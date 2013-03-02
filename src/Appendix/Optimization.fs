@@ -116,7 +116,9 @@ type LineSearch (f: (Vector<float> -> float), xinit, xmax) =
                               match a_new with
                               | None -> rescuestepsize
                               | Some a_new ->
-                                  if a_new >= maxstep then maxstep else (search a_new (a_cur, phi_cur, dphi_cur))
+                                  if a_new >= maxstep then maxstep
+                                  else if a_new <= a_cur then a_cur
+                                  else (search a_new (a_cur, phi_cur, dphi_cur))
 
             match cubicInterpolation((0.0, phi0, dphi0), (maxstep, phimax, dphimax)) with
             | None -> rescuestepsize

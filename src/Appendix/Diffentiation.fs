@@ -49,6 +49,7 @@ type Differentiation() =
     static let mutable candNum = 4
     static let mutable zeroLim = 100.0 * System.Double.Epsilon
     static let mutable searchInitHLimit = 10
+    static let mutable gradientToZeroLimit = 3
 
     static member InitialDenominator
         with get() = initialDenominator
@@ -66,6 +67,10 @@ type Differentiation() =
         with get() = searchInitHLimit
         and set(value) = searchInitHLimit <- value
 
+    static member GradientToZeroLimit
+        with get() = gradientToZeroLimit
+        and set(value) = gradientToZeroLimit <- value
+
     static member private OneGradient ((f: Vector<float> -> float), (xs: Vector<float>), h, index) =
         let res = 0.5 * ( (Vector.mapi (fun j x -> if j = index then x + h else x) xs |> f)
                   - (Vector.mapi (fun j x -> if j = index then x - h else x) xs |> f) ) / h
@@ -76,25 +81,36 @@ type Differentiation() =
         else Result(res)
 
     static member private SearchInitial ((f: Vector<float> -> float), (xs: Vector<float>), index) = 
-        let rec search h i =
+        let rec search h oldg i zeronum =
             if i > Differentiation.SearchInitHLimit then Failure
-            else
-                let gs = Array.Parallel.init Differentiation.CandNum (fun j -> Differentiation.OneGradient(f, xs, (h * (10.0**(float j))), index))
-                let isinvalid = (fun x -> match x with
-                                          | PositiveInfinity | NegativeInfinity | NaN -> true
-                                          | _ -> false)
-                let iszero = (fun x -> match x with
-                                       | Result(v) -> abs(v) < zeroLim
-                                       | _ -> true)
-                // if the following conditions are true, then denominator search is retried.
-                // * One or more gradient candidates(gs) are NaN or infinite.
-                // * All candidates are almost zero.                     
-                if Array.exists isinvalid gs || Array.forall iszero gs then 
-                    let nexth = h * (10.0**(float Differentiation.CandNum))
-                    search nexth (i+1)
-                else Success(gs)
+            else if zeronum > Differentiation.GradientToZeroLimit then Array.Parallel.init Differentiation.CandNum (fun i -> Result(0.0)) |> Success
+            else let isinvalid = (fun x -> match x with
+                                           | PositiveInfinity | NegativeInfinity | NaN -> true
+                                           | _ -> false)
+                 let iszero = (fun x -> match x with
+                                        | Result(v) -> abs(v) < zeroLim
+                                        | _ -> true)
+
+                 let nexth = (h * 10.0**(float Differentiation.CandNum - 1.0))
+                 let largestgrad = Differentiation.OneGradient(f, xs, nexth, index)
+                 if (isinvalid oldg) then search nexth largestgrad (i+1) zeronum
+                 else
+                     match largestgrad with
+                     | Result(res) -> let gs = Array.Parallel.init Differentiation.CandNum (fun j -> if j = 0 then oldg
+                                                                                                     else if j = (Differentiation.CandNum - 1) then largestgrad
+                                                                                                     else Differentiation.OneGradient(f, xs, (h * (10.0**(float j))), index)
+                                                                                           )
+                                      // if the following conditions are true, then denominator search is retried.
+                                      // * One or more gradient candidates(gs) are NaN or infinite.
+                                      // * All candidates are almost zero.                     
+                                      if Array.exists isinvalid gs then 
+                                          search nexth largestgrad (i+1) zeronum
+                                      else if Array.forall iszero gs then
+                                          search nexth largestgrad (i+1) (zeronum+1)
+                                      else Success(gs)
+                     | _ -> search nexth largestgrad (i+1) zeronum
                 
-        search Differentiation.InitialDenominator 0
+        search Differentiation.InitialDenominator (Differentiation.OneGradient(f, xs, Differentiation.InitialDenominator, index)) 0 0
 
     static member private OneGradient ((f: Vector<float> -> float), (xs: Vector<float>), index) =
         let rec richardsonExtrapolation (fds: float array) trial =
