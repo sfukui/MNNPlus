@@ -1,4 +1,11 @@
-﻿Math.NET Numerics
+﻿What is this fork?
+=================
+This fork append some feature to Math.NET Numerics(The explanation of Math.NET Numerics is in later section in detail). The additional features as follows:
+* Numerical differentiation(Not include Hessian calculation yet).
+* Numerical optimization(BFGS and Nelder-Mead method)
+* MCMC sampling(Adaptive rejection Metropolis sampling)
+
+Math.NET Numerics
 =================
 
 Math.NET Numerics is an opensource **numerical library for .Net, Silverlight and Mono**.

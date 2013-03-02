@@ -1,4 +1,8 @@
-﻿Math.NET Numerics Authors
+﻿Author of this folk
+===================
+* Fukui Shogo
+
+Math.NET Numerics Authors
 =========================
 
 * [Marcus Cuda](http://marcuscuda.com/): @cuda
