@@ -72,13 +72,17 @@ type Differentiation() =
         and set(value) = gradientToZeroLimit <- value
 
     static member private OneGradient ((f: Vector<float> -> float), (xs: Vector<float>), h, index) =
-        let res = 0.5 * ( (Vector.mapi (fun j x -> if j = index then x + h else x) xs |> f)
-                  - (Vector.mapi (fun j x -> if j = index then x - h else x) xs |> f) ) / h
+        let largef = Vector.mapi (fun j x -> if j = index then x + h else x) xs |> f
 
-        if System.Double.IsNaN(res) then NaN
-        else if System.Double.IsPositiveInfinity(res) then PositiveInfinity
-        else if System.Double.IsNegativeInfinity(res) then NegativeInfinity
-        else Result(res)
+        if System.Double.IsNaN(largef) then NaN
+        else
+            let res = 0.5 *
+                      ( largef - (Vector.mapi (fun j x -> if j = index then x - h else x) xs |> f) ) / h
+
+            if System.Double.IsNaN(res) then NaN
+            else if System.Double.IsPositiveInfinity(res) then PositiveInfinity
+            else if System.Double.IsNegativeInfinity(res) then NegativeInfinity
+            else Result(res)
 
     static member private SearchInitial ((f: Vector<float> -> float), (xs: Vector<float>), index) = 
         let rec search h oldg i zeronum =
