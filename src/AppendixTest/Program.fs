@@ -14,8 +14,10 @@ let normalPdf (theta: Vector<float>) (x: float)
 let normalPdfLn (theta: Vector<float>) (x: float)
     = -log (sqrt (2.0 * theta.[1] * System.Math.PI)) + (-0.5 * ((x - theta.[0])**2.0) / (theta.[1]**2.0))
 let normTheta = [1.0; 2.0] |> DenseVector.ofList
-let normARMSampler = AdaptiveRejectionMetropolisSampler((normalPdfLn normTheta), -7.0, 9.0, -2.0, 4.0)
-let normSample = normARMSampler.Sample(5.0, 10000)
+//let normARMSampler = AdaptiveRejectionMetropolisSampler((normalPdfLn normTheta), -7.0, 9.0, -2.0, 4.0)
+//let normSample = normARMSampler.Sample(5.0, 10000)
+let normARMSampler = AdaptiveRejectionMetropolisSampler((normalPdfLn normTheta), -7.0, 9.0, 5000)
+let normSample = normARMSampler.Sample(10000)
 let normMean = List.sum normSample / (List.length normSample |> float)
 let normSampleV = DenseVector.ofList normSample
 let normMeanV = normSampleV.Sum() / ( normSample.Length |> float)
@@ -29,8 +31,10 @@ let gbeta2PdfLn (theta: Vector<float>) x =
                  ( theta.[2] + theta.[3] ) * (log ( 1.0 + (x / theta.[1])**(theta.[0]) ) )
     lnumer - ldenom
 let gbeta2Theta = [1.58840897986439; 1315.45595003162; 2.12302790284458; 4.62820357269144] |> DenseVector.ofList
-let gbeta2ARMSampler = new AdaptiveRejectionMetropolisSampler((gbeta2PdfLn gbeta2Theta), 0.0, 40000.0, 200.0, 1500.0)
-let gbeta2Sample = gbeta2ARMSampler.Sample(800.0, 200000)
+//let gbeta2ARMSampler = new AdaptiveRejectionMetropolisSampler((gbeta2PdfLn gbeta2Theta), 0.0, 40000.0, 200.0, 1500.0)
+//let gbeta2Sample = gbeta2ARMSampler.Sample(800.0, 200000)
+let gbeta2ARMSampler = new AdaptiveRejectionMetropolisSampler((gbeta2PdfLn gbeta2Theta), 0.0, 40000.0, 5000)
+let gbeta2Sample = gbeta2ARMSampler.Sample(200000)
 let gbeta2SimMean = List.average gbeta2Sample
 let gbeta2SimVar = gbeta2Sample |> List.map (fun x -> (x - gbeta2SimMean)**2.0) |> List.sum
                 |> (*) (1.0 / ((List.length gbeta2Sample |> float) - 1.0))
