@@ -42,7 +42,7 @@ type ZoneInfo = {
 }
 
 type AdaptiveRejectionMetropolisSampler =
-    val m_pdfLn : (float -> float)
+    val m_pdfLn : float -> float
     val m_xMin : float
     val m_xMax : float
     val m_x1 : float
@@ -173,24 +173,28 @@ type AdaptiveRejectionMetropolisSampler =
                 draw (onex :: xlst) (acc+1) iter
 
         let res = draw [x0] 0 iteration
-        res
-
+        //new System.Collections.Generic.List<float>(res)
+        res |> List.rev |> List.tail
+        
     member this.Sample(iteration: int) =
         let mean = AdaptiveRejectionMetropolisSampler.calcMoment this.m_pdfLn this.m_xMin this.m_xMax (fun x -> x)
         this.Sample(mean, iteration)
 
     new(pdfLn:(float -> float), xMin:float, xMax:float, x1:float, xn:float) as this =
+        //let fspdfln = (fun x -> pdfLn.Invoke(x))
         { m_pdfLn = pdfLn; m_xMin = xMin; m_xMax = xMax; m_x1 = x1; m_xn = xn; abscissas = List.empty; proposalInfos = List.empty; m_Sampler = new MersenneTwister()}
         then
             this.abscissas <- [x1; (x1 + xn) * 0.5; xn]
     
     new(pdfLn:(float -> float), xMin:float, xMax:float, x1:float, xn:float, burnIn:int) as this =
+        //let fspdfln = (fun x -> pdfLn.Invoke(x))
         { m_pdfLn = pdfLn; m_xMin = xMin; m_xMax = xMax; m_x1 = x1; m_xn = xn; abscissas = List.empty; proposalInfos = List.empty; m_Sampler = new MersenneTwister()}
         then
             this.abscissas <- [x1; (x1 + xn) * 0.5; xn]
             do this.Sample(burnIn) |> ignore
                 
     new(pdfLn:(float -> float), xMin: float, xMax: float) as this =
+        //let fspdfln = (fun x -> pdfLn.Invoke(x))
         let mean = AdaptiveRejectionMetropolisSampler.calcMoment pdfLn xMin xMax (fun y -> y)
         let sd = AdaptiveRejectionMetropolisSampler.calcMoment pdfLn xMin xMax (fun x -> (x - mean)**2.0) |> sqrt
         let x1t = (max (mean - 2.0*sd) (0.5*(xMin + mean)))
@@ -200,6 +204,7 @@ type AdaptiveRejectionMetropolisSampler =
             this.abscissas <- [this.m_x1; (this.m_x1 + this.m_xn) * 0.5; this.m_xn]
 
     new(pdfLn:(float -> float), xMin: float, xMax: float, burnIn: int) as this =
+        //let fspdfln = (fun x -> pdfLn.Invoke(x))
         let mean = AdaptiveRejectionMetropolisSampler.calcMoment pdfLn xMin xMax (fun x -> x)
         let sd = AdaptiveRejectionMetropolisSampler.calcMoment pdfLn xMin xMax (fun x -> (x - mean)**2.0) |> sqrt
         let x1t = (max (mean - 2.0*sd) (0.5*(xMin + mean)))
