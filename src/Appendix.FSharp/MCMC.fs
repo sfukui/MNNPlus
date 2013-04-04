@@ -42,174 +42,181 @@ type ZoneInfo = {
 }
 
 type AdaptiveRejectionMetropolisSampler =
-    val m_pdfLn : float -> float
-    val m_xMin : float
-    val m_xMax : float
-    val m_x1 : float
-    val m_xn : float
-    val mutable abscissas : List<float>
-    val mutable proposalInfos : List<ZoneInfo>
+    val m_LnPdf : float -> float
+    val m_XMin : float
+    val m_XMax : float
+    val m_X1 : float
+    val m_Xn : float
+    val mutable Abscissas : List<float>
+    val mutable ProposalInfos : List<ZoneInfo>
     val m_Sampler : AbstractRandomNumberGenerator
 
-    member private this.lineab (a:float, b:float) = (fun x -> a + b * x)
-
-    static member private calcMoment (pdfLn: (float -> float)) (xMin: float) (xMax: float) (mfunc: (float -> float)) =
+    static member private calcMoment (pdfLn: (float -> float)) (xMin: float) (xMax: float) (mFunc: (float -> float)) =
         let denom = Integrate.OnClosedInterval((fun x -> pdfLn x |> exp), xMin, xMax)
-        Integrate.OnClosedInterval((fun x -> (mfunc x) * (pdfLn x |> exp)), xMin, xMax) / denom
+        Integrate.OnClosedInterval((fun x -> (mFunc x) * (pdfLn x |> exp)), xMin, xMax) / denom
+
+    member private this.lineAB (a:float, b:float) = (fun x -> a + b * x)
 
     member private this.h x =
-        let proposalInfosArray = this.proposalInfos |> List.toArray
+        let proposalInfosArray = this.ProposalInfos |> List.toArray
 
-        let rec binSearch onex lowind upind =
-            let cind = (lowind + upind) / 2.0
-            let oneProposalInfo = proposalInfosArray.[(round cind) |> int]
-            if (onex >= (fst oneProposalInfo.XRange) && onex < (snd oneProposalInfo.XRange)) ||
-                onex = (snd oneProposalInfo.XRange) && (snd oneProposalInfo.XRange) = this.m_xMax
-                then onex |> (this.lineab oneProposalInfo.HCoeff)
-            elif onex < (fst oneProposalInfo.XRange) then binSearch onex lowind cind
+        let rec binSearch oneX lowInd upInd =
+            let cInd = (lowInd + upInd) / 2.0
+            let oneProposalInfo = proposalInfosArray.[(round cInd) |> int]
+            if (oneX >= (fst oneProposalInfo.XRange) && oneX < (snd oneProposalInfo.XRange)) ||
+                oneX = (snd oneProposalInfo.XRange) && (snd oneProposalInfo.XRange) = this.m_XMax
+                then oneX |> (this.lineAB oneProposalInfo.HCoeff)
+            elif oneX < (fst oneProposalInfo.XRange) then binSearch oneX lowInd cInd
             else // onex >= (snd zoneInfo.XRange)
-                binSearch onex cind upind
+                binSearch oneX cInd upInd
 
-        binSearch x 0.0 ((this.proposalInfos.Length |> float) - 1.0)
+        binSearch x 0.0 ((this.ProposalInfos.Length |> float) - 1.0)
 
     member private this.calcProposal absc =
-        let xranges = List.zip (this.m_xMin :: absc) (absc @ [this.m_xMax])
+        let xRanges = List.zip (this.m_XMin :: absc) (absc @ [this.m_XMax])
 
-        let secantab (xl, xu) =
-            let (yl, yu) = (this.m_pdfLn xl, this.m_pdfLn xu)
+        let secantAB (xl, xu) =
+            let (yl, yu) = (this.m_LnPdf xl, this.m_LnPdf xu)
             (yl - xl * (yu - yl) / (xu - xl), (yu - yl) / (xu - xl))
 
-        let rec getEnvelope acc ranges ls revnewranges revhs =
+        let rec getEnvelope acc ranges ls revNewRanges revHs =
             match acc with
-            | x when x = xranges.Length -> (List.rev revnewranges), (List.rev revhs)
-            | x when x = xranges.Length - 1 ->
+            | x when x = xRanges.Length -> (List.rev revNewRanges), (List.rev revHs)
+            | x when x = xRanges.Length - 1 ->
                 let rightmostab =
-                    if (this.lineab (List.head ls)) (List.head ranges |> snd) < this.m_pdfLn (List.head ranges |> snd) then ls.[1]
+                    if (this.lineAB (List.head ls)) (List.head ranges |> snd) < this.m_LnPdf (List.head ranges |> snd) then ls.[1]
                     else List.head ls
-                getEnvelope (x+1) (List.tail ranges) (List.tail ls) ((List.head ranges) :: revnewranges) (rightmostab :: revhs)
-            | x when x = xranges.Length - 2 ->
-                getEnvelope (x+1) (List.tail ranges) (List.tail ls) ((List.head ranges) :: revnewranges) ((List.head ls) :: revhs)
+                getEnvelope (x+1) (List.tail ranges) (List.tail ls) ((List.head ranges) :: revNewRanges) (rightmostab :: revHs)
+            | x when x = xRanges.Length - 2 ->
+                getEnvelope (x+1) (List.tail ranges) (List.tail ls) ((List.head ranges) :: revNewRanges) ((List.head ls) :: revHs)
             | 0 -> 
                 let leftmostab =
-                    if (this.lineab ls.[1]) (List.head ranges |> fst) < this.m_pdfLn (List.head ranges |> fst) then ls.[0]
+                    if (this.lineAB ls.[1]) (List.head ranges |> fst) < this.m_LnPdf (List.head ranges |> fst) then ls.[0]
                     else ls.[1]
-                getEnvelope 1 (List.tail ranges) ls ((List.head ranges) :: revnewranges) (leftmostab :: revhs)
-            | 1 -> getEnvelope 2 (List.tail ranges) (List.tail ls) ((List.head ranges) :: revnewranges) (ls.[2] :: revhs)
+                getEnvelope 1 (List.tail ranges) ls ((List.head ranges) :: revNewRanges) (leftmostab :: revHs)
+            | 1 -> getEnvelope 2 (List.tail ranges) (List.tail ls) ((List.head ranges) :: revNewRanges) (ls.[2] :: revHs)
             | _ -> let ((la, lb), curab, (ua, ub), (xl, xu)) = ((List.head ls), ls.[1], ls.[2], (List.head ranges))
                    let xint = (ua - la) / (lb - ub)
-                   if xint > xl && xint < xu && (this.lineab curab) xint < (this.lineab (la, lb)) xint
+                   if xint > xl && xint < xu && (this.lineAB curab) xint < (this.lineAB (la, lb)) xint
                        then getEnvelope (acc+1) (List.tail ranges) (List.tail ls)
-                                ([(xint, xu); (xl, xint)] @ revnewranges) ([(ua, ub); (la, lb)] @ revhs)
-                   else getEnvelope (acc+1) (List.tail ranges) (List.tail ls) ((xl,xu) :: revnewranges) (curab :: revhs)
+                                ([(xint, xu); (xl, xint)] @ revNewRanges) ([(ua, ub); (la, lb)] @ revHs)
+                   else getEnvelope (acc+1) (List.tail ranges) (List.tail ls) ((xl,xu) :: revNewRanges) (curab :: revHs)
         
         let secants = List.mapi (fun i (l, u) ->
-                                if l <> (-infinity) && u <> infinity then secantab (l, u)
-                                else (nan, nan) ) xranges
+                                if l <> (-infinity) && u <> infinity then secantAB (l, u)
+                                else (nan, nan) ) xRanges
 
-        let (newxranges, hs) = getEnvelope 0 xranges secants [] []
+        let (newXRanges, hs) = getEnvelope 0 xRanges secants [] []
 
-        let areas = List.map2 (fun (l,u) (a,b) -> (System.Math.Exp(a + b * u) - System.Math.Exp(a + b * l)) / b) newxranges hs
+        let areas = List.map2 (fun (l,u) (a,b) -> (System.Math.Exp(a + b * u) - System.Math.Exp(a + b * l)) / b) newXRanges hs
         let probs = List.map (fun x -> x / (List.sum areas)) areas
         
         List.map3 (fun range hi (area, prob) -> { XRange = range; HCoeff = hi; HArea = area; Prob = prob }) 
-            newxranges hs (List.zip areas probs)
+            newXRanges hs (List.zip areas probs)
         
     member private this.sampleProposal () =
-        let ubetween = this.m_Sampler.NextDouble()
+        let uBetween = this.m_Sampler.NextDouble()
 
-        let rec searchrange uval (uprobs: float array) i =
-            if uprobs.Length <= 1 then i
-            else let upcenter = (uprobs.Length / 2)
-                 let loweruprobs = Array.sub uprobs 0 upcenter
-                 let upperuprobs = Array.sub uprobs upcenter (uprobs.Length - loweruprobs.Length)
-                 let lowerupsum = loweruprobs |> Array.sum
-                 if uval < lowerupsum then searchrange uval loweruprobs (i + 0)
-                 else searchrange (uval-lowerupsum) upperuprobs (i + upcenter)
+        let rec searchRange uVal (uProbs: float array) i =
+            if uProbs.Length <= 1 then i
+            else let uPCenter = (uProbs.Length / 2)
+                 let lowerUProbs = Array.sub uProbs 0 uPCenter
+                 let upperUProbs = Array.sub uProbs uPCenter (uProbs.Length - lowerUProbs.Length)
+                 let lowerUPSum = lowerUProbs |> Array.sum
+                 if uVal < lowerUPSum then searchRange uVal lowerUProbs (i + 0)
+                 else searchRange (uVal-lowerUPSum) upperUProbs (i + uPCenter)
             
-        let probs = List.map (fun x -> x.Prob) this.proposalInfos |> List.toArray
-        let targetPropInfo = this.proposalInfos.[(searchrange ubetween probs 0)]
+        let probs = List.map (fun x -> x.Prob) this.ProposalInfos |> List.toArray
+        let targetPropInfo = this.ProposalInfos.[(searchRange uBetween probs 0)]
 
         let (range, coef, area) = (targetPropInfo.XRange, targetPropInfo.HCoeff, targetPropInfo.HArea) 
-        let uwithin = this.m_Sampler.NextDouble()
-        let res = System.Math.Log( (uwithin * (snd coef) * area / System.Math.Exp(fst coef)) + System.Math.Exp((snd coef) * (fst range)) ) / (snd coef)
+        let uWithin = this.m_Sampler.NextDouble()
+        let res = System.Math.Log( (uWithin * (snd coef) * area / System.Math.Exp(fst coef)) + System.Math.Exp((snd coef) * (fst range)) ) / (snd coef)
         res
 
-    member private this.onedraw xcur = 
+    member private this.oneDraw xcur = 
         let rec draw cur =         
             // step 1
-            let xcand = this.sampleProposal ()
-            let hxcand = this.h xcand
+            let xCand = this.sampleProposal ()
+            let hXCand = this.h xCand
         
             // step 2
-            let uar = this.m_Sampler.NextDouble()
+            let uAR = this.m_Sampler.NextDouble()
 
             // step 3
-            if (log uar) > (this.m_pdfLn xcand) - hxcand then
-                this.abscissas <- (xcand :: this.abscissas) |> List.sort
-                this.proposalInfos <- this.calcProposal this.abscissas
+            if (log uAR) > (this.m_LnPdf xCand) - hXCand then
+                this.Abscissas <- (xCand :: this.Abscissas) |> List.sort
+                this.ProposalInfos <- this.calcProposal this.Abscissas
                 draw cur
             else
                 // step 4
-                let umh = this.m_Sampler.NextDouble()
+                let uMH = this.m_Sampler.NextDouble()
 
                 // step 5 
-                let hxcur = this.h cur 
+                let hXCur = this.h cur 
 
-                if (log umh) > min 0.0 ( ((this.m_pdfLn xcand) + (min (this.m_pdfLn cur) hxcur)) - ((this.m_pdfLn cur) + (min (this.m_pdfLn xcand) hxcand)) ) then 
+                if (log uMH) > min 0.0 ( ((this.m_LnPdf xCand) + (min (this.m_LnPdf cur) hXCur)) - ((this.m_LnPdf cur) + (min (this.m_LnPdf xCand) hXCand)) ) then 
                     cur        
-                else xcand
+                else xCand
 
         draw xcur
 
     member this.Sample(x0:float, iteration:int) =
         // step 0
-        this.proposalInfos <- this.calcProposal this.abscissas
+        this.ProposalInfos <- this.calcProposal this.Abscissas
 
         let rec draw xlst acc iter =
             if acc >= iter then
                 xlst
             else 
-                let onex = this.onedraw (List.head xlst)
-                draw (onex :: xlst) (acc+1) iter
+                let oneX = this.oneDraw (List.head xlst)
+                draw (oneX :: xlst) (acc+1) iter
 
         let res = draw [x0] 0 iteration
         //new System.Collections.Generic.List<float>(res)
         res |> List.rev |> List.tail
         
     member this.Sample(iteration: int) =
-        let mean = AdaptiveRejectionMetropolisSampler.calcMoment this.m_pdfLn this.m_xMin this.m_xMax (fun x -> x)
+        let mean = AdaptiveRejectionMetropolisSampler.calcMoment this.m_LnPdf this.m_XMin this.m_XMax (fun x -> x)
         this.Sample(mean, iteration)
 
-    new(pdfLn:(float -> float), xMin:float, xMax:float, x1:float, xn:float) as this =
+    new(lnPdf:(float -> float), xMin:float, xMax:float, x1:float, xn:float) as this =
         //let fspdfln = (fun x -> pdfLn.Invoke(x))
-        { m_pdfLn = pdfLn; m_xMin = xMin; m_xMax = xMax; m_x1 = x1; m_xn = xn; abscissas = List.empty; proposalInfos = List.empty; m_Sampler = new MersenneTwister()}
+        { m_LnPdf = lnPdf; m_XMin = xMin; m_XMax = xMax; m_X1 = x1; m_Xn = xn; Abscissas = List.empty; ProposalInfos = List.empty; m_Sampler = new MersenneTwister()}
         then
-            this.abscissas <- [x1; (x1 + xn) * 0.5; xn]
+            this.Abscissas <- [x1; (x1 + xn) * 0.5; xn]
     
-    new(pdfLn:(float -> float), xMin:float, xMax:float, x1:float, xn:float, burnIn:int) as this =
+    new(lnPdf:(float -> float), xMin:float, xMax:float, x1:float, xn:float, burnIn:int) as this =
         //let fspdfln = (fun x -> pdfLn.Invoke(x))
-        { m_pdfLn = pdfLn; m_xMin = xMin; m_xMax = xMax; m_x1 = x1; m_xn = xn; abscissas = List.empty; proposalInfos = List.empty; m_Sampler = new MersenneTwister()}
+        { m_LnPdf = lnPdf; m_XMin = xMin; m_XMax = xMax; m_X1 = x1; m_Xn = xn; Abscissas = List.empty; ProposalInfos = List.empty; m_Sampler = new MersenneTwister()}
         then
-            this.abscissas <- [x1; (x1 + xn) * 0.5; xn]
+            this.Abscissas <- [x1; (x1 + xn) * 0.5; xn]
+            do this.Sample(burnIn) |> ignore
+
+    new(lnPdf:(float -> float), xMin:float, xMax:float, x1:float, xn:float, burnIn:int, sampler:AbstractRandomNumberGenerator) as this =
+        //let fspdfln = (fun x -> pdfLn.Invoke(x))
+        { m_LnPdf = lnPdf; m_XMin = xMin; m_XMax = xMax; m_X1 = x1; m_Xn = xn; Abscissas = List.empty; ProposalInfos = List.empty; m_Sampler = sampler}
+        then
+            this.Abscissas <- [x1; (x1 + xn) * 0.5; xn]
             do this.Sample(burnIn) |> ignore
                 
-    new(pdfLn:(float -> float), xMin: float, xMax: float) as this =
+    new(lnPdf:(float -> float), xMin: float, xMax: float) as this =
         //let fspdfln = (fun x -> pdfLn.Invoke(x))
-        let mean = AdaptiveRejectionMetropolisSampler.calcMoment pdfLn xMin xMax (fun y -> y)
-        let sd = AdaptiveRejectionMetropolisSampler.calcMoment pdfLn xMin xMax (fun x -> (x - mean)**2.0) |> sqrt
+        let mean = AdaptiveRejectionMetropolisSampler.calcMoment lnPdf xMin xMax (fun y -> y)
+        let sd = AdaptiveRejectionMetropolisSampler.calcMoment lnPdf xMin xMax (fun x -> (x - mean)**2.0) |> sqrt
         let x1t = (max (mean - 2.0*sd) (0.5*(xMin + mean)))
         let xnt = (min (mean + 2.0*sd) (0.5*(mean + xMax)))
-        { m_pdfLn = pdfLn; m_xMin = xMin; m_xMax = xMax; m_x1 = x1t; m_xn = xnt; abscissas = List.empty; proposalInfos = List.empty; m_Sampler = new MersenneTwister()}  
+        { m_LnPdf = lnPdf; m_XMin = xMin; m_XMax = xMax; m_X1 = x1t; m_Xn = xnt; Abscissas = List.empty; ProposalInfos = List.empty; m_Sampler = new MersenneTwister()}  
         then
-            this.abscissas <- [this.m_x1; (this.m_x1 + this.m_xn) * 0.5; this.m_xn]
+            this.Abscissas <- [this.m_X1; (this.m_X1 + this.m_Xn) * 0.5; this.m_Xn]
 
-    new(pdfLn:(float -> float), xMin: float, xMax: float, burnIn: int) as this =
+    new(lnPdf:(float -> float), xMin: float, xMax: float, burnIn: int) as this =
         //let fspdfln = (fun x -> pdfLn.Invoke(x))
-        let mean = AdaptiveRejectionMetropolisSampler.calcMoment pdfLn xMin xMax (fun x -> x)
-        let sd = AdaptiveRejectionMetropolisSampler.calcMoment pdfLn xMin xMax (fun x -> (x - mean)**2.0) |> sqrt
+        let mean = AdaptiveRejectionMetropolisSampler.calcMoment lnPdf xMin xMax (fun x -> x)
+        let sd = AdaptiveRejectionMetropolisSampler.calcMoment lnPdf xMin xMax (fun x -> (x - mean)**2.0) |> sqrt
         let x1t = (max (mean - 2.0*sd) (0.5*(xMin + mean)))
         let xnt = (min (mean + 2.0*sd) (0.5*(mean + xMax)))
-        { m_pdfLn = pdfLn; m_xMin = xMin; m_xMax = xMax; m_x1 = x1t; m_xn = xnt; abscissas = List.empty; proposalInfos = List.empty; m_Sampler = new MersenneTwister()}  
+        { m_LnPdf = lnPdf; m_XMin = xMin; m_XMax = xMax; m_X1 = x1t; m_Xn = xnt; Abscissas = List.empty; ProposalInfos = List.empty; m_Sampler = new MersenneTwister()}  
         then
-            this.abscissas <- [this.m_x1; (this.m_x1 + this.m_xn) * 0.5; this.m_xn]
+            this.Abscissas <- [this.m_X1; (this.m_X1 + this.m_Xn) * 0.5; this.m_Xn]
             do this.Sample(burnIn) |> ignore
