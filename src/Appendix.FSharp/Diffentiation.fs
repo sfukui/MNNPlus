@@ -45,31 +45,31 @@ type SearchDenomResult =
     | Failure
 
 type Differentiation() =
-    static let mutable initialDenominator = MathNet.Numerics.Precision.DoubleMachinePrecision**(1.0/3.0)
-    static let mutable candNum = 4
-    static let mutable zeroLim = 100.0 * System.Double.Epsilon
-    static let mutable searchInitHLimit = 10
-    static let mutable gradientToZeroLimit = 3
+    static let mutable m_InitialDenominator = MathNet.Numerics.Precision.DoubleMachinePrecision**(1.0/3.0)
+    static let mutable m_ExtrapolationTime = 4
+    static let mutable m_ZeroValue = 100.0 * System.Double.Epsilon
+    static let mutable m_SearchInitalDenominatorMaxNumber = 10
+    static let mutable m_TimeToZeroValue = 3
 
     static member InitialDenominator
-        with get() = initialDenominator
-        and set(value) = initialDenominator <- value
+        with get() = m_InitialDenominator
+        and set(value) = m_InitialDenominator <- value
 
-    static member CandNum
-        with get() = candNum
-        and set(value) = candNum <- value
+    static member ExtrapolationTime
+        with get() = m_ExtrapolationTime
+        and set(value) = m_ExtrapolationTime <- value
 
-    static member ZeroLim
-        with get() = zeroLim
-        and set(value) = zeroLim <- value
+    static member ZeroValue
+        with get() = m_ZeroValue
+        and set(value) = m_ZeroValue <- value
 
-    static member SearchInitHLimit
-        with get() = searchInitHLimit
-        and set(value) = searchInitHLimit <- value
+    static member SearchInitalDenominatorMaxNumber
+        with get() = m_SearchInitalDenominatorMaxNumber
+        and set(value) = m_SearchInitalDenominatorMaxNumber <- value
 
-    static member GradientToZeroLimit
-        with get() = gradientToZeroLimit
-        and set(value) = gradientToZeroLimit <- value
+    static member TimeToZeroValue
+        with get() = m_TimeToZeroValue
+        and set(value) = m_TimeToZeroValue <- value
 
     static member private OneGradient ((f: Vector<float> -> float), (xs: Vector<float>), h, index) =
         let largef = Vector.mapi (fun j x -> if j = index then x + h else x) xs |> f
@@ -86,24 +86,24 @@ type Differentiation() =
 
     static member private SearchInitial ((f: Vector<float> -> float), (xs: Vector<float>), index) = 
         let rec search h oldg i zeronum =
-            if i > Differentiation.SearchInitHLimit then Failure
-            else if zeronum > Differentiation.GradientToZeroLimit then Array.Parallel.init Differentiation.CandNum (fun i -> Result(0.0)) |> Success
+            if i > Differentiation.SearchInitalDenominatorMaxNumber then Failure
+            else if zeronum > Differentiation.TimeToZeroValue then Array.Parallel.init Differentiation.ExtrapolationTime (fun i -> Result(0.0)) |> Success
             else let isinvalid = (fun x -> match x with
                                            | PositiveInfinity | NegativeInfinity | NaN -> true
                                            | _ -> false)
                  let iszero = (fun x -> match x with
-                                        | Result(v) -> abs(v) < zeroLim
+                                        | Result(v) -> abs(v) < Differentiation.ZeroValue
                                         | _ -> true)
 
-                 let nexth = (h * 10.0**(float Differentiation.CandNum - 1.0))
+                 let nexth = (h * 10.0**(float Differentiation.ExtrapolationTime - 1.0))
                  let largestgrad = Differentiation.OneGradient(f, xs, nexth, index)
                  if (isinvalid oldg) then search nexth largestgrad (i+1) zeronum
                  else
                      match largestgrad with
-                     | Result(res) -> let gs = Array.Parallel.init Differentiation.CandNum (fun j -> if j = 0 then oldg
-                                                                                                     else if j = (Differentiation.CandNum - 1) then largestgrad
-                                                                                                     else Differentiation.OneGradient(f, xs, (h * (10.0**(float j))), index)
-                                                                                           )
+                     | Result(res) -> let gs = Array.Parallel.init Differentiation.ExtrapolationTime (fun j -> if j = 0 then oldg
+                                                                                                               else if j = (Differentiation.ExtrapolationTime - 1) then largestgrad
+                                                                                                               else Differentiation.OneGradient(f, xs, (h * (10.0**(float j))), index)
+                                                                                                     )
                                       // if the following conditions are true, then denominator search is retried.
                                       // * One or more gradient candidates(gs) are NaN or infinite.
                                       // * All candidates are almost zero.                     
