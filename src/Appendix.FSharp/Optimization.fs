@@ -68,7 +68,7 @@ type LineSearch (f: (Vector<float> -> float), xinit, xmax) =
 
             searchMaxStep(xmax, 0)
             
-    member x.Search (v: Vector<float>) (d: Vector<float>) =
+    member this.Search (v: Vector<float>) (d: Vector<float>) =
         let actualMaxStep = initialMaxStep v d
         match actualMaxStep with
         | None -> System.Double.NaN
@@ -129,31 +129,31 @@ type NelderMead (f:(Vector<float> -> float), iteration: int, tolerance: float) =
     let defaultIteration = 100
     let defaultTolerance = 1e-3
 
-    let mutable iteration = iteration
-    let mutable tolerance = tolerance
-    let mutable zdelta = 0.00025
-    let mutable delta = 0.05
-    let mutable rho = 1.0
-    let mutable chi = 2.0
-    let mutable psi = 0.5
-    let mutable sigma = 0.5
+    let mutable m_Iteration = iteration
+    let mutable m_Tolerance = tolerance
+    let mutable m_ZDelta = 0.00025
+    let mutable m_Delta = 0.05
+    let mutable m_Rho = 1.0
+    let mutable m_Chi = 2.0
+    let mutable m_Psi = 0.5
+    let mutable m_Sigma = 0.5
 
-    member x.Iteration with get() = iteration and set v = iteration <- if v <= 0 then defaultIteration else v
-    member x.Tolerance with get() = tolerance and set v = tolerance <- if v <= 0.0 then defaultTolerance else v
-    member x.ZDelta with get() = zdelta and set v = zdelta <- v
-    member x.Delta with get() = delta and set v = delta <- v
-    member x.Rho with get() = rho and set v = rho <- v
-    member x.Chi with get() = chi and set v = chi <- v
-    member x.Psi with get() = psi and set v = psi <- v
-    member x.Sigma with get() = sigma and set v = sigma <- v
+    member this.Iteration with get() = m_Iteration and set v = m_Iteration <- if v <= 0 then defaultIteration else v
+    member this.Tolerance with get() = m_Tolerance and set v = m_Tolerance <- if v <= 0.0 then defaultTolerance else v
+    member this.ZDelta with get() = m_ZDelta and set v = m_ZDelta <- v
+    member this.Delta with get() = m_Delta and set v = m_Delta <- v
+    member this.Rho with get() = m_Rho and set v = m_Rho <- v
+    member this.Chi with get() = m_Chi and set v = m_Chi <- v
+    member this.Psi with get() = m_Psi and set v = m_Psi <- v
+    member this.Sigma with get() = m_Sigma and set v = m_Sigma <- v
                 
-    member x.Minimize(initval: Vector<float>) =
+    member this.Minimize(initval: Vector<float>) =
         // Creating Simplex
         let rec loop_cs (vec: Vector<float>) acc simplex =
             if acc = vec.Count then simplex
             else vec |> Vector.mapi (fun i x -> if i = acc then match x with
-                                                                | 0.0 -> zdelta
-                                                                | x -> (1.0 + delta) * x
+                                                                | 0.0 -> this.ZDelta
+                                                                | x -> (1.0 + this.Delta) * x
                                                 else x) 
                      |> (fun s -> loop_cs vec (acc+1) (s :: simplex))
         let ss = initval :: (loop_cs initval 0 []) |> List.map (fun x -> (x, (f x)))
@@ -175,8 +175,8 @@ type NelderMead (f:(Vector<float> -> float), iteration: int, tolerance: float) =
                     (getVectorFX oldsimplex) - (getVectorFX newsimplex) |> Vector.fold (fun a x -> a + x*x) 0.0 |> System.Math.Sqrt
                 else
                     0.0
-            if f_L2 < x.Tolerance && count > 0 then (List.head newsimplex) |> (fun x -> ((fst x), (snd x), true)) 
-            else if count > x.Iteration && count > 0 then (List.head newsimplex) |> (fun x -> ((fst x), (snd x), false))          
+            if f_L2 < this.Tolerance && count > 0 then (List.head newsimplex) |> (fun x -> ((fst x), (snd x), true)) 
+            else if count > this.Iteration && count > 0 then (List.head newsimplex) |> (fun x -> ((fst x), (snd x), false))          
             else
                 let (best, worst, sndworst) =
                     (List.head ascendingsimplex, List.head descendingsimplex, (descendingsimplex |> List.tail |> List.head))
@@ -184,22 +184,22 @@ type NelderMead (f:(Vector<float> -> float), iteration: int, tolerance: float) =
                                |> (fun x -> x / (float (descendingsimplex.Length) - 1.0))
 
                 // Reflect
-                let r = centroid + rho * (centroid - (fst worst)) |> (fun x -> (x, f x))
+                let r = centroid + this.Rho * (centroid - (fst worst)) |> (fun x -> (x, f x))
             
                 if (snd r) < (snd best) then       // Expand
-                    let e = (fst r) + chi * ((fst r) - centroid) |> (fun x -> (x, f x))
+                    let e = (fst r) + this.Chi * ((fst r) - centroid) |> (fun x -> (x, f x))
                     loop_it ascendingsimplex (createNextNewSimplex e) (count + 1)
                 else if (snd sndworst) <= (snd r) then     // Contract
                     let c =
                         if (snd r) < (snd worst) then
-                            centroid + psi * ((fst r) - centroid) |> (fun x -> (x, f x))    // Outside Contract
+                            centroid + this.Psi * ((fst r) - centroid) |> (fun x -> (x, f x))    // Outside Contract
                         else
-                            centroid + psi * ((fst worst) - centroid) |> (fun x -> (x, f x))    // Inside Contract
+                            centroid + this.Psi * ((fst worst) - centroid) |> (fun x -> (x, f x))    // Inside Contract
                     if (snd c) <= (snd worst) then
                         loop_it newsimplex (createNextNewSimplex c) (count + 1)
                     else                // Shrink
                         let nnewsimplex = List.map (fun (v: (Vector<float> * float)) ->
-                                                        let x = (fst best) + sigma * ((fst v) - (fst best))
+                                                        let x = (fst best) + this.Sigma * ((fst v) - (fst best))
                                                         (x, f x)) newsimplex
                         loop_it newsimplex nnewsimplex (count + 1)
                 else
@@ -208,8 +208,7 @@ type NelderMead (f:(Vector<float> -> float), iteration: int, tolerance: float) =
         loop_it [] ss 0
 
 type QuasiNewtonMethodStatus<'a> =
-    Ongoing of 'a
-    | Converged of 'a
+    Converged of 'a
     | NotConverged of 'a
     | FunctionValueInvalid
     | GradientInvalid
@@ -219,8 +218,7 @@ type QuasiNewtonMethodStatus<'a> =
 type QuasiNewtonSearchBuilder() =
     member this.Bind(result: QuasiNewtonMethodStatus<'a>, rest: 'a -> QuasiNewtonMethodStatus<'b>) =
         match result with
-        | Ongoing(x)
-        | Converged(x)
+        Converged(x)
         | NotConverged(x) -> rest x
         | FunctionValueInvalid -> FunctionValueInvalid
         | GradientInvalid -> GradientInvalid
@@ -233,61 +231,61 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
     let defaultIteration = 100
     let defaultTolerance = 1e-3
 
-    let mutable iteration = iteration
-    let mutable tolerance = tolerance
-    let mutable initialstepsize = 1.0
-    let mutable maxstepsize = 5.0
-    let mutable derivationmethod = (fun x -> Differentiation.Gradient(f, x))
-    let mutable firsttimestepsizemuiltiplier = 1.0
+    let mutable m_Iteration = iteration
+    let mutable m_Tolerance = tolerance
+    let mutable m_InitialStepSize = 1.0
+    let mutable m_MaxStepSize = 5.0
+    let mutable m_DerivationMethod = (fun x -> Differentiation.Gradient(f, x))
+    let mutable m_FirstTimeStepSizeMuiltiplier = 1.0
 
     let isInvalidFloat (x: float) =
         if System.Double.IsInfinity x || System.Double.IsNaN x then true
         else false
          
     let qnsearch = new QuasiNewtonSearchBuilder()
-    let derivative x =
-        let tres = derivationmethod x
-        if Vector.exists isInvalidFloat tres then GradientInvalid
-        else Ongoing(tres)
 
-    let BFGSWeightMatrix (w: Matrix<float>) (xds: Vector<float>) (dds: Vector<float>) =
+    member this.Iteration with get() = iteration and set v = m_Iteration <- if v <= 0 then defaultIteration else v
+    member this.Tolerance with get() = tolerance and set v = m_Tolerance <- if v <= 0.0 then defaultTolerance else v
+    member this.DerivationMethod with get() = m_DerivationMethod and set v = m_DerivationMethod <- v
+    member this.InitialStepSize with get() = m_InitialStepSize and set v = m_InitialStepSize <- v
+    member this.MaxStepSize with get() = m_MaxStepSize and set v = m_MaxStepSize <- v
+    member this.FirstTimeStepSizeMultiplier with get() = m_FirstTimeStepSizeMuiltiplier and set v = m_FirstTimeStepSizeMuiltiplier <- v
+
+    member private this.differentiation x =
+        let tres = this.DerivationMethod x
+        if Vector.exists isInvalidFloat tres then GradientInvalid
+        else NotConverged(tres)
+
+    member private this.BFGSWeightMatrix (w: Matrix<float>) (xds: Vector<float>) (dds: Vector<float>) =
         let tres = w + ((1.0 / (dds * xds)) * Vector.OuterProduct(dds, dds)) - ((1.0 / (xds * w * xds)) * Vector.OuterProduct((w * xds), (w * xds)))
         if Matrix.exists isInvalidFloat tres then WeightMatrixInvalid
-        else Ongoing(tres)
+        else NotConverged(tres)
 
-    let linesearch r g =
-        let ls = LineSearch(f, initialstepsize, maxstepsize)
+    member private this.lineSearch r g =
+        let ls = LineSearch(f, this.InitialStepSize, this.MaxStepSize)
         let tres = ls.Search r g
         if isInvalidFloat tres then LineSearchFailure
-        else Ongoing(tres)
+        else NotConverged(tres)
 
-    member x.Iteration with get() = iteration and set v = iteration <- if v <= 0 then defaultIteration else v
-    member x.Tolerance with get() = tolerance and set v = tolerance <- if v <= 0.0 then defaultTolerance else v
-    member x.DerivationMethod with get() = derivationmethod and set v = derivationmethod <- v
-    member x.InitialStepSize with get() = initialstepsize and set v = initialstepsize <- v
-    member x.MaxStepSize with get() = maxstepsize and set v = maxstepsize <- v
-    member x.FirstTimeStepSizeMultiplier with get() = firsttimestepsizemuiltiplier and set v = firsttimestepsizemuiltiplier <- v
-
-    // To Do: Rewrite with computation Expression
-    member x.Minimize(initval: Vector<float>) =
+    member this.Minimize(initval: Vector<float>) =
         let rec search (w: Matrix<float>) (r: Vector<float>) (g: Vector<float>) count =
             qnsearch {
                 let wi = w.Inverse()
 
-                if g.Norm(2.0) < x.Tolerance && count > 0 then return Converged(r, (f r), wi)
-                else if (count >= x.Iteration) then return NotConverged(r, (f r), wi)
-                else let! step = linesearch r ((-1.0) * (wi * g))
+                if g.Norm(2.0) < this.Tolerance && count > 0 then return Converged(r, (f r), wi)
+                else if (count >= this.Iteration) then return NotConverged(r, (f r), wi)
+                else let! step = this.lineSearch r ((-1.0) * (wi * g))
                      let newr = r - step * (wi * g)
-                     let! newg = derivative newr
-                     let! neww = BFGSWeightMatrix w (newr - r) (newg - g)
+                     let! newg = this.differentiation newr
+                     let! neww = this.BFGSWeightMatrix w (newr - r) (newg - g)
                      return search neww newr newg (count + 1)
             }
 
         qnsearch {
             let initx = initval.Clone()
-            let! initd = derivative initx
-            let w = let mult = if firsttimestepsizemuiltiplier = 1.0 then 1.0
-                               else (1.0 / firsttimestepsizemuiltiplier) * initd.Norm(2.0)
+            let! initd = this.differentiation initx
+            let w = let mult = if this.FirstTimeStepSizeMultiplier = 1.0 then 1.0
+                               else (1.0 / this.FirstTimeStepSizeMultiplier) * initd.Norm(2.0)
                     mult * DenseMatrix.Identity(initx.Count)
 
             return search w initx initd 0
