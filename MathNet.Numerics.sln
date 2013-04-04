@@ -26,9 +26,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTests", "src\UnitTests\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Numerics.IO", "src\Numerics.IO\Numerics.IO.csproj", "{EB1A5D32-F264-4BCE-BEB7-0B97085075BE}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Appendix", "src\Appendix\Appendix.fsproj", "{41F05A5F-6F9E-48CA-857E-4078D0381CC2}"
-EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "AppendixSimpleTest", "src\AppendixTest\AppendixSimpleTest.fsproj", "{F310DA11-1A77-4C6F-ABEB-E5BE2903E6BD}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Appendix.FSharp", "src\Appendix.FSharp\Appendix.FSharp.fsproj", "{41F05A5F-6F9E-48CA-857E-4078D0381CC2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -127,21 +127,6 @@ Global
 		{EB1A5D32-F264-4BCE-BEB7-0B97085075BE}.Release-Signed|Any CPU.Build.0 = Release-Signed|Any CPU
 		{EB1A5D32-F264-4BCE-BEB7-0B97085075BE}.Release-Signed|x64.ActiveCfg = Release-Signed|Any CPU
 		{EB1A5D32-F264-4BCE-BEB7-0B97085075BE}.Release-Signed|x86.ActiveCfg = Release-Signed|Any CPU
-		{41F05A5F-6F9E-48CA-857E-4078D0381CC2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{41F05A5F-6F9E-48CA-857E-4078D0381CC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{41F05A5F-6F9E-48CA-857E-4078D0381CC2}.Debug|x64.ActiveCfg = Debug|x64
-		{41F05A5F-6F9E-48CA-857E-4078D0381CC2}.Debug|x64.Build.0 = Debug|x64
-		{41F05A5F-6F9E-48CA-857E-4078D0381CC2}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{41F05A5F-6F9E-48CA-857E-4078D0381CC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{41F05A5F-6F9E-48CA-857E-4078D0381CC2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{41F05A5F-6F9E-48CA-857E-4078D0381CC2}.Release|x64.ActiveCfg = Release|x64
-		{41F05A5F-6F9E-48CA-857E-4078D0381CC2}.Release|x64.Build.0 = Release|x64
-		{41F05A5F-6F9E-48CA-857E-4078D0381CC2}.Release|x86.ActiveCfg = Release|Any CPU
-		{41F05A5F-6F9E-48CA-857E-4078D0381CC2}.Release-Signed|Any CPU.ActiveCfg = Release|Any CPU
-		{41F05A5F-6F9E-48CA-857E-4078D0381CC2}.Release-Signed|Any CPU.Build.0 = Release|Any CPU
-		{41F05A5F-6F9E-48CA-857E-4078D0381CC2}.Release-Signed|x64.ActiveCfg = Release|x64
-		{41F05A5F-6F9E-48CA-857E-4078D0381CC2}.Release-Signed|x64.Build.0 = Release|x64
-		{41F05A5F-6F9E-48CA-857E-4078D0381CC2}.Release-Signed|x86.ActiveCfg = Release|Any CPU
 		{F310DA11-1A77-4C6F-ABEB-E5BE2903E6BD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F310DA11-1A77-4C6F-ABEB-E5BE2903E6BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F310DA11-1A77-4C6F-ABEB-E5BE2903E6BD}.Debug|x64.ActiveCfg = Debug|x64
@@ -160,6 +145,21 @@ Global
 		{F310DA11-1A77-4C6F-ABEB-E5BE2903E6BD}.Release-Signed|x64.Build.0 = Release|x64
 		{F310DA11-1A77-4C6F-ABEB-E5BE2903E6BD}.Release-Signed|x86.ActiveCfg = Release|x86
 		{F310DA11-1A77-4C6F-ABEB-E5BE2903E6BD}.Release-Signed|x86.Build.0 = Release|x86
+		{41F05A5F-6F9E-48CA-857E-4078D0381CC2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{41F05A5F-6F9E-48CA-857E-4078D0381CC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{41F05A5F-6F9E-48CA-857E-4078D0381CC2}.Debug|x64.ActiveCfg = Debug|x64
+		{41F05A5F-6F9E-48CA-857E-4078D0381CC2}.Debug|x64.Build.0 = Debug|x64
+		{41F05A5F-6F9E-48CA-857E-4078D0381CC2}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{41F05A5F-6F9E-48CA-857E-4078D0381CC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{41F05A5F-6F9E-48CA-857E-4078D0381CC2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{41F05A5F-6F9E-48CA-857E-4078D0381CC2}.Release|x64.ActiveCfg = Release|x64
+		{41F05A5F-6F9E-48CA-857E-4078D0381CC2}.Release|x64.Build.0 = Release|x64
+		{41F05A5F-6F9E-48CA-857E-4078D0381CC2}.Release|x86.ActiveCfg = Release|Any CPU
+		{41F05A5F-6F9E-48CA-857E-4078D0381CC2}.Release-Signed|Any CPU.ActiveCfg = Release|Any CPU
+		{41F05A5F-6F9E-48CA-857E-4078D0381CC2}.Release-Signed|Any CPU.Build.0 = Release|Any CPU
+		{41F05A5F-6F9E-48CA-857E-4078D0381CC2}.Release-Signed|x64.ActiveCfg = Release|x64
+		{41F05A5F-6F9E-48CA-857E-4078D0381CC2}.Release-Signed|x64.Build.0 = Release|x64
+		{41F05A5F-6F9E-48CA-857E-4078D0381CC2}.Release-Signed|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

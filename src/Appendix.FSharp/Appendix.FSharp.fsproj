@@ -8,9 +8,9 @@
     <ProjectGuid>{41f05a5f-6f9e-48ca-857e-4078d0381cc2}</ProjectGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>Appendix</RootNamespace>
-    <AssemblyName>Appendix</AssemblyName>
+    <AssemblyName>MathNet.Numerics.Appendix.FSharp</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <Name>Appendix</Name>
+    <Name>Appendix.FSharp</Name>
     <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">

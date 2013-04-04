@@ -95,11 +95,6 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
-    <ProjectReference Include="..\Appendix\Appendix.fsproj">
-      <Name>Appendix</Name>
-      <Project>{41f05a5f-6f9e-48ca-857e-4078d0381cc2}</Project>
-      <Private>True</Private>
-    </ProjectReference>
     <ProjectReference Include="..\FSharp\FSharp.fsproj">
       <Name>FSharp</Name>
       <Project>{37e8e802-a354-4114-bfc1-6e1357da605b}</Project>
