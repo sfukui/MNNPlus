@@ -32,97 +32,97 @@ open MathNet.Numerics.Interpolation.Algorithms
 open MathNet.Numerics.LinearAlgebra.Generic
 open MathNet.Numerics.LinearAlgebra.Double
 
-type LineSearch (f: (Vector<float> -> float), xinit, xmax) =
+type LineSearch (f: (Vector<float> -> float), xInit, xMax) =
     let c1, c2 = 10.0**(-4.0), 0.9
-    let dmin = 1e-16
-    let rescuestepsize = 1.0
-    let searchmaxstepmult = 0.5
-    let searchmaxstepmax = 100
+    let dMin = 1e-16
+    let rescueStepSize = 1.0
+    let searchMaxStepMult = 0.5
+    let searchMaxStepMax = 100
 
     let cubicInterpolation((a_old, f_old, df_old), (a_cur, f_cur, df_cur)) =
-        if abs( (a_old - a_cur) / a_cur) < dmin then Some(a_cur)
+        if abs( (a_old - a_cur) / a_cur) < dMin then Some(a_cur)
         else
             let d1 = df_old + df_cur - 3.0 * ((f_old - f_cur) / (a_old - a_cur))
-            let d2temp = (d1**2.0 - (df_old * df_cur)) |> sqrt
-            let d2sign = (a_cur - a_old) |> sign |> float
-            let d2 = d2sign * d2temp
-            let tres = a_cur - (a_cur - a_old) * ((df_cur + d2 - d1) / (df_cur - df_old + 2.0 * d2))
-            let (amin, amax) = ((min a_old a_cur), (max a_old a_cur))
+            let d2Temp = (d1**2.0 - (df_old * df_cur)) |> sqrt
+            let d2Sign = (a_cur - a_old) |> sign |> float
+            let d2 = d2Sign * d2Temp
+            let tRes = a_cur - (a_cur - a_old) * ((df_cur + d2 - d1) / (df_cur - df_old + 2.0 * d2))
+            let (aMin, aMax) = ((min a_old a_cur), (max a_old a_cur))
 
-            if System.Double.IsNaN(tres) then None
-            else if tres < amin then Some(amin)
-            else if tres > amax then Some(amax)
-            else Some(tres)
+            if System.Double.IsNaN(tRes) then None
+            else if tRes < aMin then Some(aMin)
+            else if tRes > aMax then Some(aMax)
+            else Some(tRes)
 
     let initialMaxStep (v: Vector<float>) (d: Vector<float>) =
         if Vector.exists System.Double.IsNaN v || Vector.exists System.Double.IsInfinity v then None
         else if Vector.exists System.Double.IsNaN d || Vector.exists System.Double.IsInfinity d then None
         else
-            let rec searchMaxStep (cmax: float, searchnum: int) =
-                if searchnum >= searchmaxstepmax then None
+            let rec searchMaxStep (cMax: float, searchNum: int) =
+                if searchNum >= searchMaxStepMax then None
                 else
-                    let y = f (v + cmax * d)
-                    if System.Double.IsInfinity(y) || System.Double.IsNaN(y) then let nextxmax = cmax * searchmaxstepmult
-                                                                                  searchMaxStep (nextxmax, searchnum + 1)
-                    else Some(cmax)
+                    let y = f (v + cMax * d)
+                    if System.Double.IsInfinity(y) || System.Double.IsNaN(y) then let nextxmax = cMax * searchMaxStepMult
+                                                                                  searchMaxStep (nextxmax, searchNum + 1)
+                    else Some(cMax)
 
-            searchMaxStep(xmax, 0)
+            searchMaxStep(xMax, 0)
             
     member this.Search (v: Vector<float>) (d: Vector<float>) =
         let actualMaxStep = initialMaxStep v d
         match actualMaxStep with
         | None -> System.Double.NaN
-        | Some(maxstep) -> 
-            let actualInitStep = if maxstep < xinit then 0.5 * maxstep else xinit
+        | Some(maxStep) -> 
+            let actualInitStep = if maxStep < xInit then 0.5 * maxStep else xInit
             let phi = (fun (a: Vector<float>) -> f (v + a.[0] * d))
             let dphi = (fun a -> let res = Differentiation.Gradient(phi, a)
                                  res.[0])
-            let phi0, dphi0 = DenseVector(1, 0.0) |> (fun x -> (phi x, dphi x))
-            let phii, dphii = DenseVector(1, actualInitStep) |> (fun x -> (phi x, dphi x))
-            let phimax, dphimax = DenseVector(1, maxstep) |> (fun x -> (phi x, dphi x))
+            let phi_0, dphi_0 = DenseVector(1, 0.0) |> (fun x -> (phi x, dphi x))
+            //let phi_i, dphi_i = DenseVector(1, actualInitStep) |> (fun x -> (phi x, dphi x))
+            let phiMax, dphiMax = DenseVector(1, maxStep) |> (fun x -> (phi x, dphi x))
 
             let rec zoom ((a_l, phi_l, dphi_l) as low) ((a_h, phi_h, dphi_h) as high) =
-                if a_h < dmin then rescuestepsize
+                if a_h < dMin then rescueStepSize
                 else
                     let int_a = (low, high) |> cubicInterpolation
 
                     match int_a with
-                    | None -> rescuestepsize
+                    | None -> rescueStepSize
                     | Some a_j
-                        -> let zoomnotforsamepoint newlow newhigh =
+                        -> let zoomNotForSamePoint newlow newhigh =
                                if (newlow = low) && (newhigh = high) then a_j
                                else zoom newlow newhigh
 
                            let phi_j, dphi_j = [a_j] |> DenseVector.ofList |> (fun x -> (phi x, dphi x))
             
                            match phi_j with
-                           | _ when phi_j > (phi0 + c1 * a_j * dphi0) || (phi_j >= phi_l) -> zoomnotforsamepoint (a_l, phi_l, dphi_l) (a_j, phi_j, dphi_j)
+                           | _ when phi_j > (phi_0 + c1 * a_j * dphi_0) || (phi_j >= phi_l) -> zoomNotForSamePoint (a_l, phi_l, dphi_l) (a_j, phi_j, dphi_j)
                            | _ -> match dphi_j with
-                                  | _ when (abs dphi_j) <= -c2 * dphi0 -> a_j
-                                  | _ when dphi_j * (a_h - a_l) >= 0.0 -> zoomnotforsamepoint (a_j, phi_j, dphi_j) (a_l, phi_l, dphi_l)
-                                  | _ -> zoomnotforsamepoint (a_j, phi_j, dphi_j) (a_h, phi_h, dphi_h)
+                                  | _ when (abs dphi_j) <= -c2 * dphi_0 -> a_j
+                                  | _ when dphi_j * (a_h - a_l) >= 0.0 -> zoomNotForSamePoint (a_j, phi_j, dphi_j) (a_l, phi_l, dphi_l)
+                                  | _ -> zoomNotForSamePoint (a_j, phi_j, dphi_j) (a_h, phi_h, dphi_h)
 
             let rec search a_cur (a_old, phi_old, dphi_old as old) =
-                let a_curvec = [a_cur] |> DenseVector.ofList
-                let phi_cur, dphi_cur = (phi a_curvec, dphi a_curvec)
+                let a_curVec = [a_cur] |> DenseVector.ofList
+                let phi_cur, dphi_cur = (phi a_curVec, dphi a_curVec)
 
                 match phi_cur with
-                | _ when (phi_cur > phi0 + c1 * a_cur * dphi0) || (phi_cur >= phi_old && a_old <> actualInitStep)
+                | _ when (phi_cur > phi_0 + c1 * a_cur * dphi_0) || (phi_cur >= phi_old && a_old <> actualInitStep)
                     -> zoom (a_old, phi_old, dphi_old) (a_cur, phi_cur, dphi_cur)
                 | _ -> match dphi_cur with
-                       | _ when (abs dphi_cur) <= -c2 * dphi0 -> a_cur
+                       | _ when (abs dphi_cur) <= -c2 * dphi_0 -> a_cur
                        | _ when dphi_cur >= 0.0 -> zoom (a_cur, phi_cur, dphi_cur) (a_old, phi_old, dphi_old)
-                       | _ -> let a_new = cubicInterpolation ((a_cur, phi_cur, dphi_cur), (maxstep, phimax, dphimax))
+                       | _ -> let a_new = cubicInterpolation ((a_cur, phi_cur, dphi_cur), (maxStep, phiMax, dphiMax))
                               match a_new with
-                              | None -> rescuestepsize
+                              | None -> rescueStepSize
                               | Some a_new ->
-                                  if a_new >= maxstep then maxstep
+                                  if a_new >= maxStep then maxStep
                                   else if a_new <= a_cur then a_cur
                                   else (search a_new (a_cur, phi_cur, dphi_cur))
 
-            match cubicInterpolation((0.0, phi0, dphi0), (maxstep, phimax, dphimax)) with
-            | None -> rescuestepsize
-            | Some x -> search actualInitStep (0.0, phi0, dphi0)
+            match cubicInterpolation((0.0, phi_0, dphi_0), (maxStep, phiMax, dphiMax)) with
+            | None -> rescueStepSize
+            | Some x -> search actualInitStep (0.0, phi_0, dphi_0)
 
 
 type NelderMead (f:(Vector<float> -> float), iteration: int, tolerance: float) =
@@ -149,63 +149,63 @@ type NelderMead (f:(Vector<float> -> float), iteration: int, tolerance: float) =
                 
     member this.Minimize(initval: Vector<float>) =
         // Creating Simplex
-        let rec loop_cs (vec: Vector<float>) acc simplex =
+        let rec loopCS (vec: Vector<float>) acc simplex =
             if acc = vec.Count then simplex
             else vec |> Vector.mapi (fun i x -> if i = acc then match x with
                                                                 | 0.0 -> this.ZDelta
                                                                 | x -> (1.0 + this.Delta) * x
                                                 else x) 
-                     |> (fun s -> loop_cs vec (acc+1) (s :: simplex))
-        let ss = initval :: (loop_cs initval 0 []) |> List.map (fun x -> (x, (f x)))
+                     |> (fun s -> loopCS vec (acc+1) (s :: simplex))
+        let ss = initval :: (loopCS initval 0 []) |> List.map (fun x -> (x, (f x)))
         
-        let rec loop_it (oldsimplex: (Vector<float> * float) list) (newsimplex: (Vector<float> * float) list) (count: int) =
-            let ascendingsimplex = List.sortBy (fun elem -> (snd elem)) newsimplex
-            let descendingsimplex = List.rev ascendingsimplex
+        let rec loopIT (oldSimplex: (Vector<float> * float) list) (newSimplex: (Vector<float> * float) list) (count: int) =
+            let ascendingSimplex = List.sortBy (fun elem -> (snd elem)) newSimplex
+            let descendingSimplex = List.rev ascendingSimplex
 
             let getVectorFX (s: (Vector<float> * float) list) =
                 s |> List.unzip |> snd |> DenseVector.ofList
 
             let createNextNewSimplex (newv: (Vector<float> * float)) = 
-                let otherthanlargest = List.tail descendingsimplex
-                newv :: otherthanlargest
+                let otherThanLargest = List.tail descendingSimplex
+                newv :: otherThanLargest
 
             // Checking Convergence
             let f_L2 =
                 if count > 0 then
-                    (getVectorFX oldsimplex) - (getVectorFX newsimplex) |> Vector.fold (fun a x -> a + x*x) 0.0 |> System.Math.Sqrt
+                    (getVectorFX oldSimplex) - (getVectorFX newSimplex) |> Vector.fold (fun a x -> a + x*x) 0.0 |> System.Math.Sqrt
                 else
                     0.0
-            if f_L2 < this.Tolerance && count > 0 then (List.head newsimplex) |> (fun x -> ((fst x), (snd x), true)) 
-            else if count > this.Iteration && count > 0 then (List.head newsimplex) |> (fun x -> ((fst x), (snd x), false))          
+            if f_L2 < this.Tolerance && count > 0 then (List.head newSimplex) |> (fun x -> ((fst x), (snd x), true)) 
+            else if count > this.Iteration && count > 0 then (List.head newSimplex) |> (fun x -> ((fst x), (snd x), false))          
             else
-                let (best, worst, sndworst) =
-                    (List.head ascendingsimplex, List.head descendingsimplex, (descendingsimplex |> List.tail |> List.head))
-                let centroid = List.reduce (+) (List.tail descendingsimplex |> List.unzip |> fst)
-                               |> (fun x -> x / (float (descendingsimplex.Length) - 1.0))
+                let (best, worst, sndWorst) =
+                    (List.head ascendingSimplex, List.head descendingSimplex, (descendingSimplex |> List.tail |> List.head))
+                let centroid = List.reduce (+) (List.tail descendingSimplex |> List.unzip |> fst)
+                               |> (fun x -> x / (float (descendingSimplex.Length) - 1.0))
 
                 // Reflect
                 let r = centroid + this.Rho * (centroid - (fst worst)) |> (fun x -> (x, f x))
             
                 if (snd r) < (snd best) then       // Expand
                     let e = (fst r) + this.Chi * ((fst r) - centroid) |> (fun x -> (x, f x))
-                    loop_it ascendingsimplex (createNextNewSimplex e) (count + 1)
-                else if (snd sndworst) <= (snd r) then     // Contract
+                    loopIT ascendingSimplex (createNextNewSimplex e) (count + 1)
+                else if (snd sndWorst) <= (snd r) then     // Contract
                     let c =
                         if (snd r) < (snd worst) then
                             centroid + this.Psi * ((fst r) - centroid) |> (fun x -> (x, f x))    // Outside Contract
                         else
                             centroid + this.Psi * ((fst worst) - centroid) |> (fun x -> (x, f x))    // Inside Contract
                     if (snd c) <= (snd worst) then
-                        loop_it newsimplex (createNextNewSimplex c) (count + 1)
+                        loopIT newSimplex (createNextNewSimplex c) (count + 1)
                     else                // Shrink
-                        let nnewsimplex = List.map (fun (v: (Vector<float> * float)) ->
+                        let nNewSimplex = List.map (fun (v: (Vector<float> * float)) ->
                                                         let x = (fst best) + this.Sigma * ((fst v) - (fst best))
-                                                        (x, f x)) newsimplex
-                        loop_it newsimplex nnewsimplex (count + 1)
+                                                        (x, f x)) newSimplex
+                        loopIT newSimplex nNewSimplex (count + 1)
                 else
-                    loop_it newsimplex (createNextNewSimplex r) (count + 1)
+                    loopIT newSimplex (createNextNewSimplex r) (count + 1)
 
-        loop_it [] ss 0
+        loopIT [] ss 0
 
 type QuasiNewtonMethodStatus<'a> =
     Converged of 'a
@@ -252,22 +252,22 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
     member this.FirstTimeStepSizeMultiplier with get() = m_FirstTimeStepSizeMuiltiplier and set v = m_FirstTimeStepSizeMuiltiplier <- v
 
     member private this.differentiation x =
-        let tres = this.DerivationMethod x
-        if Vector.exists isInvalidFloat tres then GradientInvalid
-        else NotConverged(tres)
+        let tRes = this.DerivationMethod x
+        if Vector.exists isInvalidFloat tRes then GradientInvalid
+        else NotConverged(tRes)
 
     member private this.BFGSWeightMatrix (w: Matrix<float>) (xds: Vector<float>) (dds: Vector<float>) =
-        let tres = w + ((1.0 / (dds * xds)) * Vector.OuterProduct(dds, dds)) - ((1.0 / (xds * w * xds)) * Vector.OuterProduct((w * xds), (w * xds)))
-        if Matrix.exists isInvalidFloat tres then WeightMatrixInvalid
-        else NotConverged(tres)
+        let tRes = w + ((1.0 / (dds * xds)) * Vector.OuterProduct(dds, dds)) - ((1.0 / (xds * w * xds)) * Vector.OuterProduct((w * xds), (w * xds)))
+        if Matrix.exists isInvalidFloat tRes then WeightMatrixInvalid
+        else NotConverged(tRes)
 
     member private this.lineSearch r g =
         let ls = LineSearch(f, this.InitialStepSize, this.MaxStepSize)
-        let tres = ls.Search r g
-        if isInvalidFloat tres then LineSearchFailure
-        else NotConverged(tres)
+        let tRes = ls.Search r g
+        if isInvalidFloat tRes then LineSearchFailure
+        else NotConverged(tRes)
 
-    member this.Minimize(initval: Vector<float>) =
+    member this.Minimize(initVal: Vector<float>) =
         let rec search (w: Matrix<float>) (r: Vector<float>) (g: Vector<float>) count =
             qnsearch {
                 let wi = w.Inverse()
@@ -275,18 +275,18 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
                 if g.Norm(2.0) < this.Tolerance && count > 0 then return Converged(r, (f r), wi)
                 else if (count >= this.Iteration) then return NotConverged(r, (f r), wi)
                 else let! step = this.lineSearch r ((-1.0) * (wi * g))
-                     let newr = r - step * (wi * g)
-                     let! newg = this.differentiation newr
-                     let! neww = this.BFGSWeightMatrix w (newr - r) (newg - g)
-                     return search neww newr newg (count + 1)
+                     let newR = r - step * (wi * g)
+                     let! newG = this.differentiation newR
+                     let! newW = this.BFGSWeightMatrix w (newR - r) (newG - g)
+                     return search newW newR newG (count + 1)
             }
 
         qnsearch {
-            let initx = initval.Clone()
-            let! initd = this.differentiation initx
+            let initX = initVal.Clone()
+            let! initD = this.differentiation initX
             let w = let mult = if this.FirstTimeStepSizeMultiplier = 1.0 then 1.0
-                               else (1.0 / this.FirstTimeStepSizeMultiplier) * initd.Norm(2.0)
-                    mult * DenseMatrix.Identity(initx.Count)
+                               else (1.0 / this.FirstTimeStepSizeMultiplier) * initD.Norm(2.0)
+                    mult * DenseMatrix.Identity(initX.Count)
 
-            return search w initx initd 0
+            return search w initX initD 0
         }
