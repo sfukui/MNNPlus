@@ -33,6 +33,7 @@ open MathNet.Numerics.LinearAlgebra.Double
 open System
 open System.Threading.Tasks
 
+[<CompiledName "GradientResultFSharp">]
 type GradientResult =
     | Result of float
     | PositiveInfinity
@@ -40,10 +41,12 @@ type GradientResult =
     | NaN
     | NoDenominator
 
+[<CompiledName "SearchDenomResultFSharp">]
 type SearchDenomResult =
     | Success of GradientResult array
     | Failure
 
+[<CompiledName "DifferentiationFSharp">]
 type Differentiation() =
     static let mutable m_InitialDenominator = MathNet.Numerics.Precision.DoubleMachinePrecision**(1.0/3.0)
     static let mutable m_ExtrapolationTime = 4

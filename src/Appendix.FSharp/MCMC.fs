@@ -34,6 +34,7 @@ open MathNet.Numerics.LinearAlgebra.Double
 open MathNet.Numerics.Random
 open MathNet.Numerics.Integration
 
+[<CompiledName "ZoneInfoFSharp">]
 type ZoneInfo = {
     XRange : (float * float);
     HCoeff : (float * float);
@@ -41,6 +42,7 @@ type ZoneInfo = {
     Prob : float
 }
 
+[<CompiledName "AdaptiveRejectionMetropolisSamplerFSharp">]
 type AdaptiveRejectionMetropolisSampler =
     val m_LnPdf : float -> float
     val m_XMin : float

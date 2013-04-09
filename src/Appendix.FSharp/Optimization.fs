@@ -32,6 +32,7 @@ open MathNet.Numerics.Interpolation.Algorithms
 open MathNet.Numerics.LinearAlgebra.Generic
 open MathNet.Numerics.LinearAlgebra.Double
 
+[<CompiledName "LineSearchFSharp">]
 type LineSearch (f: (Vector<float> -> float), xInit, xMax) =
     let c1, c2 = 10.0**(-4.0), 0.9
     let dMin = 1e-16
@@ -124,7 +125,10 @@ type LineSearch (f: (Vector<float> -> float), xInit, xMax) =
             | None -> rescueStepSize
             | Some x -> search actualInitStep (0.0, phi_0, dphi_0)
 
+// "NelderMeadResult" class is for C#.
+type NelderMeadResult = { Parameters: Vector<float>; FunctionValue: float; Converged: bool }
 
+[<CompiledName "NelderMeadFSharp">]
 type NelderMead (f:(Vector<float> -> float), iteration: int, tolerance: float) =
     let defaultIteration = 100
     let defaultTolerance = 1e-3
@@ -207,6 +211,11 @@ type NelderMead (f:(Vector<float> -> float), iteration: int, tolerance: float) =
 
         loopIT [] ss 0
 
+    member this.FSResultToCSResult (result:(Vector<float> * float * bool)) =
+        let (parameters, fValue, converged) = result
+        { Parameters = parameters; FunctionValue = fValue; Converged = converged } 
+
+[<CompiledName "QuasiNewtonMethodStatusFSharp">]
 type QuasiNewtonMethodStatus<'a> =
     Converged of 'a
     | NotConverged of 'a
@@ -215,6 +224,7 @@ type QuasiNewtonMethodStatus<'a> =
     | WeightMatrixInvalid
     | LineSearchFailure
 
+[<CompiledName "QuasiNewtonSearchBuilderFSharp">]
 type QuasiNewtonSearchBuilder() =
     member this.Bind(result: QuasiNewtonMethodStatus<'a>, rest: 'a -> QuasiNewtonMethodStatus<'b>) =
         match result with
@@ -227,6 +237,16 @@ type QuasiNewtonSearchBuilder() =
 
     member this.Return(result) = result
 
+type QuasiNewtonMethodResultStatus =
+    | Converged = 0
+    | NotConverged = 1
+    | FunctionValueInvalid = 2
+    | GradientInvalid = 3
+    | WeightMatrixInvalid = 4
+    | LineSearchFailure = 5
+type QuasiNewtonMethodResult = { Status: QuasiNewtonMethodResultStatus; Parameters: Vector<double>; FunctionValue: System.Nullable<float>; InvertedWeightMatrix: Matrix<float> }
+
+[<CompiledName "BFGSFSharp">]
 type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =  
     let defaultIteration = 100
     let defaultTolerance = 1e-3
@@ -266,6 +286,15 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
         let tRes = ls.Search r g
         if isInvalidFloat tRes then LineSearchFailure
         else NotConverged(tRes)
+
+    member this.FSResultToCSResult(result: QuasiNewtonMethodStatus<Vector<float> * float * Matrix<float>>) =
+        match result with
+            Converged((x, f, w)) -> { Status = QuasiNewtonMethodResultStatus.Converged; Parameters = x; FunctionValue = new System.Nullable<float>(f); InvertedWeightMatrix = w }
+            | NotConverged((x, f, w)) -> { Status = QuasiNewtonMethodResultStatus.NotConverged; Parameters = x; FunctionValue = new System.Nullable<float>(f); InvertedWeightMatrix = w }
+            | FunctionValueInvalid -> { Status = QuasiNewtonMethodResultStatus.FunctionValueInvalid; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
+            | GradientInvalid -> { Status = QuasiNewtonMethodResultStatus.GradientInvalid; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
+            | WeightMatrixInvalid -> { Status = QuasiNewtonMethodResultStatus.WeightMatrixInvalid; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
+            | LineSearchFailure -> { Status = QuasiNewtonMethodResultStatus.LineSearchFailure; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
 
     member this.Minimize(initVal: Vector<float>) =
         let rec search (w: Matrix<float>) (r: Vector<float>) (g: Vector<float>) count =
