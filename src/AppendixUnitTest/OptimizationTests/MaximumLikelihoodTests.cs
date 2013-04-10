@@ -28,7 +28,7 @@ namespace MathNet.Numerics.UnitTests.OptimizationTests
         /// Likelihood function.
         /// </summary>
         /// <param name="parameters">Vector value of parameters.</param>
-        /// <returns></returns>
+        /// <returns>Value of log-likelihood.</returns>
         private double likehood(Vector<double> parameters)
         {
             int i = 0;
@@ -115,7 +115,7 @@ namespace MathNet.Numerics.UnitTests.OptimizationTests
         /// </summary>
         /// <param name="x">Value of variable.</param>
         /// <param name="parameters">Vector value of parameters.</param>
-        /// <returns>Value of density.</returns>
+        /// <returns>Natural log of density.</returns>
         private double lnPDF_GB2(double x, Vector<double> parameters)
         {
             double lnumer = Math.Log(parameters[0]) + (parameters[0] * parameters[2] - 1.0) * Math.Log(x);
@@ -140,7 +140,7 @@ namespace MathNet.Numerics.UnitTests.OptimizationTests
         /// Likelihood function of GB2.
         /// </summary>
         /// <param name="parameters">Vector value of parameters.</param>
-        /// <returns>Value of likelihood.</returns>
+        /// <returns>Value of log-likelihood.</returns>
         private double likelihood(Vector<double> parameters)
         {
             int i = 0;
