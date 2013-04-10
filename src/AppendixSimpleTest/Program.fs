@@ -30,7 +30,8 @@ let gbeta2PdfLn (theta: Vector<float>) x =
     let ldenom = ( theta.[0] * theta.[2] ) * (log theta.[1]) + SpecialFunctions.BetaLn(theta.[2], theta.[3]) + 
                  ( theta.[2] + theta.[3] ) * (log ( 1.0 + (x / theta.[1])**(theta.[0]) ) )
     lnumer - ldenom
-let gbeta2Theta = [1.58840897986439; 1315.45595003162; 2.12302790284458; 4.62820357269144] |> DenseVector.ofList
+//let gbeta2Theta = [1.58840897986439; 1315.45595003162; 2.12302790284458; 4.62820357269144] |> DenseVector.ofList
+let gbeta2Theta = [1.5; 1300.0; 2.0; 4.5] |> DenseVector.ofList
 //let gbeta2ARMSampler = new AdaptiveRejectionMetropolisSampler((gbeta2PdfLn gbeta2Theta), 0.0, 40000.0, 200.0, 1500.0)
 //let gbeta2Sample = gbeta2ARMSampler.Sample(800.0, 200000)
 let gbeta2ARMSampler = new AdaptiveRejectionMetropolisSampler((gbeta2PdfLn gbeta2Theta), 0.0, 40000.0, 5000)

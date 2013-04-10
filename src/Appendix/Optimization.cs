@@ -28,6 +28,20 @@ namespace MathNet.Numerics.Optimization
         }
     }
 
+    public class NelderMeadResult
+    {
+        public Vector<double> Parameters { get; private set; }
+        public double FunctionValue { get; private set; }
+        public bool Converged { get; private set; }
+
+        public NelderMeadResult(NelderMeadResultFSharp result)
+        {
+            Parameters = result.Parameters;
+            FunctionValue = result.FunctionValue;
+            Converged = result.Converged;
+        }
+    }
+
     public class NelderMead
     {
         private NelderMeadFSharp m_NelderMeadFS;
@@ -91,8 +105,34 @@ namespace MathNet.Numerics.Optimization
         public NelderMeadResult Minimize(Vector<double> initVal)
         {
             var resFS = m_NelderMeadFS.Minimize(initVal);
-            return m_NelderMeadFS.FSResultToCSResult(resFS);
+            return new NelderMeadResult(m_NelderMeadFS.ResultConvertToType(resFS));
         }
+    }
+
+    public class QuasiNewtonMethodResult
+    {
+        public QuasiNewtonMethodResultStatus Status { get; private set; }
+        public Vector<double> Parameters { get; private set; }
+        public double? FunctionValue { get; private set; }
+        public Matrix<double> InvertedWeightMatrix { get; private set; }
+
+        public QuasiNewtonMethodResult(QuasiNewtonMethodResultFSharp result)
+        {
+            Status = (QuasiNewtonMethodResultStatus)(result.Status);
+            Parameters = result.Parameters;
+            FunctionValue = result.FunctionValue;
+            InvertedWeightMatrix = result.InvertedWeightMatrix;
+        }
+    }
+
+    public enum QuasiNewtonMethodResultStatus
+    {
+        Converged = 0,
+        NotConverged = 1,
+        FunctionValueInvalid = 2,
+        GradientInvalid = 3,
+        WeightMatrixInvalid = 4,
+        LineSearchFailure = 5,
     }
 
     public class BFGS
@@ -134,7 +174,7 @@ namespace MathNet.Numerics.Optimization
         public QuasiNewtonMethodResult Minimize(Vector<double> initVal)
         {
             var resFS = m_BFGSFS.Minimize(initVal);
-            return m_BFGSFS.FSResultToCSResult(resFS);
+            return new QuasiNewtonMethodResult(m_BFGSFS.FSResultToCSResult(resFS));
         }
     }
 }

@@ -126,7 +126,7 @@ type LineSearch (f: (Vector<float> -> float), xInit, xMax) =
             | Some x -> search actualInitStep (0.0, phi_0, dphi_0)
 
 // "NelderMeadResult" class is for C#.
-type NelderMeadResult = { Parameters: Vector<float>; FunctionValue: float; Converged: bool }
+type NelderMeadResultFSharp = { Parameters: Vector<float>; FunctionValue: float; Converged: bool }
 
 [<CompiledName "NelderMeadFSharp">]
 type NelderMead (f:(Vector<float> -> float), iteration: int, tolerance: float) =
@@ -211,7 +211,7 @@ type NelderMead (f:(Vector<float> -> float), iteration: int, tolerance: float) =
 
         loopIT [] ss 0
 
-    member this.FSResultToCSResult (result:(Vector<float> * float * bool)) =
+    member this.ResultConvertToType (result:(Vector<float> * float * bool)) =
         let (parameters, fValue, converged) = result
         { Parameters = parameters; FunctionValue = fValue; Converged = converged } 
 
@@ -237,14 +237,9 @@ type QuasiNewtonSearchBuilder() =
 
     member this.Return(result) = result
 
-type QuasiNewtonMethodResultStatus =
-    | Converged = 0
-    | NotConverged = 1
-    | FunctionValueInvalid = 2
-    | GradientInvalid = 3
-    | WeightMatrixInvalid = 4
-    | LineSearchFailure = 5
-type QuasiNewtonMethodResult = { Status: QuasiNewtonMethodResultStatus; Parameters: Vector<double>; FunctionValue: System.Nullable<float>; InvertedWeightMatrix: Matrix<float> }
+
+type QuasiNewtonMethodResultFSharp = { Status: int; Parameters: Vector<double>; FunctionValue: System.Nullable<float>; InvertedWeightMatrix: Matrix<float> }
+
 
 [<CompiledName "BFGSFSharp">]
 type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =  
@@ -254,7 +249,7 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
     let mutable m_Iteration = iteration
     let mutable m_Tolerance = tolerance
     let mutable m_InitialStepSize = 1.0
-    let mutable m_MaxStepSize = 5.0
+    let mutable m_MaxStepSize = 2.0
     let mutable m_DerivationMethod = (fun x -> Differentiation.Gradient(f, x))
     let mutable m_FirstTimeStepSizeMuiltiplier = 1.0
 
@@ -289,12 +284,12 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
 
     member this.FSResultToCSResult(result: QuasiNewtonMethodStatus<Vector<float> * float * Matrix<float>>) =
         match result with
-            Converged((x, f, w)) -> { Status = QuasiNewtonMethodResultStatus.Converged; Parameters = x; FunctionValue = new System.Nullable<float>(f); InvertedWeightMatrix = w }
-            | NotConverged((x, f, w)) -> { Status = QuasiNewtonMethodResultStatus.NotConverged; Parameters = x; FunctionValue = new System.Nullable<float>(f); InvertedWeightMatrix = w }
-            | FunctionValueInvalid -> { Status = QuasiNewtonMethodResultStatus.FunctionValueInvalid; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
-            | GradientInvalid -> { Status = QuasiNewtonMethodResultStatus.GradientInvalid; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
-            | WeightMatrixInvalid -> { Status = QuasiNewtonMethodResultStatus.WeightMatrixInvalid; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
-            | LineSearchFailure -> { Status = QuasiNewtonMethodResultStatus.LineSearchFailure; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
+            Converged((x, f, w)) -> { Status = 0; Parameters = x; FunctionValue = new System.Nullable<float>(f); InvertedWeightMatrix = w }
+            | NotConverged((x, f, w)) -> { Status = 1; Parameters = x; FunctionValue = new System.Nullable<float>(f); InvertedWeightMatrix = w }
+            | FunctionValueInvalid -> { Status = 2; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
+            | GradientInvalid -> { Status = 3; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
+            | WeightMatrixInvalid -> { Status = 4; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
+            | LineSearchFailure -> { Status = 5; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
 
     member this.Minimize(initVal: Vector<float>) =
         let rec search (w: Matrix<float>) (r: Vector<float>) (g: Vector<float>) count =
