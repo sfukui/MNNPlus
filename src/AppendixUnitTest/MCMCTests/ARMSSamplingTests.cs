@@ -38,7 +38,7 @@ namespace MathNet.Numerics.UnitTests.MCMCTests
         [Test]
         public void CompareSampledStats_Normal()
         {
-
+            
         }
 
         [Test]

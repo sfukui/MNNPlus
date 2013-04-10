@@ -53,6 +53,7 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="DifferentiationTests\FunctionDerivationTests.cs" />
     <Compile Include="MCMCTests\ARMSSamplingTests.cs" />
     <Compile Include="OptimizationTests\MaximumLikelihoodTests.cs" />
     <Compile Include="OptimizationTests\SimpleOptimizationTests.cs" />
