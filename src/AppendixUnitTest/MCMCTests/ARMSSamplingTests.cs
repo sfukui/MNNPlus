@@ -1,6 +1,8 @@
 ﻿using System;
-using MathNet.Numerics.LinearAlgebra.Generic;
+using System.Linq;
+using MathNet.Numerics.Integration;
 using MathNet.Numerics.LinearAlgebra.Double;
+using MathNet.Numerics.LinearAlgebra.Generic;
 using MathNet.Numerics.Statistics.Mcmc;
 using NUnit.Framework;
 
@@ -9,6 +11,17 @@ namespace MathNet.Numerics.UnitTests.MCMCTests
     [TestFixture]
     public class ARMSSamplingTests
     {
+        /// <summary>
+        /// Rate of accept range for parameter comparison.
+        /// </summary>
+        private double acceptRangeRate = 0.01;
+
+        /// <summary>
+        /// Sample sizes in ARMS.
+        /// </summary>
+        private int Iteration_NormalTest = 50000;
+        private int Iteration_GB2Test = 50000;
+
         /// <summary>
         /// Log of normal density function.
         /// </summary>
@@ -35,15 +48,64 @@ namespace MathNet.Numerics.UnitTests.MCMCTests
             return lnumer - ldenom;
         }
 
-        [Test]
-        public void CompareSampledStats_Normal()
+        /// <summary>
+        /// Unit tests for sampling from normal distribution with ARMS.
+        /// </summary>
+        /// <param name="mean">Mean value.</param>
+        /// <param name="variance">Variance value.</param>
+        [TestCase(10.0, 0.1)]
+        [TestCase(-5.0, 1.0)]
+        [TestCase(0.0, 10.0)]
+        [TestCase(10.0, 100.0)]
+        public void CompareSampledStats_Normal(double mean, double variance)
         {
+            DenseVector parameters = new DenseVector(new double[2] { mean, variance });
+            Func<double, double> lnpdf = (double x) => { return lnPDF_Normal(x, parameters); };
             
+            double xmin = mean - 4.0 * Math.Sqrt(variance), xmax = mean + 4.0 * Math.Sqrt(variance);
+            var arms = new AdaptiveRejectionMetropolisSampler(lnpdf, xmin, xmax);
+            double[] sample = arms.Sample(Iteration_NormalTest);
+ 
+            double mean_sim = sample.Average(), variance_sim = 0.0;
+            int i = 0;
+            while(i < sample.Length)
+                variance_sim += Math.Pow((sample[i++] - mean_sim), 2.0);
+            variance_sim /= (sample.Length - 1);
+
+            double delta_mean = mean == 0.0 ? acceptRangeRate : acceptRangeRate * mean;
+            double delta_sd = acceptRangeRate * Math.Sqrt(variance);
+
+            Assert.AreEqual(mean, mean_sim, Math.Abs(delta_mean));
+            Assert.AreEqual(Math.Sqrt(variance), Math.Sqrt(variance_sim), delta_sd);
         }
 
+        /// <summary>
+        /// Unit test for sampling from generalized beta distribution of second kind with ARMS.
+        /// The parameters are: (a, b, p, q) = (1.65, 700.0, 2.34, 3.24).
+        /// </summary>
         [Test]
         public void CompareSampledStats_GB2()
         {
+            DenseVector parameters = new DenseVector(new double[4] { 1.65, 700.0, 2.34, 3.24 });
+            Func<double, double> lnpdf = (double x) => { return lnPDF_GB2(x, parameters); };
+
+            double xmin = 0.0, xmax = 20000.0, x1 = 150.0, xn = 2000.0;
+            var arms = new AdaptiveRejectionMetropolisSampler(lnpdf, xmin, xmax, x1, xn);
+            double[] sample = arms.Sample(Iteration_GB2Test);
+
+            double mean = Integrate.OnClosedInterval((double x) => { return x * Math.Exp(lnpdf(x)); }, 0.0, 20000.0);
+            double variance = Integrate.OnClosedInterval((double x) => { return Math.Pow((x - mean), 2.0) * Math.Exp(lnpdf(x)); }, 0.0, 20000.0);
+
+            double mean_sim = sample.Average(), variance_sim = 0.0;
+            int i = 0;
+            while(i < sample.Length)
+                variance_sim += Math.Pow((sample[i++] - mean_sim), 2.0);
+            variance_sim /= (sample.Length - 1);
+
+            double delta_mean = acceptRangeRate * mean, delta_sd = acceptRangeRate * Math.Sqrt(variance);
+
+            Assert.AreEqual(mean, mean_sim, Math.Abs(delta_mean));
+            Assert.AreEqual(Math.Sqrt(variance), Math.Sqrt(variance_sim), delta_sd);
         }
     }
 }
