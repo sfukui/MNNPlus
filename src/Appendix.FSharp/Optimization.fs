@@ -40,7 +40,7 @@ type LineSearch (f: (Vector<float> -> float), xInit, xMax) =
     let searchMaxStepMult = 0.5
     let searchMaxStepMax = 100
 
-    let cubicInterpolation((a_old, f_old, df_old), (a_cur, f_cur, df_cur)) =
+    let cubicInterpolation((a_old, f_old, df_old), (a_cur, f_cur, df_cur), a_min, a_max) =
         if abs( (a_old - a_cur) / a_cur) < dMin then Some(a_cur)
         else
             let d1 = df_old + df_cur - 3.0 * ((f_old - f_cur) / (a_old - a_cur))
@@ -48,11 +48,10 @@ type LineSearch (f: (Vector<float> -> float), xInit, xMax) =
             let d2Sign = (a_cur - a_old) |> sign |> float
             let d2 = d2Sign * d2Temp
             let tRes = a_cur - (a_cur - a_old) * ((df_cur + d2 - d1) / (df_cur - df_old + 2.0 * d2))
-            let (aMin, aMax) = ((min a_old a_cur), (max a_old a_cur))
 
             if System.Double.IsNaN(tRes) then None
-            else if tRes < aMin then Some(aMin)
-            else if tRes > aMax then Some(aMax)
+            else if tRes < a_min then Some(a_min)
+            else if tRes > a_max then Some(a_max)
             else Some(tRes)
 
     let initialMaxStep (v: Vector<float>) (d: Vector<float>) =
@@ -79,13 +78,13 @@ type LineSearch (f: (Vector<float> -> float), xInit, xMax) =
             let dphi = (fun a -> let res = Differentiation.Gradient(phi, a)
                                  res.[0])
             let phi_0, dphi_0 = DenseVector(1, 0.0) |> (fun x -> (phi x, dphi x))
-            //let phi_i, dphi_i = DenseVector(1, actualInitStep) |> (fun x -> (phi x, dphi x))
             let phiMax, dphiMax = DenseVector(1, maxStep) |> (fun x -> (phi x, dphi x))
 
             let rec zoom ((a_l, phi_l, dphi_l) as low) ((a_h, phi_h, dphi_h) as high) =
-                if a_h < dMin then rescueStepSize
+                if a_h < dMin then
+                    dMin
                 else
-                    let int_a = (low, high) |> cubicInterpolation
+                    let int_a = (low, high, a_l, a_h) |> cubicInterpolation
 
                     match int_a with
                     | None -> rescueStepSize
@@ -112,8 +111,8 @@ type LineSearch (f: (Vector<float> -> float), xInit, xMax) =
                     -> zoom (a_old, phi_old, dphi_old) (a_cur, phi_cur, dphi_cur)
                 | _ -> match dphi_cur with
                        | _ when (abs dphi_cur) <= -c2 * dphi_0 -> a_cur
-                       | _ when dphi_cur >= 0.0 -> zoom (a_cur, phi_cur, dphi_cur) (a_old, phi_old, dphi_old)
-                       | _ -> let a_new = cubicInterpolation ((a_cur, phi_cur, dphi_cur), (maxStep, phiMax, dphiMax))
+                       | _ when dphi_cur >= 0.0 -> zoom (a_old, phi_old, dphi_old) (a_cur, phi_cur, dphi_cur)
+                       | _ -> let a_new = cubicInterpolation ((a_cur, phi_cur, dphi_cur), (maxStep, phiMax, dphiMax), a_cur, maxStep)
                               match a_new with
                               | None -> rescueStepSize
                               | Some a_new ->
@@ -121,7 +120,7 @@ type LineSearch (f: (Vector<float> -> float), xInit, xMax) =
                                   else if a_new <= a_cur then a_cur
                                   else (search a_new (a_cur, phi_cur, dphi_cur))
 
-            match cubicInterpolation((0.0, phi_0, dphi_0), (maxStep, phiMax, dphiMax)) with
+            match cubicInterpolation ((0.0, phi_0, dphi_0), (maxStep, phiMax, dphiMax), 0.0, maxStep) with
             | None -> rescueStepSize
             | Some x -> search actualInitStep (0.0, phi_0, dphi_0)
 
@@ -249,7 +248,7 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
     let mutable m_Iteration = iteration
     let mutable m_Tolerance = tolerance
     let mutable m_InitialStepSize = 1.0
-    let mutable m_MaxStepSize = 2.0
+    let mutable m_MaxStepSize = 10.0
     let mutable m_DerivationMethod = (fun x -> Differentiation.Gradient(f, x))
     let mutable m_FirstTimeStepSizeMuiltiplier = 1.0
 
