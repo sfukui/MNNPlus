@@ -7,8 +7,8 @@
     <ProjectGuid>{85993FB1-BDDB-406D-89DC-06D21435A340}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>MathNet.Appendix</RootNamespace>
-    <AssemblyName>MathNet.Appendix</AssemblyName>
+    <RootNamespace>MathNet.Numerics.Appendix</RootNamespace>
+    <AssemblyName>MathNet.Numerics.Appendix</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -28,7 +28,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>..\..\out\lib\Net40\MathNet.Appendix.XML</DocumentationFile>
+    <DocumentationFile>..\..\out\lib\Net40\MathNet.Numerics.Appendix.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="FSharp.Core, Version=4.3.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
@@ -41,6 +41,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Common.cs" />
     <Compile Include="Differentiation.cs" />
     <Compile Include="MCMC.cs" />
     <Compile Include="Optimization.cs" />

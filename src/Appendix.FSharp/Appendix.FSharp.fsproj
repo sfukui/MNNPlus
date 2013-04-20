@@ -31,7 +31,7 @@
     <OutputPath>..\..\out\lib\Net40\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Release\Appendix.XML</DocumentationFile>
+    <DocumentationFile>..\..\out\lib\Net40\MathNet.Numerics.Appendix.FSharp.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
     <DebugSymbols>true</DebugSymbols>

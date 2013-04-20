@@ -7,6 +7,7 @@ using MathNet.Numerics;
 using MathNet.Numerics.LinearAlgebra.Generic;
 using MathNet.Numerics.LinearAlgebra.Double;
 using MathNet.Numerics.Optimization;
+using MathNet.Numerics.Appendix;
 
 namespace MathNet.Numerics.Optimization
 {
@@ -175,6 +176,39 @@ namespace MathNet.Numerics.Optimization
         {
             var resFS = m_BFGSFS.Minimize(initVal);
             return new QuasiNewtonMethodResult(m_BFGSFS.FSResultToCSResult(resFS));
+        }
+
+        public double? LatestStepSize
+        {
+            get
+            {
+                return Appendix.Common.CommonTools.FSOptionToCSNullable(m_BFGSFS.LatestStepSize);
+            }
+        }
+
+        public Vector<double> LatestXVector
+        {
+            get
+            {
+                return Appendix.Common.CommonTools.FSOptionVectorToCSVector(m_BFGSFS.LatestXVector);
+            }
+        }
+
+        public Vector<double> LatestGradientVector
+        {
+            get
+            {
+                return Appendix.Common.CommonTools.FSOptionVectorToCSVector(m_BFGSFS.LatestGradientVector);
+            }
+        }
+
+        public Matrix<double> LatestWeightMatrix
+        {
+            get
+            {
+                return Appendix.Common.CommonTools.FSOptionMatrixToCSMatrix(m_BFGSFS.LatestWeightMatrix);
+
+            }
         }
     }
 }

@@ -252,6 +252,11 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
     let mutable m_DerivationMethod = (fun x -> Differentiation.Gradient(f, x))
     let mutable m_FirstTimeStepSizeMuiltiplier = 1.0
 
+    let mutable m_LatestStepSize = None
+    let mutable m_LatestXVector = None
+    let mutable m_LatestGradientVector = None
+    let mutable m_LatestWeightMatrix = None
+
     let isInvalidFloat (x: float) =
         if System.Double.IsInfinity x || System.Double.IsNaN x then true
         else false
@@ -265,21 +270,30 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
     member this.MaxStepSize with get() = m_MaxStepSize and set v = m_MaxStepSize <- v
     member this.FirstTimeStepSizeMultiplier with get() = m_FirstTimeStepSizeMuiltiplier and set v = m_FirstTimeStepSizeMuiltiplier <- v
 
+    member this.LatestStepSize with get() = m_LatestStepSize
+    member this.LatestXVector with get() = m_LatestXVector
+    member this.LatestGradientVector with get() = m_LatestGradientVector
+    member this.LatestWeightMatrix with get() = m_LatestWeightMatrix
+
     member private this.differentiation x =
         let tRes = this.DerivationMethod x
         if Vector.exists isInvalidFloat tRes then GradientInvalid
-        else NotConverged(tRes)
+        else do m_LatestGradientVector <- Some(tRes)
+             NotConverged(tRes)
 
     member private this.BFGSWeightMatrix (w: Matrix<float>) (xds: Vector<float>) (dds: Vector<float>) =
         let tRes = w + ((1.0 / (dds * xds)) * Vector.OuterProduct(dds, dds)) - ((1.0 / (xds * w * xds)) * Vector.OuterProduct((w * xds), (w * xds)))
-        if Matrix.exists isInvalidFloat tRes then WeightMatrixInvalid
-        else NotConverged(tRes)
+        if Matrix.exists isInvalidFloat tRes then
+            WeightMatrixInvalid
+        else do m_LatestWeightMatrix <- Some(tRes)
+             NotConverged(tRes)
 
     member private this.lineSearch r g =
         let ls = LineSearch(f, this.InitialStepSize, this.MaxStepSize)
         let tRes = ls.Search r g
         if isInvalidFloat tRes then LineSearchFailure
-        else NotConverged(tRes)
+        else do m_LatestStepSize <- Some(tRes)
+             NotConverged(tRes)
 
     member this.FSResultToCSResult(result: QuasiNewtonMethodStatus<Vector<float> * float * Matrix<float>>) =
         match result with
@@ -299,6 +313,7 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
                 else if (count >= this.Iteration) then return NotConverged(r, (f r), wi)
                 else let! step = this.lineSearch r ((-1.0) * (wi * g))
                      let newR = r - step * (wi * g)
+                     do m_LatestXVector <- Some(newR)
                      let! newG = this.differentiation newR
                      let! newW = this.BFGSWeightMatrix w (newR - r) (newG - g)
                      return search newW newR newG (count + 1)

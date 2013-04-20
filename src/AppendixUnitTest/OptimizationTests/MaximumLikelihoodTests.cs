@@ -195,6 +195,12 @@ namespace MathNet.Numerics.UnitTests.OptimizationTests
                 Assert.AreEqual(expectedParams[i], bfgsResult.Parameters[i], delta);
                 i++;
             }
+
+            while (i < bfgs.LatestXVector.Count)
+            {
+                Assert.AreEqual(bfgsResult.Parameters[i], bfgs.LatestXVector[i]);
+                i++;
+            }
         }
     }
 }
