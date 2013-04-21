@@ -72,12 +72,15 @@ namespace MathNet.Numerics.UnitTests.MCMCTests
                 variance_sim += Math.Pow((sample[i++] - mean_sim), 2.0);
             variance_sim /= (sample.Length - 1);
 
-            double delta_mean = mean == 0.0 ? acceptRangeRate : acceptRangeRate * mean;
-            double delta_sd = acceptRangeRate * Math.Sqrt(variance);
+            double delta_mean = mean == 0.0 ? Math.Abs(acceptRangeRate) : Math.Abs(acceptRangeRate * mean);
+            double delta_sd = Math.Abs(acceptRangeRate * Math.Sqrt(variance));
 
-            Assert.AreEqual(mean, mean_sim, Math.Abs(delta_mean));
+            Assert.AreEqual(mean, mean_sim, delta_mean);
             Assert.AreEqual(Math.Sqrt(variance), Math.Sqrt(variance_sim), delta_sd);
         }
+
+        // Additional Test
+        // let normARMSampler = AdaptiveRejectionMetropolisSampler((normalPdfLn normTheta), -7.0, 9.0, -2.0, 4.0)
 
         /// <summary>
         /// Unit test for sampling from generalized beta distribution of second kind with ARMS.
@@ -102,10 +105,13 @@ namespace MathNet.Numerics.UnitTests.MCMCTests
                 variance_sim += Math.Pow((sample[i++] - mean_sim), 2.0);
             variance_sim /= (sample.Length - 1);
 
-            double delta_mean = acceptRangeRate * mean, delta_sd = acceptRangeRate * Math.Sqrt(variance);
+            double delta_mean = Math.Abs(acceptRangeRate * mean), delta_sd = Math.Abs(acceptRangeRate * Math.Sqrt(variance));
 
-            Assert.AreEqual(mean, mean_sim, Math.Abs(delta_mean));
+            Assert.AreEqual(mean, mean_sim, delta_mean);
             Assert.AreEqual(Math.Sqrt(variance), Math.Sqrt(variance_sim), delta_sd);
         }
+
+        // Additional Test
+        //let gbeta2ARMSampler = new AdaptiveRejectionMetropolisSampler((gbeta2PdfLn gbeta2Theta), 0.0, 40000.0, 200.0, 1500.0)
     }
 }

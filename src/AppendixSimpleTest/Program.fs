@@ -8,6 +8,7 @@ open MathNet.Numerics.LinearAlgebra.Double
 open MathNet.Numerics.Statistics.Mcmc
 open MathNet.Numerics.Integration.Algorithms
 
+(*
 // Adaptive rejection metropolis sampling from normal distribution
 let normalPdf (theta: Vector<float>) (x: float)
     = (1.0 / (sqrt (2.0 * theta.[1] * System.Math.PI))) * exp (-0.5 * ((x - theta.[0])**2.0) / (theta.[1]**2.0))
@@ -45,7 +46,7 @@ let deQuadrature = new DoubleExponentialTransformation()
 let gbeta2Mean = deQuadrature.Integrate((fun x -> x * exp(gbeta2PdfLn gbeta2Theta x)), 0.0, 30000.0, 0.001)
 let gbeta2Var = deQuadrature.Integrate((fun x -> (x - gbeta2Mean)**2.0 * exp(gbeta2PdfLn gbeta2Theta x)), 0.0, 30000.0, 0.001)
 let gbeta2Sd = sqrt gbeta2Var
-
+*)
 
 
 
@@ -67,6 +68,7 @@ let loglikelihood (p: Generic.Vector<float>) = dataset
 let nm = NelderMead(targetfunction, 100, 0.001)
 let bfgs = BFGS(targetfunction, 100, 0.1)
 let init = [0.1;10.0] |> Double.DenseVector.ofList
+(*
 let resnm = nm.Minimize(init)
 let resbfgs = bfgs.Minimize(init)
 
@@ -76,6 +78,7 @@ let init2 = [0.1;0.1;10.0] |> Double.DenseVector.ofList
 let (p2, y2, _) = nm2.Minimize(init2)
 do bfgs2.MaxStepSize <- 5.0
 let resbfgs2 = bfgs2.Minimize(p2)
+*)
 
 let df1 = Differentiation.Gradient(targetfunction, init, ([0.01;0.01] |> Double.DenseVector.ofList))
 let df2 = Differentiation.Gradient(targetfunction, init)

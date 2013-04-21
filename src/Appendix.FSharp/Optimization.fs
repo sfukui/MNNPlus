@@ -309,7 +309,7 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
             qnsearch {
                 let wi = w.Inverse()
 
-                if g.Norm(2.0) < this.Tolerance && count > 0 then return Converged(r, (f r), wi)
+                if g.Norm(2.0) < this.Tolerance then return Converged(r, (f r), wi)
                 else if (count >= this.Iteration) then return NotConverged(r, (f r), wi)
                 else let! step = this.lineSearch r ((-1.0) * (wi * g))
                      let newR = r - step * (wi * g)
