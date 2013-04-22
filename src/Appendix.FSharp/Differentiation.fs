@@ -75,17 +75,17 @@ type Differentiation() =
         and set(value) = m_CriterionTimeToZeroValue <- value
 
     static member private oneGradient ((f: Vector<float> -> float), (xs: Vector<float>), h, index) =
-        let largeF = Vector.mapi (fun j x -> if j = index then x + h else x) xs |> f
+        let xDiffVec (operator : float -> float -> float) (xVec : Vector<float>) =
+            Vector.mapi (fun j x -> if j = index then (operator x h) else x) xVec
+        let dxUpperLower = [| (xDiffVec (+) xs) ; (xDiffVec (-) xs) |]
+        let fUpperLower = Array.Parallel.map f dxUpperLower
 
-        if System.Double.IsNaN(largeF) then NaN
-        else
-            let res = 0.5 *
-                      ( largeF - (Vector.mapi (fun j x -> if j = index then x - h else x) xs |> f) ) / h
+        let res = 0.5 * (fUpperLower.[0] - fUpperLower.[1]) / h
 
-            if System.Double.IsNaN(res) then NaN
-            else if System.Double.IsPositiveInfinity(res) then PositiveInfinity
-            else if System.Double.IsNegativeInfinity(res) then NegativeInfinity
-            else Result(res)
+        if System.Double.IsNaN(res) then NaN
+        else if System.Double.IsPositiveInfinity(res) then PositiveInfinity
+        else if System.Double.IsNegativeInfinity(res) then NegativeInfinity
+        else Result(res)
 
     static member private searchInitial ((f: Vector<float> -> float), (xs: Vector<float>), index) = 
         let getGradientCandidates (initialGradients : (float * GradientResult) array) (initialDenominator : float) (length : int) =
