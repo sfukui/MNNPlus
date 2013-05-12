@@ -14,6 +14,12 @@ namespace MathNet.Numerics.Differentiation
             set { DifferentiationFSharp.InitialDenominator = value; }
         }
 
+        public static double DenominatorMultiplier
+        {
+            get { return DifferentiationFSharp.DenominatorMultiplier; }
+            set { DifferentiationFSharp.DenominatorMultiplier = value; }
+        }
+
         public static int ExtrapolationTime
         {
             get { return DifferentiationFSharp.ExtrapolationLength; }

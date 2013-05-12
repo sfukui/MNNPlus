@@ -49,6 +49,7 @@ type SearchDenomResult =
 [<CompiledName "DifferentiationFSharp">]
 type Differentiation() =
     static let mutable m_InitialDenominator = MathNet.Numerics.Precision.DoubleMachinePrecision**(1.0/3.0)
+    static let mutable m_DenominatorMultiplier = 2.0
     static let mutable m_NumberOfCandidates = 8
     static let mutable m_ExtrapolationLength = 4
     static let mutable m_ZeroValue = 100.0 * System.Double.Epsilon
@@ -58,6 +59,10 @@ type Differentiation() =
     static member InitialDenominator
         with get() = m_InitialDenominator
         and set(value) = m_InitialDenominator <- value
+
+    static member DenominatorMultiplier
+        with get() = m_DenominatorMultiplier
+        and set(value) = m_DenominatorMultiplier <- value
 
     static member NumberOfCandidates
         with get() = m_NumberOfCandidates
@@ -94,33 +99,37 @@ type Differentiation() =
 
     static member private searchInitial ((f: Vector<float> -> float), (xs: Vector<float>), index) = 
         let getGradientCandidates (initialGradients : (float * GradientResult) array) (initialDenominator : float) (length : int) =
-            let newGradients = Array.Parallel.init (length - initialGradients.Length) (fun i -> let h = initialDenominator * 2.0**(float i)
+            let newGradients = Array.Parallel.init (length - initialGradients.Length) (fun i -> let h = initialDenominator * Differentiation.DenominatorMultiplier**(float i)
                                                                                                 (h, Differentiation.oneGradient(f, xs, h, index)) ) |> Array.rev
             Array.append newGradients initialGradients
 
-        let isAnyInvalid gradients = Array.tryFindIndex (fun (h, res) -> match res with
-                                                                         | PositiveInfinity | NegativeInfinity | NaN -> true
-                                                                         | _ -> false) gradients
-        let isAllZero gradients = Array.forall (fun (h, res) -> match res with
-                                                                | Result(v) -> abs(v) < Differentiation.ZeroValue
-                                                                | _ -> false) gradients 
+        let isInvalid grad = match (snd grad) with
+                             | PositiveInfinity | NegativeInfinity | NaN -> true
+                             | _ -> false
+        
+        let isZero grad = match (snd grad) with
+                          | Result(v) -> abs(v) < Differentiation.ZeroValue
+                          | _ -> false
 
-        let rec search gradientsCandidates i zeroNum =
-            if i > Differentiation.SearchTimeOfMaxInitalDenominator then Failure
+        let rec search gradientsCandidates i zeroNum allValidCands =
+            if i > Differentiation.SearchTimeOfMaxInitalDenominator then
+                if Array.isEmpty(allValidCands) then Failure
+                else Success( (Array.unzip allValidCands) |> snd |> Array.rev )
             else if zeroNum > Differentiation.CriterionTimeToZeroValue then Array.Parallel.init Differentiation.NumberOfCandidates (fun i -> Result(0.0)) |> Success
-            else match (isAnyInvalid gradientsCandidates) with
+            else if (Array.forall isZero gradientsCandidates) then let nextInitDenominator = (fst gradientsCandidates.[0]) * Differentiation.DenominatorMultiplier
+                                                                   let nextCandidates = getGradientCandidates Array.empty<(float * GradientResult)> nextInitDenominator Differentiation.NumberOfCandidates
+                                                                   search nextCandidates (i + 1) (zeroNum + 1) allValidCands
+            else match Array.tryFindIndex (fun x -> (isInvalid x) || (isZero x)) gradientsCandidates with
                  | Some(j) -> let nextInitGradients = Array.sub gradientsCandidates 0 j
-                              let nextInitDenominator = (fst gradientsCandidates.[0]) * 2.0
+                              let nextInitDenominator = (fst gradientsCandidates.[0]) * Differentiation.DenominatorMultiplier
                               let nextCandidates = getGradientCandidates nextInitGradients nextInitDenominator Differentiation.NumberOfCandidates
-                              search nextCandidates (i+1) zeroNum
-                 | None -> if isAllZero gradientsCandidates then let nextInitDenominator = (fst gradientsCandidates.[0]) * 2.0
-                                                                 let nextCandidates = getGradientCandidates Array.empty<(float * GradientResult)> nextInitDenominator Differentiation.NumberOfCandidates
-                                                                 search nextCandidates (i + 1) (zeroNum + 1)
-                           else let (hs, grads) = Array.unzip gradientsCandidates
-                                Success(Array.rev grads)
+                              let nextAllValidCands = if Array.exists isInvalid gradientsCandidates then allValidCands else gradientsCandidates
+                              search nextCandidates (i+1) zeroNum nextAllValidCands
+                 | None -> let (hs, grads) = Array.unzip gradientsCandidates
+                           Success(Array.rev grads)
         
         let initialGradients = getGradientCandidates Array.empty<(float * GradientResult)> Differentiation.InitialDenominator Differentiation.NumberOfCandidates      
-        search initialGradients 0 0
+        search initialGradients 0 0 Array.empty<(float * GradientResult)>
 
     static member private oneGradient ((f: Vector<float> -> float), (xs: Vector<float>), index) =
         let getGradientResultValue g =
@@ -138,7 +147,7 @@ type Differentiation() =
 
         let rec richardsonExtrapolation (fds: float array) trial =
             let getOneExtrapolation (smallerHG, greaterHG) =
-                smallerHG + (smallerHG - greaterHG) / (2.0**(float trial) - 1.0)
+                smallerHG + (smallerHG - greaterHG) / (Differentiation.DenominatorMultiplier**(2.0 * (float trial)) - 1.0)
 
             let hGTuples = Array.zip (Array.sub fds 0 (fds.Length-1)) (Array.sub fds 1 (fds.Length-1)) 
             let newDs = Array.Parallel.map getOneExtrapolation hGTuples
