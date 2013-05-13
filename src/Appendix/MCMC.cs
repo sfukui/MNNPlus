@@ -25,10 +25,16 @@ namespace MathNet.Numerics.Statistics.Mcmc
         {
             m_ARMSFS = new AdaptiveRejectionMetropolisSamplerFSharp(CSFuncToFSFunc(lnPdf), xMin, xMax, x1, xn, burnIn);
         }
-        
-        public AdaptiveRejectionMetropolisSampler(Func<double, double> lnPdf, double xMin, double xMax, int burnIn)
+
+        public AdaptiveRejectionMetropolisSampler(Func<double, double> lnPdf, double xMin, double xMax,
+            double x1, double xn, int burnIn, int seed)
         {
-            m_ARMSFS = new AdaptiveRejectionMetropolisSamplerFSharp(CSFuncToFSFunc(lnPdf), xMin, xMax, burnIn);
+            m_ARMSFS = new AdaptiveRejectionMetropolisSamplerFSharp(CSFuncToFSFunc(lnPdf), xMin, xMax, x1, xn, burnIn, seed);
+        }
+        
+        public AdaptiveRejectionMetropolisSampler(Func<double, double> lnPdf, double xMin, double xMax, int burnIn, int seed)
+        {
+            m_ARMSFS = new AdaptiveRejectionMetropolisSamplerFSharp(CSFuncToFSFunc(lnPdf), xMin, xMax, burnIn, seed);
         }
 
         public AdaptiveRejectionMetropolisSampler(Func<double, double> lnPdf, double xMin, double xMax,

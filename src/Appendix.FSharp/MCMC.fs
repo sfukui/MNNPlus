@@ -175,7 +175,6 @@ type AdaptiveRejectionMetropolisSampler =
                 draw (oneX :: xlst) (acc+1) iter
 
         let res = draw [x0] 0 iteration
-        //new System.Collections.Generic.List<float>(res)
         res |> List.rev |> List.tail
         
     member this.Sample(iteration: int) =
@@ -183,27 +182,29 @@ type AdaptiveRejectionMetropolisSampler =
         this.Sample(mean, iteration)
 
     new(lnPdf:(float -> float), xMin:float, xMax:float, x1:float, xn:float) as this =
-        //let fspdfln = (fun x -> pdfLn.Invoke(x))
         { m_LnPdf = lnPdf; m_XMin = xMin; m_XMax = xMax; m_X1 = x1; m_Xn = xn; Abscissas = List.empty; ProposalInfos = List.empty; m_Sampler = new MersenneTwister()}
         then
             this.Abscissas <- [x1; (x1 + xn) * 0.5; xn]
     
     new(lnPdf:(float -> float), xMin:float, xMax:float, x1:float, xn:float, burnIn:int) as this =
-        //let fspdfln = (fun x -> pdfLn.Invoke(x))
         { m_LnPdf = lnPdf; m_XMin = xMin; m_XMax = xMax; m_X1 = x1; m_Xn = xn; Abscissas = List.empty; ProposalInfos = List.empty; m_Sampler = new MersenneTwister()}
+        then
+            this.Abscissas <- [x1; (x1 + xn) * 0.5; xn]
+            do this.Sample(burnIn) |> ignore
+    
+    new(lnPdf:(float -> float), xMin:float, xMax:float, x1:float, xn:float, burnIn:int, seed:int) as this =
+        { m_LnPdf = lnPdf; m_XMin = xMin; m_XMax = xMax; m_X1 = x1; m_Xn = xn; Abscissas = List.empty; ProposalInfos = List.empty; m_Sampler = new MersenneTwister(seed)}
         then
             this.Abscissas <- [x1; (x1 + xn) * 0.5; xn]
             do this.Sample(burnIn) |> ignore
 
     new(lnPdf:(float -> float), xMin:float, xMax:float, x1:float, xn:float, burnIn:int, sampler:AbstractRandomNumberGenerator) as this =
-        //let fspdfln = (fun x -> pdfLn.Invoke(x))
         { m_LnPdf = lnPdf; m_XMin = xMin; m_XMax = xMax; m_X1 = x1; m_Xn = xn; Abscissas = List.empty; ProposalInfos = List.empty; m_Sampler = sampler}
         then
             this.Abscissas <- [x1; (x1 + xn) * 0.5; xn]
             do this.Sample(burnIn) |> ignore
                 
     new(lnPdf:(float -> float), xMin: float, xMax: float) as this =
-        //let fspdfln = (fun x -> pdfLn.Invoke(x))
         let mean = AdaptiveRejectionMetropolisSampler.calcMoment lnPdf xMin xMax (fun y -> y)
         let sd = AdaptiveRejectionMetropolisSampler.calcMoment lnPdf xMin xMax (fun x -> (x - mean)**2.0) |> sqrt
         let x1t = (max (mean - 2.0*sd) (0.5*(xMin + mean)))
@@ -213,12 +214,21 @@ type AdaptiveRejectionMetropolisSampler =
             this.Abscissas <- [this.m_X1; (this.m_X1 + this.m_Xn) * 0.5; this.m_Xn]
 
     new(lnPdf:(float -> float), xMin: float, xMax: float, burnIn: int) as this =
-        //let fspdfln = (fun x -> pdfLn.Invoke(x))
         let mean = AdaptiveRejectionMetropolisSampler.calcMoment lnPdf xMin xMax (fun x -> x)
         let sd = AdaptiveRejectionMetropolisSampler.calcMoment lnPdf xMin xMax (fun x -> (x - mean)**2.0) |> sqrt
         let x1t = (max (mean - 2.0*sd) (0.5*(xMin + mean)))
         let xnt = (min (mean + 2.0*sd) (0.5*(mean + xMax)))
         { m_LnPdf = lnPdf; m_XMin = xMin; m_XMax = xMax; m_X1 = x1t; m_Xn = xnt; Abscissas = List.empty; ProposalInfos = List.empty; m_Sampler = new MersenneTwister()}  
+        then
+            this.Abscissas <- [this.m_X1; (this.m_X1 + this.m_Xn) * 0.5; this.m_Xn]
+            do this.Sample(burnIn) |> ignore
+
+    new(lnPdf:(float -> float), xMin: float, xMax: float, burnIn: int, seed: int) as this =
+        let mean = AdaptiveRejectionMetropolisSampler.calcMoment lnPdf xMin xMax (fun y -> y)
+        let sd = AdaptiveRejectionMetropolisSampler.calcMoment lnPdf xMin xMax (fun x -> (x - mean)**2.0) |> sqrt
+        let x1t = (max (mean - 2.0*sd) (0.5*(xMin + mean)))
+        let xnt = (min (mean + 2.0*sd) (0.5*(mean + xMax)))
+        { m_LnPdf = lnPdf; m_XMin = xMin; m_XMax = xMax; m_X1 = x1t; m_Xn = xnt; Abscissas = List.empty; ProposalInfos = List.empty; m_Sampler = new MersenneTwister(seed)}  
         then
             this.Abscissas <- [this.m_X1; (this.m_X1 + this.m_Xn) * 0.5; this.m_Xn]
             do this.Sample(burnIn) |> ignore
