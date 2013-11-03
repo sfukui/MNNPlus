@@ -46,6 +46,7 @@ type SearchDenomResult =
     | Success of GradientResult array
     | Failure
 
+/// A type which imprements numerical differentiations.
 [<CompiledName "DifferentiationFSharp">]
 type Differentiation() =
     static let mutable m_InitialDenominator = MathNet.Numerics.Precision.DoubleMachinePrecision**(1.0/3.0)

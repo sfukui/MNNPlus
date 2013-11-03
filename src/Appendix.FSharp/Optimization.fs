@@ -179,7 +179,10 @@ type NelderMead (f:(Vector<float> -> float), iteration: int, tolerance: float) =
                 else
                     0.0
             if f_L2 < this.Tolerance && count > 0 then (List.head newSimplex) |> (fun x -> ((fst x), (snd x), true)) 
-            else if count > this.Iteration && count > 0 then (List.head newSimplex) |> (fun x -> ((fst x), (snd x), false))          
+            else if count > this.Iteration && count > 0 then (List.head newSimplex) |> (fun x -> ((fst x), (snd x), false))
+            else if System.Double.IsNaN(f_L2) || System.Double.IsInfinity(f_L2) then
+                let invalidres = List.init initval.Count (fun i -> System.Double.NaN) |> DenseVector.ofList |> Vector.map (fun x -> x)
+                (invalidres, f_L2, false)
             else
                 let (best, worst, sndWorst) =
                     (List.head ascendingSimplex, List.head descendingSimplex, (descendingSimplex |> List.tail |> List.head))
@@ -308,9 +311,11 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
         let rec search (w: Matrix<float>) (r: Vector<float>) (g: Vector<float>) count =
             qnsearch {
                 let wi = w.Inverse()
+                let cur_fval = f r
 
-                if g.Norm(2.0) < this.Tolerance then return Converged(r, (f r), wi)
-                else if (count >= this.Iteration) then return NotConverged(r, (f r), wi)
+                if System.Double.IsNaN(cur_fval) || System.Double.IsInfinity(cur_fval) then return FunctionValueInvalid
+                else if g.Norm(2.0) < this.Tolerance then return Converged(r, cur_fval, wi)
+                else if (count >= this.Iteration) then return NotConverged(r, cur_fval, wi)
                 else let! step = this.lineSearch r ((-1.0) * (wi * g))
                      let newR = r - step * (wi * g)
                      do m_LatestXVector <- Some(newR)
