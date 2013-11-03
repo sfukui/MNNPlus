@@ -28,7 +28,7 @@ namespace MathNet.Numerics.Differentiation
 
 open MathNet.Numerics
 open MathNet.Numerics.LinearAlgebra
-open MathNet.Numerics.LinearAlgebra.Generic
+open MathNet.Numerics.LinearAlgebra
 open MathNet.Numerics.LinearAlgebra.Double
 open System
 open System.Threading.Tasks
@@ -49,7 +49,7 @@ type SearchDenomResult =
 /// A type which imprements numerical differentiations.
 [<CompiledName "DifferentiationFSharp">]
 type Differentiation() =
-    static let mutable m_InitialDenominator = MathNet.Numerics.Precision.DoubleMachinePrecision**(1.0/3.0)
+    static let mutable m_InitialDenominator = MathNet.Numerics.Precision.DoublePrecision**(1.0/3.0)
     static let mutable m_DenominatorMultiplier = 2.0
     static let mutable m_NumberOfCandidates = 8
     static let mutable m_ExtrapolationLength = 4

@@ -28,8 +28,8 @@ namespace MathNet.Numerics.Optimization
 
 open MathNet.Numerics
 open MathNet.Numerics.Differentiation
-open MathNet.Numerics.Interpolation.Algorithms
-open MathNet.Numerics.LinearAlgebra.Generic
+open MathNet.Numerics.Interpolation
+open MathNet.Numerics.LinearAlgebra
 open MathNet.Numerics.LinearAlgebra.Double
 
 [<CompiledName "LineSearchFSharp">]
@@ -77,8 +77,8 @@ type LineSearch (f: (Vector<float> -> float), xInit, xMax) =
             let phi = (fun (a: Vector<float>) -> f (v + a.[0] * d))
             let dphi = (fun a -> let res = Differentiation.Gradient(phi, a)
                                  res.[0])
-            let phi_0, dphi_0 = DenseVector(1, 0.0) |> (fun x -> (phi x, dphi x))
-            let phiMax, dphiMax = DenseVector(1, maxStep) |> (fun x -> (phi x, dphi x))
+            let phi_0, dphi_0 = DenseVector.Create(1, 0.0) |> (fun x -> (phi x, dphi x))
+            let phiMax, dphiMax = DenseVector.Create(1, maxStep) |> (fun x -> (phi x, dphi x))
 
             let rec zoom ((a_l, phi_l, dphi_l) as low) ((a_h, phi_h, dphi_h) as high) =
                 if a_h < dMin then
@@ -329,7 +329,7 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
             let! initD = this.differentiation initX
             let w = let mult = if this.FirstTimeStepSizeMultiplier = 1.0 then 1.0
                                else (1.0 / this.FirstTimeStepSizeMultiplier) * initD.Norm(2.0)
-                    mult * DenseMatrix.Identity(initX.Count)
+                    mult * DenseMatrix.identity(initX.Count)
 
             return search w initX initD 0
         }

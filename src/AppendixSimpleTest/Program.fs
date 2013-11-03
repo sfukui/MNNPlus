@@ -3,10 +3,9 @@ open MathNet.Numerics.LinearAlgebra
 open MathNet.Numerics.Optimization
 open MathNet.Numerics.Differentiation
 open MathNet.Numerics.Integration
-open MathNet.Numerics.LinearAlgebra.Generic
+open MathNet.Numerics.LinearAlgebra
 open MathNet.Numerics.LinearAlgebra.Double
 open MathNet.Numerics.Statistics.Mcmc
-open MathNet.Numerics.Integration.Algorithms
 
 (*
 // Adaptive rejection metropolis sampling from normal distribution
@@ -51,23 +50,23 @@ let gbeta2Sd = sqrt gbeta2Var
 
 
 // Optimization: Nelder-Mead and BFGS
-let targetsf (x: Generic.Vector<float>) =
+let targetsf (x: Vector<float>) =
     if System.Math.Abs(x.[0]) >= 1.0 then System.Double.NaN else System.Math.Sqrt(x.[0])
 
-let x = [0.5] |> Double.DenseVector.ofList
+let x = [0.5] |> Double.DenseVector.OfEnumerable
 
 let dif = Differentiation.Gradient(targetsf, x) 
 
-let targetfunction (x: Generic.Vector<float>) = (x.[0] - 1.0) * (x.[0] - 1.0) + (x.[1] - 1.0) * (x.[1] - 1.0)
+let targetfunction (x: Vector<float>) = (x.[0] - 1.0) * (x.[0] - 1.0) + (x.[1] - 1.0) * (x.[1] - 1.0)
 // Minimized at (x,y) = (1.0,1.0)
 // df / dx = 4.0 and df / dy = 4.0 at (3.0,3.0)
 let dataset = [(20.5, 12.0); (31.5, 16.0); (47.7, 18.0); (26.2, 16.0); (44.0, 12.0)]
-let loglikelihood (p: Generic.Vector<float>) = dataset
+let loglikelihood (p: Vector<float>) = dataset
                                                |> List.fold (fun acc (x,y) -> acc + (-0.5) * (System.Math.Log(2.0 * System.Math.PI) + (System.Math.Log(p.[2]))) - ( (y - p.[0] - p.[1] * x)**2.0 / ( 2.0 * p.[2] ) ) ) 0.0 |> (*) (-1.0)
 
 let nm = NelderMead(targetfunction, 100, 0.001)
 let bfgs = BFGS(targetfunction, 100, 0.1)
-let init = [0.1;10.0] |> Double.DenseVector.ofList
+let init = [0.1;10.0] |> Double.DenseVector.OfEnumerable
 (*
 let resnm = nm.Minimize(init)
 let resbfgs = bfgs.Minimize(init)
@@ -80,21 +79,21 @@ do bfgs2.MaxStepSize <- 5.0
 let resbfgs2 = bfgs2.Minimize(p2)
 *)
 
-let df1 = Differentiation.Gradient(targetfunction, init, ([0.01;0.01] |> Double.DenseVector.ofList))
+let df1 = Differentiation.Gradient(targetfunction, init, ([0.01;0.01] |> Double.DenseVector.OfEnumerable))
 let df2 = Differentiation.Gradient(targetfunction, init)
 
-let funcA (x: Generic.Vector<float>) = ((x.[0] + x.[0]) + 3.0) * x.[0] + 100000.0 * System.Math.Exp(x.[1]) + 1.0
+let funcA (x: Vector<float>) = ((x.[0] + x.[0]) + 3.0) * x.[0] + 100000.0 * System.Math.Exp(x.[1]) + 1.0
 // Hessian = (4.0, 0), (0, 100000 * e^y)
-let funcB (x: Generic.Vector<float>) = (1.0 / System.Math.Sqrt(2.0 * System.Math.PI) * 2.0 * x.[0])
+let funcB (x: Vector<float>) = (1.0 / System.Math.Sqrt(2.0 * System.Math.PI) * 2.0 * x.[0])
                                         * System.Math.Exp((-1.0) * (System.Math.Log(x.[0] - 10.0))**2.0 / (2.0 * 2.0 ** 2.0))
 
-let df3 = Differentiation.Gradient(funcA, [1000000.0;1.0] |> Double.DenseVector.ofList)
-let df4 = Differentiation.Gradient(funcA, [0.1;10.0] |> Double.DenseVector.ofList)
+let df3 = Differentiation.Gradient(funcA, [1000000.0;1.0] |> Double.DenseVector.OfEnumerable)
+let df4 = Differentiation.Gradient(funcA, [0.1;10.0] |> Double.DenseVector.OfEnumerable)
 //let h1 = Differentiation.Hessian(funcA, [0.1;10.0] |> Double.DenseVector.ofList)
 //let h2 = Differentiation.Hessian(funcA, [1000000.0;10.0] |> Double.DenseVector.ofList)
 
-let funcA2 (x: float) = [x;1.0] |> Double.DenseVector.ofList |> funcA
-let int1 = MathNet.Numerics.Integration.Integrate.OnClosedInterval((fun x -> funcA2 x), 1.0, 10.0)
+let funcA2 (x: float) = [x;1.0] |> Double.DenseVector.OfEnumerable |> funcA
+let int1 = MathNet.Numerics.Integration.DoubleExponentialTransformation.Integrate((fun x -> funcA2 x), 1.0, 10.0, 0.001)
 
 
 printfn "End of the program."

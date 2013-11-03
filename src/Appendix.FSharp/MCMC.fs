@@ -28,8 +28,8 @@ namespace MathNet.Numerics.Statistics.Mcmc
 
 open MathNet.Numerics
 open MathNet.Numerics.Differentiation
-open MathNet.Numerics.Interpolation.Algorithms
-open MathNet.Numerics.LinearAlgebra.Generic
+open MathNet.Numerics.Interpolation
+open MathNet.Numerics.LinearAlgebra
 open MathNet.Numerics.LinearAlgebra.Double
 open MathNet.Numerics.Random
 open MathNet.Numerics.Integration
