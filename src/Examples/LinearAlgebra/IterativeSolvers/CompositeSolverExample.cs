@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2013 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -29,8 +33,7 @@ using System.Globalization;
 using System.Reflection;
 using MathNet.Numerics.LinearAlgebra.Double;
 using MathNet.Numerics.LinearAlgebra.Double.Solvers;
-using MathNet.Numerics.LinearAlgebra.Double.Solvers.Iterative;
-using MathNet.Numerics.LinearAlgebra.Double.Solvers.StopCriterium;
+using MathNet.Numerics.LinearAlgebra.Solvers;
 
 namespace Examples.LinearAlgebra.IterativeSolversExamples
 {
@@ -76,7 +79,7 @@ namespace Examples.LinearAlgebra.IterativeSolversExamples
             // 4*x + 1*y + 5*z = 43
 
             // Create matrix "A" with coefficients 
-            var matrixA = new DenseMatrix(new[,] { { 5.00, 2.00, -4.00 }, { 3.00, -7.00, 6.00 }, { 4.00, 1.00, 5.00 } });
+            var matrixA = DenseMatrix.OfArray(new[,] { { 5.00, 2.00, -4.00 }, { 3.00, -7.00, 6.00 }, { 4.00, 1.00, 5.00 } });
             Console.WriteLine(@"Matrix 'A' with coefficients");
             Console.WriteLine(matrixA.ToString("#0.00\t", formatProvider));
             Console.WriteLine();
@@ -94,24 +97,21 @@ namespace Examples.LinearAlgebra.IterativeSolversExamples
             // - ResidualStopCriterium: monitors residuals if calculation is considered converged;
 
             // Stop calculation if 1000 iterations reached during calculation
-            var iterationCountStopCriterium = new IterationCountStopCriterium(1000);
+            var iterationCountStopCriterium = new IterationCountStopCriterium<double>(1000);
 
             // Stop calculation if residuals are below 1E-10 --> the calculation is considered converged
-            var residualStopCriterium = new ResidualStopCriterium(1e-10);
+            var residualStopCriterium = new ResidualStopCriterium<double>(1e-10);
 
             // Create monitor with defined stop criteriums
-            var monitor = new Iterator(new IIterationStopCriterium[] { iterationCountStopCriterium, residualStopCriterium });
+            var monitor = new Iterator<double>(iterationCountStopCriterium, residualStopCriterium);
 
             // Load all suitable solvers from current assembly. Below in this example, there is user-defined solver
             // "class UserBiCgStab : IIterativeSolverSetup<double>" which uses regular BiCgStab solver. But user may create any other solver 
             // and solver setup classes which implement IIterativeSolverSetup<T> and pass assembly to next function:
-            CompositeSolver.LoadSolverInformationFromAssembly(Assembly.GetExecutingAssembly());
-
-            // Create composite solver
-            var solver = new CompositeSolver(monitor);
+            var solver = new CompositeSolver(SolverSetup<double>.LoadFromAssembly(Assembly.GetExecutingAssembly()));
             
             // 1. Solve the matrix equation
-            var resultX = solver.Solve(matrixA, vectorB);
+            var resultX = matrixA.SolveIterative(vectorB, solver, monitor);
             Console.WriteLine(@"1. Solve the matrix equation");
             Console.WriteLine();
 
@@ -126,7 +126,7 @@ namespace Examples.LinearAlgebra.IterativeSolversExamples
             // - CalculationRunning: calculation is running and no results are yet known;
             // - CalculationStoppedWithoutConvergence: calculation has been stopped due to reaching the stopping limits, but that convergence was not achieved;
             Console.WriteLine(@"2. Solver status of the iterations");
-            Console.WriteLine(solver.IterationResult);
+            Console.WriteLine(monitor.Status);
             Console.WriteLine();
 
             // 3. Solution result vector of the matrix equation
@@ -145,7 +145,7 @@ namespace Examples.LinearAlgebra.IterativeSolversExamples
     /// <summary>
     /// Sample of user-defined solver setup
     /// </summary>
-    public class UserBiCgStab : IIterativeSolverSetup
+    public class UserBiCgStab : IIterativeSolverSetup<double>
     {
         /// <summary>
         /// Gets the type of the solver that will be created by this setup object.
@@ -173,10 +173,15 @@ namespace Examples.LinearAlgebra.IterativeSolversExamples
         /// Creates a fully functional iterative solver with the default settings
         /// given by this setup.
         /// </summary>
-        /// <returns>A new <see cref="IIterativeSolver"/>.</returns>
-        public IIterativeSolver CreateNew()
+        /// <returns>A new <see cref="IIterativeSolver{T}"/>.</returns>
+        public IIterativeSolver<double> CreateSolver()
         {
             return new BiCgStab();
+        }
+
+        public IPreconditioner<double> CreatePreconditioner()
+        {
+            return null;
         }
 
         /// <summary>

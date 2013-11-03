@@ -22,18 +22,37 @@
     <OutputPath>..\..\out\debug\Net40\</OutputPath>
     <DefineConstants>TRACE;DEBUG</DefineConstants>
     <WarningLevel>3</WarningLevel>
+    <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
+    <TargetFSharpCoreVersion>4.3.0.0</TargetFSharpCoreVersion>
+    <!-- Conditional Strong Name -->
+    <AssemblyOriginatorKeyFile>..\MathNet.Numerics.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly Condition=" '$(SignAssembly)' == '' ">false</SignAssembly>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <Tailcalls>true</Tailcalls>
     <OutputPath>..\..\out\lib\Net40\</OutputPath>
+    <IntermediateOutputPath>..\..\obj\lib\Net40\</IntermediateOutputPath>
+    <BaseIntermediateOutputPath>..\..\obj\lib\Net40\</BaseIntermediateOutputPath>
+    <DocumentationFile>..\..\out\lib\Net40\MathNet.Numerics.FSharp.xml</DocumentationFile>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>..\..\out\lib\Net40\MathNet.Numerics.FSharp.xml</DocumentationFile>
+    <!-- Conditional Strong Name: NO -->
+    <SignAssembly>false</SignAssembly>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-    <DocumentationFile>MathNet.Numerics.FSharp.XML</DocumentationFile>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <Tailcalls>false</Tailcalls>
+    <OutputPath>..\..\out\lib-debug\Net40\</OutputPath>
+    <IntermediateOutputPath>..\..\obj\lib-debug\Net40\</IntermediateOutputPath>
+    <BaseIntermediateOutputPath>..\..\obj\lib-debug\Net40\</BaseIntermediateOutputPath>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <WarningLevel>3</WarningLevel>
+    <!-- Conditional Strong Name: NO -->
+    <SignAssembly>false</SignAssembly>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release-Signed|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -41,11 +60,12 @@
     <Tailcalls>true</Tailcalls>
     <DefineConstants>TRACE;STRONGNAME</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>..\..\out\lib\Net40\MathNet.Numerics.FSharp.xml</DocumentationFile>
-    <OutputPath>bin\Release-Signed\</OutputPath>
-  </PropertyGroup>
-  <PropertyGroup>
-    <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
+    <OutputPath>..\..\out\lib-signed\Net40\</OutputPath>
+    <IntermediateOutputPath>..\..\obj\lib-signed\Net40\</IntermediateOutputPath>
+    <BaseIntermediateOutputPath>..\..\obj\lib-signed\Net40\</BaseIntermediateOutputPath>
+    <DocumentationFile>..\..\out\lib-signed\Net40\MathNet.Numerics.FSharp.xml</DocumentationFile>
+    <!-- Conditional Strong Name: YES -->
+    <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '11.0'">
@@ -64,15 +84,15 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Random.fs" />
     <Compile Include="Distributions.fs" />
-    <Compile Include="LinearAlgebra.fs" />
-    <Compile Include="LinearAlgebra.Double.Vector.fs" />
-    <Compile Include="LinearAlgebra.Double.Matrix.fs" />
-    <Compile Include="LinearAlgebra.Double.fs" />
+    <Compile Include="LinearAlgebra.Vector.fs" />
+    <Compile Include="LinearAlgebra.Matrix.fs" />
     <Compile Include="Complex.fsi" />
     <Compile Include="Complex.fs" />
     <Compile Include="BigIntegerExtensions.fs" />
     <Compile Include="BigRational.fsi" />
     <Compile Include="BigRational.fs" />
+    <Compile Include="Fit.fs" />
+    <Compile Include="FindRoots.fs" />
     <Compile Include="RandomVariable.fs" />
   </ItemGroup>
   <ItemGroup>
@@ -91,11 +111,17 @@
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-	     Other similar extension points exist, see Microsoft.Common.targets.
-	<Target Name="BeforeBuild">
-	</Target>
-	<Target Name="AfterBuild">
-	</Target>
-	-->
+  <Choose>
+    <When Condition="'$(VisualStudioVersion)' == '11.0'">
+      <PropertyGroup>
+        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets</FSharpTargetsPath>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+  <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
 </Project>

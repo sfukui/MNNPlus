@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2013 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -24,10 +28,16 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using MathNet.Numerics.LinearAlgebra.Factorization;
+
 namespace MathNet.Numerics.LinearAlgebra.Complex.Factorization
 {
-    using System.Numerics;
-    using Generic.Factorization;
+
+#if NOSYSNUMERICS
+    using Complex = Numerics.Complex;
+#else
+    using Complex = System.Numerics.Complex;
+#endif
 
     /// <summary>
     /// <para>A class which encapsulates the functionality of an LU factorization.</para>
@@ -39,8 +49,13 @@ namespace MathNet.Numerics.LinearAlgebra.Complex.Factorization
     /// <remarks>
     /// The computation of the LU factorization is done at construction time.
     /// </remarks>
-    public abstract class LU : LU<Complex>
+    internal abstract class LU : LU<Complex>
     {
+        protected LU(Matrix<Complex> factors, int[] pivots)
+            : base(factors, pivots)
+        {
+        }
+
         /// <summary>
         /// Gets the determinant of the matrix for which the LU factorization was computed.
         /// </summary>

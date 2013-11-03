@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2013 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -23,11 +27,20 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
+
+using MathNet.Numerics.LinearAlgebra;
+using MathNet.Numerics.LinearAlgebra.Complex;
+using MathNet.Numerics.LinearAlgebra.Solvers;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Solvers.Preconditioners
 {
-    using LinearAlgebra.Complex;
-    using LinearAlgebra.Complex.Solvers.Preconditioners;
-    using NUnit.Framework;
+
+#if NOSYSNUMERICS
+    using Complex = Numerics.Complex;
+#else
+    using Complex = System.Numerics.Complex;
+#endif
 
     /// <summary>
     /// Unit precondition tests
@@ -39,9 +52,9 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Solvers.Precondi
         /// Create preconditioner.
         /// </summary>
         /// <returns>New preconditioner instance.</returns>
-        internal override IPreConditioner CreatePreconditioner()
+        internal override IPreconditioner<Complex> CreatePreconditioner()
         {
-            return new UnitPreconditioner();
+            return new UnitPreconditioner<Complex>();
         }
 
         /// <summary>
@@ -51,9 +64,9 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Solvers.Precondi
         /// <param name="matrix">Source matrix.</param>
         /// <param name="vector">Initial vector.</param>
         /// <param name="result">Result vector.</param>
-        protected override void CheckResult(IPreConditioner preconditioner, SparseMatrix matrix, Vector vector, Vector result)
+        protected override void CheckResult(IPreconditioner<Complex> preconditioner, SparseMatrix matrix, Vector<Complex> vector, Vector<Complex> result)
         {
-            Assert.AreEqual(typeof(UnitPreconditioner), preconditioner.GetType(), "#01");
+            Assert.AreEqual(typeof(UnitPreconditioner<Complex>), preconditioner.GetType(), "#01");
 
             // Unit preconditioner is doing nothing. Vector and result should be equal
             for (var i = 0; i < vector.Count; i++)

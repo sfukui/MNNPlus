@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2013 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -24,14 +28,13 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using MathNet.Numerics.LinearAlgebra.Double;
+using MathNet.Numerics.LinearAlgebra.Solvers;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Solvers.StopCriterium
 {
-    using System;
-    using LinearAlgebra.Double;
-    using LinearAlgebra.Double.Solvers.StopCriterium;
-    using LinearAlgebra.Generic.Solvers.Status;
-    using NUnit.Framework;
-
     /// <summary>
     /// Iteration count stop criterium tests.
     /// </summary>
@@ -44,7 +47,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Solvers.StopCrite
         [Test]
         public void CreateWithIllegalMinimumIterationsThrowsArgumentOutOfRangeException()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new IterationCountStopCriterium(-1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new IterationCountStopCriterium<double>(-1));
         }
 
         /// <summary>
@@ -53,7 +56,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Solvers.StopCrite
         [Test]
         public void Create()
         {
-            var criterium = new IterationCountStopCriterium(10);
+            var criterium = new IterationCountStopCriterium<double>(10);
             Assert.IsNotNull(criterium, "A criterium should have been created");
         }
 
@@ -63,13 +66,13 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Solvers.StopCrite
         [Test]
         public void ResetMaximumIterations()
         {
-            var criterium = new IterationCountStopCriterium(10);
+            var criterium = new IterationCountStopCriterium<double>(10);
             Assert.IsNotNull(criterium, "A criterium should have been created");
             Assert.AreEqual(10, criterium.MaximumNumberOfIterations, "Incorrect maximum number of iterations");
 
             criterium.ResetMaximumNumberOfIterationsToDefault();
             Assert.AreNotEqual(10, criterium.MaximumNumberOfIterations, "Should have reset");
-            Assert.AreEqual(IterationCountStopCriterium.DefaultMaximumNumberOfIterations, criterium.MaximumNumberOfIterations, "Reset to the wrong value");
+            Assert.AreEqual(IterationCountStopCriterium<double>.DefaultMaximumNumberOfIterations, criterium.MaximumNumberOfIterations, "Reset to the wrong value");
         }
 
         /// <summary>
@@ -78,10 +81,10 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Solvers.StopCrite
         [Test]
         public void DetermineStatusWithIllegalIterationNumberThrowsArgumentOutOfRangeException()
         {
-            var criterium = new IterationCountStopCriterium(10);
+            var criterium = new IterationCountStopCriterium<double>(10);
             Assert.IsNotNull(criterium, "A criterium should have been created");
 
-            Assert.Throws<ArgumentOutOfRangeException>(() => criterium.DetermineStatus(-1, new DenseVector(3, 1), new DenseVector(3, 2), new DenseVector(3, 3)));
+            Assert.Throws<ArgumentOutOfRangeException>(() => criterium.DetermineStatus(-1, DenseVector.Create(3, i => 1), DenseVector.Create(3, i => 2), DenseVector.Create(3, i => 3)));
         }
 
         /// <summary>
@@ -90,14 +93,14 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Solvers.StopCrite
         [Test]
         public void DetermineStatus()
         {
-            var criterium = new IterationCountStopCriterium(10);
+            var criterium = new IterationCountStopCriterium<double>(10);
             Assert.IsNotNull(criterium, "A criterium should have been created");
 
-            criterium.DetermineStatus(5, new DenseVector(3, 1), new DenseVector(3, 2), new DenseVector(3, 3));
-            Assert.IsInstanceOf(typeof(CalculationRunning), criterium.Status, "Should be running");
+            var status = criterium.DetermineStatus(5, DenseVector.Create(3, i => 1), DenseVector.Create(3, i => 2), DenseVector.Create(3, i => 3));
+            Assert.AreEqual(IterationStatus.Continue, status, "Should be running");
 
-            criterium.DetermineStatus(10, new DenseVector(3, 1), new DenseVector(3, 2), new DenseVector(3, 3));
-            Assert.IsInstanceOf(typeof(CalculationStoppedWithoutConvergence), criterium.Status, "Should be finished");
+            var status2 = criterium.DetermineStatus(10, DenseVector.Create(3, i => 1), DenseVector.Create(3, i => 2), DenseVector.Create(3, i => 3));
+            Assert.AreEqual(IterationStatus.StoppedWithoutConvergence, status2, "Should be finished");
         }
 
         /// <summary>
@@ -106,14 +109,14 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Solvers.StopCrite
         [Test]
         public void ResetCalculationState()
         {
-            var criterium = new IterationCountStopCriterium(10);
+            var criterium = new IterationCountStopCriterium<double>(10);
             Assert.IsNotNull(criterium, "A criterium should have been created");
 
-            criterium.DetermineStatus(5, new DenseVector(3, 1), new DenseVector(3, 2), new DenseVector(3, 3));
-            Assert.IsInstanceOf(typeof(CalculationRunning), criterium.Status, "Should be running");
+            var status = criterium.DetermineStatus(5, DenseVector.Create(3, i => 1), DenseVector.Create(3, i => 2), DenseVector.Create(3, i => 3));
+            Assert.AreEqual(IterationStatus.Continue, status, "Should be running");
 
-            criterium.ResetToPrecalculationState();
-            Assert.IsInstanceOf(typeof(CalculationIndetermined), criterium.Status, "Should not have started");
+            criterium.Reset();
+            Assert.AreEqual(IterationStatus.Continue, criterium.Status, "Should not have started");
         }
 
         /// <summary>
@@ -122,14 +125,14 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Solvers.StopCrite
         [Test]
         public void Clone()
         {
-            var criterium = new IterationCountStopCriterium(10);
+            var criterium = new IterationCountStopCriterium<double>(10);
             Assert.IsNotNull(criterium, "A criterium should have been created");
             Assert.AreEqual(10, criterium.MaximumNumberOfIterations, "Incorrect maximum");
 
             var clone = criterium.Clone();
-            Assert.IsInstanceOf(typeof(IterationCountStopCriterium), clone, "Wrong criterium type");
+            Assert.IsInstanceOf(typeof(IterationCountStopCriterium<double>), clone, "Wrong criterium type");
 
-            var clonedCriterium = clone as IterationCountStopCriterium;
+            var clonedCriterium = clone as IterationCountStopCriterium<double>;
             Assert.IsNotNull(clonedCriterium);
 
             // ReSharper disable PossibleNullReferenceException

@@ -1,4 +1,4 @@
-// <copyright file="GramSchmidtTests.cs" company="Math.NET">
+﻿// <copyright file="GramSchmidtTests.cs" company="Math.NET">
 // Math.NET Numerics, part of the Math.NET Project
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
@@ -24,14 +24,18 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using MathNet.Numerics.LinearAlgebra.Complex;
+using MathNet.Numerics.LinearAlgebra.Complex.Factorization;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
 {
-    using System;
-    using System.Numerics;
-    using LinearAlgebra.Complex;
-    using LinearAlgebra.Complex.Factorization;
-    using LinearAlgebra.Generic.Factorization;
-    using NUnit.Framework;
+#if NOSYSNUMERICS
+    using Complex = Numerics.Complex;
+#else
+    using Complex = System.Numerics.Complex;
+#endif
 
     /// <summary>
     /// GramSchmidt factorization tests for a dense matrix.
@@ -39,21 +43,12 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
     public class GramSchmidtTests
     {
         /// <summary>
-        /// Constructor with <c>null</c> throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void ConstructorNullThrowsArgumentNullException()
-        {
-            Assert.Throws<ArgumentNullException>(() => new DenseGramSchmidt(null));
-        }
-
-        /// <summary>
         /// Constructor with wide matrix throws <c>ArgumentException</c>.
         /// </summary>
         [Test]
         public void ConstructorWideMatrixThrowsInvalidMatrixOperationException()
         {
-            Assert.Throws<ArgumentException>(() => new DenseGramSchmidt(new DenseMatrix(3, 4)));
+            Assert.Throws<ArgumentException>(() => DenseGramSchmidt.Create(new DenseMatrix(3, 4)));
         }
 
         /// <summary>
@@ -65,7 +60,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
         [TestCase(100)]
         public void CanFactorizeIdentity(int order)
         {
-            var matrixI = DenseMatrix.Identity(order);
+            var matrixI = DenseMatrix.CreateIdentity(order);
             var factorGramSchmidt = matrixI.GramSchmidt();
             var q = factorGramSchmidt.Q;
             var r = factorGramSchmidt.R;
@@ -113,7 +108,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
         [TestCase(100)]
         public void IdentityDeterminantIsOne(int order)
         {
-            var matrixI = DenseMatrix.Identity(order);
+            var matrixI = DenseMatrix.CreateIdentity(order);
             var factorGramSchmidt = matrixI.GramSchmidt();
             Assert.AreEqual(Complex.One, factorGramSchmidt.Determinant);
         }
@@ -162,7 +157,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
             {
                 for (var j = 0; j < matrixQfromR.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrixA[i, j], matrixQfromR[i, j], 9);
+                    AssertHelpers.AlmostEqualRelative(matrixA[i, j], matrixQfromR[i, j], 9);
                 }
             }
 
@@ -174,11 +169,11 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
                 {
                     if (i == j)
                     {
-                        AssertHelpers.AlmostEqual(matrixQсtQ[i, j], Complex.One, 9);
+                        AssertHelpers.AlmostEqualRelative(matrixQсtQ[i, j], Complex.One, 9);
                     }
                     else
                     {
-                        AssertHelpers.AlmostEqual(matrixQсtQ[i, j], Complex.Zero, 9);
+                        AssertHelpers.AlmostEqualRelative(matrixQсtQ[i, j], Complex.Zero, 9);
                     }
                 }
             }
@@ -210,7 +205,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
             // Check the reconstruction.
             for (var i = 0; i < order; i++)
             {
-                AssertHelpers.AlmostEqual(vectorb[i], matrixBReconstruct[i], 9);
+                AssertHelpers.AlmostEqual(vectorb[i], matrixBReconstruct[i], 10);
             }
 
             // Make sure A didn't change.
@@ -255,7 +250,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
             {
                 for (var j = 0; j < matrixB.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrixB[i, j], matrixBReconstruct[i, j], 9);
+                    AssertHelpers.AlmostEqual(matrixB[i, j], matrixBReconstruct[i, j], 10);
                 }
             }
 
@@ -296,7 +291,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
             // Check the reconstruction.
             for (var i = 0; i < vectorb.Count; i++)
             {
-                AssertHelpers.AlmostEqual(vectorb[i], matrixBReconstruct[i], 9);
+                AssertHelpers.AlmostEqual(vectorb[i], matrixBReconstruct[i], 10);
             }
 
             // Make sure A didn't change.
@@ -350,7 +345,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
             {
                 for (var j = 0; j < matrixB.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrixB[i, j], matrixBReconstruct[i, j], 9);
+                    AssertHelpers.AlmostEqual(matrixB[i, j], matrixBReconstruct[i, j], 10);
                 }
             }
 
@@ -398,7 +393,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
             {
                 for (var j = 0; j < matrixX.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(test[i, j], matrixX[i, j], 9);
+                    AssertHelpers.AlmostEqual(test[i, j], matrixX[i, j], 12);
                 }
             }
 
@@ -432,7 +427,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
 
             for (var i = 0; i < vectorX.Count; i++)
             {
-                AssertHelpers.AlmostEqual(test[i], vectorX[i], 9);
+                AssertHelpers.AlmostEqual(test[i], vectorX[i], 12);
             }
 
             // Make sure A didn't change.

@@ -1,4 +1,4 @@
-// <copyright file="LaplaceTests.cs" company="Math.NET">
+﻿// <copyright file="LaplaceTests.cs" company="Math.NET">
 // Math.NET Numerics, part of the Math.NET Project
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
@@ -24,13 +24,13 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using System.Linq;
+using MathNet.Numerics.Distributions;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
 {
-    using System;
-    using System.Linq;
-    using Distributions;
-    using NUnit.Framework;
-
     /// <summary>
     /// Laplace distribution tests.
     /// </summary>
@@ -81,8 +81,8 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [Test]
         public void ValidateToString()
         {
-            var n = new Laplace(-1.0, 2.0);
-            Assert.AreEqual("Laplace(Location = -1, Scale = 2)", n.ToString());
+            var n = new Laplace(-1d, 2d);
+            Assert.AreEqual("Laplace(μ = -1, b = 2)", n.ToString());
         }
 
         /// <summary>
@@ -192,7 +192,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateStdDev(double location, double scale)
         {
             var n = new Laplace(location, scale);
-            Assert.AreEqual(Math.Sqrt(2.0) * scale, n.StdDev);
+            Assert.AreEqual(Constants.Sqrt2 * scale, n.StdDev);
         }
 
         /// <summary>
@@ -313,7 +313,9 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateDensity(double location, double scale, double x)
         {
             var n = new Laplace(location, scale);
-            Assert.AreEqual(Math.Exp(-Math.Abs(x - location) / scale) / (2.0 * scale), n.Density(x));
+            double expected = Math.Exp(-Math.Abs(x - location)/scale)/(2.0*scale);
+            Assert.AreEqual(expected, n.Density(x));
+            Assert.AreEqual(expected, Laplace.PDF(location, scale, x));
         }
 
         /// <summary>
@@ -346,7 +348,9 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateDensityLn(double location, double scale, double x)
         {
             var n = new Laplace(location, scale);
-            Assert.AreEqual(-Math.Log(2.0 * scale) - (Math.Abs(x - location) / scale), n.DensityLn(x));
+            double expected = -Math.Log(2.0*scale) - (Math.Abs(x - location)/scale);
+            Assert.AreEqual(expected, n.DensityLn(x));
+            Assert.AreEqual(expected, Laplace.PDFLn(location, scale, x));
         }
 
         /// <summary>
@@ -400,7 +404,9 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateCumulativeDistribution(double location, double scale, double x)
         {
             var n = new Laplace(location, scale);
-            Assert.AreEqual(0.5 * (1.0 + (Math.Sign(x - location) * (1.0 - Math.Exp(-Math.Abs(x - location) / scale)))), n.CumulativeDistribution(x));
+            double expected = 0.5*(1.0 + (Math.Sign(x - location)*(1.0 - Math.Exp(-Math.Abs(x - location)/scale))));
+            Assert.AreEqual(expected, n.CumulativeDistribution(x));
+            Assert.AreEqual(expected, Laplace.CDF(location, scale, x));
         }
     }
 }

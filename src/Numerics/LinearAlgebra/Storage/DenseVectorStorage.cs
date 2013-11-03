@@ -30,7 +30,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using MathNet.Numerics.Properties;
+using MathNet.Numerics.Threading;
 
 namespace MathNet.Numerics.LinearAlgebra.Storage
 {
@@ -65,6 +67,14 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
         }
 
         /// <summary>
+        /// True if the vector storage format is dense.
+        /// </summary>
+        public override bool IsDense
+        {
+            get { return true; }
+        }
+
+        /// <summary>
         /// Retrieves the requested element without range checking.
         /// </summary>
         public override T At(int index)
@@ -90,22 +100,65 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             Array.Clear(Data, index, count);
         }
 
-        // ENUMERATION
+        // INITIALIZATION
 
-        public override IEnumerable<T> Enumerate()
+        public static DenseVectorStorage<T> OfVector(VectorStorage<T> vector)
         {
-            return Data;
+            var storage = new DenseVectorStorage<T>(vector.Length);
+            vector.CopyToUnchecked(storage, skipClearing: true);
+            return storage;
         }
 
-        public override IEnumerable<Tuple<int, T>> EnumerateNonZero()
+        public static DenseVectorStorage<T> OfInit(int length, Func<int, T> init)
         {
-            for (var i = 0; i < Data.Length; i++)
+            if (length < 1)
             {
-                if (!Zero.Equals(Data[i]))
-                {
-                    yield return new Tuple<int, T>(i, Data[i]);
-                }
+                throw new ArgumentOutOfRangeException("length", string.Format(Resources.ArgumentLessThanOne, length));
             }
+
+            var data = new T[length];
+            CommonParallel.For(0, data.Length, 4096, (a, b) =>
+                {
+                    for (int i = a; i < b; i++)
+                    {
+                        data[i] = init(i);
+                    }
+                });
+            return new DenseVectorStorage<T>(length, data);
+        }
+
+        public static DenseVectorStorage<T> OfEnumerable(IEnumerable<T> data)
+        {
+            if (data == null)
+            {
+                throw new ArgumentNullException("data");
+            }
+
+            var arrayData = data as T[];
+            if (arrayData != null)
+            {
+                var copy = new T[arrayData.Length];
+                Array.Copy(arrayData, copy, arrayData.Length);
+                return new DenseVectorStorage<T>(copy.Length, copy);
+            }
+
+            var array = data.ToArray();
+            return new DenseVectorStorage<T>(array.Length, array);
+        }
+
+        public static DenseVectorStorage<T> OfIndexedEnumerable(int length, IEnumerable<Tuple<int, T>> data)
+        {
+            if (data == null)
+            {
+                throw new ArgumentNullException("data");
+            }
+
+            var array = new T[length];
+            foreach (var item in data)
+            {
+                array[item.Item1] = item.Item2;
+            }
+            return new DenseVectorStorage<T>(array.Length, array);
         }
 
         // VECTOR COPY
@@ -232,6 +285,58 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             {
                 target.At(ii, columnIndex, Data[i]);
             }
+        }
+
+        // ENUMERATION
+
+        public override IEnumerable<T> Enumerate()
+        {
+            return Data;
+        }
+
+        public override IEnumerable<Tuple<int, T>> EnumerateIndexed()
+        {
+            return Data.Select((t, i) => new Tuple<int, T>(i, t));
+        }
+
+        public override IEnumerable<T> EnumerateNonZero()
+        {
+            return Data.Where(x => !Zero.Equals(x));
+        }
+
+        public override IEnumerable<Tuple<int, T>> EnumerateNonZeroIndexed()
+        {
+            for (var i = 0; i < Data.Length; i++)
+            {
+                if (!Zero.Equals(Data[i]))
+                {
+                    yield return new Tuple<int, T>(i, Data[i]);
+                }
+            }
+        }
+
+        // FUNCTIONAL COMBINATORS
+
+        public override void MapInplace(Func<T, T> f, bool forceMapZeros = false)
+        {
+            CommonParallel.For(0, Data.Length, 4096, (a, b) =>
+                {
+                    for (int i = a; i < b; i++)
+                    {
+                        Data[i] = f(Data[i]);
+                    }
+                });
+        }
+
+        public override void MapIndexedInplace(Func<int, T, T> f, bool forceMapZeros = false)
+        {
+            CommonParallel.For(0, Data.Length, 4096, (a, b) =>
+                {
+                    for (int i = a; i < b; i++)
+                    {
+                        Data[i] = f(i, Data[i]);
+                    }
+                });
         }
     }
 }

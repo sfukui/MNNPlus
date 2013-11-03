@@ -1,4 +1,4 @@
-// <copyright file="GramSchmidtTests.cs" company="Math.NET">
+﻿// <copyright file="GramSchmidtTests.cs" company="Math.NET">
 // Math.NET Numerics, part of the Math.NET Project
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
@@ -24,14 +24,14 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using MathNet.Numerics.LinearAlgebra.Complex32;
+using MathNet.Numerics.LinearAlgebra.Complex32.Factorization;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
 {
-    using System;
-    using LinearAlgebra.Complex32;
-    using LinearAlgebra.Complex32.Factorization;
-    using LinearAlgebra.Generic.Factorization;
-    using NUnit.Framework;
-    using Complex32 = Numerics.Complex32;
+    using Numerics;
 
     /// <summary>
     /// GramSchmidt factorization tests for a dense matrix.
@@ -39,21 +39,12 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
     public class GramSchmidtTests
     {
         /// <summary>
-        /// Constructor with <c>null</c> throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void ConstructorNullThrowsArgumentNullException()
-        {
-            Assert.Throws<ArgumentNullException>(() => new DenseGramSchmidt(null));
-        }
-
-        /// <summary>
         /// Constructor with wide matrix throws <c>ArgumentException</c>.
         /// </summary>
         [Test]
         public void ConstructorWideMatrixThrowsInvalidMatrixOperationException()
         {
-            Assert.Throws<ArgumentException>(() => new DenseGramSchmidt(new DenseMatrix(3, 4)));
+            Assert.Throws<ArgumentException>(() => DenseGramSchmidt.Create(new DenseMatrix(3, 4)));
         }
 
         /// <summary>
@@ -65,7 +56,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
         [TestCase(100)]
         public void CanFactorizeIdentity(int order)
         {
-            var matrixI = DenseMatrix.Identity(order);
+            var matrixI = DenseMatrix.CreateIdentity(order);
             var factorGramSchmidt = matrixI.GramSchmidt();
             var q = factorGramSchmidt.Q;
             var r = factorGramSchmidt.R;
@@ -113,7 +104,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
         [TestCase(100)]
         public void IdentityDeterminantIsOne(int order)
         {
-            var matrixI = DenseMatrix.Identity(order);
+            var matrixI = DenseMatrix.CreateIdentity(order);
             var factorGramSchmidt = matrixI.GramSchmidt();
             Assert.AreEqual(Complex32.One, factorGramSchmidt.Determinant);
         }
@@ -405,7 +396,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
             {
                 for (var j = 0; j < matrixX.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(test[i, j], matrixX[i, j], 4);
+                    AssertHelpers.AlmostEqual(test[i, j], matrixX[i, j], 6);
                 }
             }
 
@@ -439,7 +430,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
 
             for (var i = 0; i < vectorX.Count; i++)
             {
-                AssertHelpers.AlmostEqual(test[i], vectorX[i], 4);
+                AssertHelpers.AlmostEqual(test[i], vectorX[i], 6);
             }
 
             // Make sure A didn't change.

@@ -66,7 +66,7 @@ namespace MathNet.Numerics.Statistics
             }
         }
 
-        private static readonly PointComparer pointComparer = new PointComparer();
+        private static readonly PointComparer Comparer = new PointComparer();
 
         /// <summary>
         /// Lower Bound of the Bucket.
@@ -86,14 +86,7 @@ namespace MathNet.Numerics.Statistics
         /// <summary>
         /// Initializes a new instance of the Bucket class.
         /// </summary>
-        public Bucket(double lowerBound, double upperBound) : this(lowerBound, upperBound, 0.0)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the Bucket class.
-        /// </summary>
-        public Bucket(double lowerBound, double upperBound, double count)
+        public Bucket(double lowerBound, double upperBound, double count = 0.0)
         {
             if (lowerBound > upperBound)
             {
@@ -132,7 +125,7 @@ namespace MathNet.Numerics.Statistics
         /// </summary>
         public static IComparer<Bucket> DefaultPointComparer
         {
-            get { return pointComparer; }
+            get { return Comparer; }
         }
 
         /// <summary>
@@ -208,7 +201,6 @@ namespace MathNet.Numerics.Statistics
         /// <summary>
         /// Formats a human-readable string for this bucket.
         /// </summary>
-        /// <returns></returns>
         public override string ToString()
         {
             return "(" + LowerBound + ";" + UpperBound + "] = " + Count;
@@ -246,7 +238,7 @@ namespace MathNet.Numerics.Statistics
         /// </summary>
         /// <param name="data">The datasequence to build a histogram on.</param>
         /// <param name="nbuckets">The number of buckets to use.</param>
-        public Histogram(IEnumerable<double> data, int nbuckets) 
+        public Histogram(IEnumerable<double> data, int nbuckets)
             : this()
         {
             if (nbuckets < 1)
@@ -256,7 +248,12 @@ namespace MathNet.Numerics.Statistics
 
             double lower = data.Minimum();
             double upper = data.Maximum();
-            double width = (upper - lower) / nbuckets;
+            double width = (upper - lower)/nbuckets;
+
+            if (double.IsNaN(width))
+            {
+                throw new ArgumentException("Data must contain at least one entry.", "data");
+            }
 
             // Add buckets for each bin; the smallest bucket's lowerbound must be slightly smaller
             // than the minimal element.
@@ -281,12 +278,12 @@ namespace MathNet.Numerics.Statistics
         {
             if (lower > upper)
             {
-                throw new ArgumentOutOfRangeException("The histogram lowerbound must be smaller than the upper bound.");
+                throw new ArgumentOutOfRangeException("upper", "The histogram lowerbound must be smaller than the upper bound.");
             }
 
             if (nbuckets < 1)
             {
-                throw new ArgumentOutOfRangeException("The number of bins in a histogram should be at least 1.");
+                throw new ArgumentOutOfRangeException("nbuckets", "The number of bins in a histogram should be at least 1.");
             }
 
             double width = (upper - lower) / nbuckets;
@@ -462,13 +459,11 @@ namespace MathNet.Numerics.Statistics
         /// </summary>
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder();
-           
+            var sb = new StringBuilder();
             foreach (Bucket b in _buckets)
             {
-                sb.Append(b.ToString());
+                sb.Append(b);
             }
-
             return sb.ToString();
         }
     }

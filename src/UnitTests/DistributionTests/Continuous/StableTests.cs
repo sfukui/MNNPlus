@@ -1,4 +1,4 @@
-// <copyright file="StableTests.cs" company="Math.NET">
+﻿// <copyright file="StableTests.cs" company="Math.NET">
 // Math.NET Numerics, part of the Math.NET Project
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
@@ -24,13 +24,13 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using System.Linq;
+using MathNet.Numerics.Distributions;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
 {
-    using System;
-    using System.Linq;
-    using Distributions;
-    using NUnit.Framework;
-
     /// <summary>
     /// Stable distribution tests.
     /// </summary>
@@ -103,8 +103,8 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [Test]
         public void ValidateToString()
         {
-            var n = new Stable(1.2, 0.3, 1.0, 2.0);
-            Assert.AreEqual(String.Format("Stable(Stability = {0}, Skewness = {1}, Scale = {2}, Location = {3})", n.Alpha, n.Beta, n.Scale, n.Location), n.ToString());
+            var n = new Stable(1.2d, 0.3d, 1d, 2d);
+            Assert.AreEqual("Stable(α = 1.2, β = 0.3, c = 1, μ = 2)", n.ToString());
         }
 
         /// <summary>
@@ -341,7 +341,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateDensity(double alpha, double beta, double scale, double location, double x, double d)
         {
             var n = new Stable(alpha, beta, scale, location);
-            AssertHelpers.AlmostEqual(d, n.Density(x), 15);
+            AssertHelpers.AlmostEqualRelative(d, n.Density(x), 15);
         }
 
         /// <summary>
@@ -365,7 +365,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateDensityLn(double alpha, double beta, double scale, double location, double x, double dln)
         {
             var n = new Stable(alpha, beta, scale, location);
-            AssertHelpers.AlmostEqual(dln, n.DensityLn(x), 15);
+            AssertHelpers.AlmostEqualRelative(dln, n.DensityLn(x), 15);
         }
 
         /// <summary>
@@ -410,7 +410,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateCumulativeDistribution(double alpha, double beta, double scale, double location, double x, double cdf)
         {
             var n = new Stable(alpha, beta, scale, location);
-            AssertHelpers.AlmostEqual(cdf, n.CumulativeDistribution(x), 15);
+            AssertHelpers.AlmostEqualRelative(cdf, n.CumulativeDistribution(x), 15);
         }
     }
 }

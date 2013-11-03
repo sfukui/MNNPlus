@@ -24,35 +24,26 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using MathNet.Numerics.LinearAlgebra.Factorization;
+using MathNet.Numerics.LinearAlgebra.Single;
+using MathNet.Numerics.LinearAlgebra.Single.Factorization;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Factorization
 {
-    using System;
-    using LinearAlgebra.Generic.Factorization;
-    using LinearAlgebra.Single;
-    using LinearAlgebra.Single.Factorization;
-    using NUnit.Framework;
-
     /// <summary>
     /// QR factorization tests for a dense matrix.
     /// </summary>
     public class QRTests
     {
         /// <summary>
-        /// Constructor with <c>null</c> throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void ConstructorNull()
-        {
-            Assert.Throws<ArgumentNullException>(() => new DenseQR(null));
-        }
-
-        /// <summary>
         /// Constructor with wide matrix throws <c>ArgumentException</c>.
         /// </summary>
         [Test]
         public void ConstructorWideMatrixThrowsInvalidMatrixOperationException()
         {
-            Assert.Throws<ArgumentException>(() => new DenseQR(new DenseMatrix(3, 4)));
+            Assert.Throws<ArgumentException>(() => UserQR.Create(new DenseMatrix(3, 4)));
         }
 
         /// <summary>
@@ -64,7 +55,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Factorization
         [TestCase(100)]
         public void CanFactorizeIdentity(int order)
         {
-            var matrixI = DenseMatrix.Identity(order);
+            var matrixI = DenseMatrix.CreateIdentity(order);
             var factorQR = matrixI.QR();
             var r = factorQR.R;
 
@@ -96,7 +87,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Factorization
         [TestCase(100)]
         public void CanFactorizeIdentityUsingThinQR(int order)
         {
-            var matrixI = DenseMatrix.Identity(order);
+            var matrixI = DenseMatrix.CreateIdentity(order);
             var factorQR = matrixI.QR(QRMethod.Thin);
             var r = factorQR.R;
 
@@ -129,7 +120,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Factorization
         [TestCase(100)]
         public void IdentityDeterminantIsOne(int order)
         {
-            var matrixI = DenseMatrix.Identity(order);
+            var matrixI = DenseMatrix.CreateIdentity(order);
             var factorQR = matrixI.QR();
             Assert.AreEqual(1.0, factorQR.Determinant);
         }
@@ -148,7 +139,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Factorization
         public void CanFactorizeRandomMatrix(int row, int column)
         {
             var matrixA = MatrixLoader.GenerateRandomDenseMatrix(row, column);
-            var factorQR = matrixA.QR();
+            var factorQR = matrixA.QR(QRMethod.Full);
             var q = factorQR.Q;
             var r = factorQR.R;
 
@@ -481,7 +472,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Factorization
             // Check the reconstruction.
             for (var i = 0; i < order; i++)
             {
-                AssertHelpers.AlmostEqual(vectorb[i], matrixBReconstruct[i], 3);
+                AssertHelpers.AlmostEqualRelative(vectorb[i], matrixBReconstruct[i], 3);
             }
 
             // Make sure A didn't change.
@@ -567,7 +558,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Factorization
             // Check the reconstruction.
             for (var i = 0; i < vectorb.Count; i++)
             {
-                AssertHelpers.AlmostEqual(vectorb[i], matrixBReconstruct[i], 3);
+                AssertHelpers.AlmostEqualRelative(vectorb[i], matrixBReconstruct[i], 3);
             }
 
             // Make sure A didn't change.
@@ -671,7 +662,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Factorization
             {
                 for (var j = 0; j < matrixX.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(test[i, j], matrixX[i, j], 4);
+                    AssertHelpers.AlmostEqual(test[i, j], matrixX[i, j], 6);
                 }
             }
 
@@ -707,7 +698,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Factorization
 
             for (var i = 0; i < vectorX.Count; i++)
             {
-                AssertHelpers.AlmostEqual(test[i], vectorX[i], 4);
+                AssertHelpers.AlmostEqual(test[i], vectorX[i], 6);
             }
 
             // Make sure A didn't change.

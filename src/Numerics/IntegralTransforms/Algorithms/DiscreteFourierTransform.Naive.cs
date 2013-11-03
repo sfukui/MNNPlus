@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2010 Math.NET
+// Copyright (c) 2009-2013 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -31,8 +31,11 @@
 namespace MathNet.Numerics.IntegralTransforms.Algorithms
 {
     using System;
-    using System.Numerics;
     using Threading;
+
+#if !NOSYSNUMERICS
+    using Complex = System.Numerics.Complex;
+#endif
 
     /// <summary>
     /// Complex Fast (FFT) Implementation of the Discrete Fourier Transform (DFT).
@@ -47,24 +50,24 @@ namespace MathNet.Numerics.IntegralTransforms.Algorithms
         /// <returns>Corresponding frequency-space vector.</returns>
         internal static Complex[] Naive(Complex[] samples, int exponentSign)
         {
-            var w0 = exponentSign * Constants.Pi2 / samples.Length;
+            var w0 = exponentSign*Constants.Pi2/samples.Length;
             var spectrum = new Complex[samples.Length];
 
-            CommonParallel.For(
-               0,
-               samples.Length,
-               index =>
-               {
-                   var wk = w0 * index;
-                   var sum = Complex.Zero;
-                   for (var n = 0; n < samples.Length; n++)
-                   {
-                       var w = n * wk;
-                       sum += samples[n] * new Complex(Math.Cos(w), Math.Sin(w));
-                   }
+            CommonParallel.For(0, samples.Length, (u, v) =>
+                {
+                    for (int i = u; i < v; i++)
+                    {
+                        var wk = w0*i;
+                        var sum = Complex.Zero;
+                        for (var n = 0; n < samples.Length; n++)
+                        {
+                            var w = n*wk;
+                            sum += samples[n]*new Complex(Math.Cos(w), Math.Sin(w));
+                        }
 
-                   spectrum[index] = sum;
-               });
+                        spectrum[i] = sum;
+                    }
+                });
 
             return spectrum;
         }

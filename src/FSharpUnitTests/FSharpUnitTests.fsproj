@@ -9,7 +9,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>FSharpUnitTests</RootNamespace>
     <AssemblyName>MathNet.Numerics.FSharp.UnitTests</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <Name>FSharpUnitTests</Name>
     <TargetFrameworkProfile />
     <TargetFSharpCoreVersion>4.3.0.0</TargetFSharpCoreVersion>
@@ -22,13 +22,28 @@
     <OutputPath>..\..\out\test\debug\Net40\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
+    <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
+    <TargetFSharpCoreVersion>4.3.0.0</TargetFSharpCoreVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <Tailcalls>true</Tailcalls>
     <OutputPath>..\..\out\test\Net40\</OutputPath>
+    <IntermediateOutputPath>..\..\obj\test\Net40\</IntermediateOutputPath>
+    <BaseIntermediateOutputPath>..\..\obj\test\Net40\</BaseIntermediateOutputPath>
     <DefineConstants>TRACE</DefineConstants>
+    <WarningLevel>3</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <Tailcalls>false</Tailcalls>
+    <OutputPath>..\..\out\test-debug\Net40\</OutputPath>
+    <IntermediateOutputPath>..\..\obj\test-debug\Net40\</IntermediateOutputPath>
+    <BaseIntermediateOutputPath>..\..\obj\test-debug\Net40\</BaseIntermediateOutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release-Signed|AnyCPU' ">
@@ -37,10 +52,13 @@
     <Tailcalls>true</Tailcalls>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <OutputPath>bin\Release-Signed\</OutputPath>
+    <OutputPath>..\..\out\test-signed\Net40\</OutputPath>
+    <IntermediateOutputPath>..\..\obj\test-signed\Net40\</IntermediateOutputPath>
+    <BaseIntermediateOutputPath>..\..\obj\test-signed\Net40\</BaseIntermediateOutputPath>
   </PropertyGroup>
-  <PropertyGroup>
-    <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '12.0' ">
+    <!-- Workaround - remove once no longer needed! -->
+    <DefineConstants>$(DefineConstants);NOFSSLICESET1D</DefineConstants>
   </PropertyGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '11.0'">
@@ -62,10 +80,24 @@
     <Reference Include="mscorlib" />
     <Reference Include="nunit.framework, Version=2.6.2.12296, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77">
       <HintPath>..\..\packages\NUnit.2.6.2\lib\nunit.framework.dll</HintPath>
+  <ItemGroup>
+    <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <Private>True</Private>
     </Reference>
+    <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
+    <Reference Include="nunit.framework">
+      <HintPath>..\..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="FsUnit.NUnit">
+      <HintPath>..\..\packages\FsUnit.1.2.1.0\Lib\Net40\FsUnit.NUnit.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+      <Private>True</Private>
+    </Reference>
     <ProjectReference Include="..\FSharp\FSharp.fsproj">
       <Name>FSharp</Name>
       <Project>{37e8e802-a354-4114-bfc1-6e1357da605b}</Project>
@@ -78,7 +110,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="FsUnit.fs" />
     <Compile Include="VectorTests.fs" />
     <Compile Include="SparseVectorTests.fs" />
     <Compile Include="DenseVectorTests.fs" />
@@ -89,13 +120,22 @@
     <Compile Include="BigRationalTests.fs" />
     <Compile Include="RandomVariableTests.fs" />
     <Compile Include="PokerTests.fs" />
+    <Compile Include="FitTests.fs" />
+    <Compile Include="FindRootsTests.fs" />
     <None Include="packages.config" />
+    <None Include="App.config" />
   </ItemGroup>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-	     Other similar extension points exist, see Microsoft.Common.targets.
-	<Target Name="BeforeBuild">
-	</Target>
-	<Target Name="AfterBuild">
-	</Target>
-	-->
+  <Choose>
+    <When Condition="'$(VisualStudioVersion)' == '11.0'">
+      <PropertyGroup>
+        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets</FSharpTargetsPath>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+  <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
 </Project>

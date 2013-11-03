@@ -39,8 +39,49 @@
     <WarningLevel>3</WarningLevel>
     <OutputPath>bin\Release-Signed\</OutputPath>
   </PropertyGroup>
+  <PropertyGroup>
+    <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
+  </PropertyGroup>
+  <Choose>
+    <When Condition="'$(VisualStudioVersion)' == '11.0'">
+      <PropertyGroup>
+        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets</FSharpTargetsPath>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+  <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
+  <ItemGroup>
+    <None Include="RandomAndDistributions.fsx" />
+    <None Include="Histogram.fsx" />
+    <None Include="MCMC.fsx" />
+    <None Include="Vectors.fsx" />
+    <None Include="Matrices.fsx" />
+    <None Include="LinearRegression.fsx" />
+    <None Include="Apply.fsx" />
+    <None Include="packages.config" />
+  </ItemGroup>
   <ItemGroup>
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="FSharp.CodeFormat">
+      <HintPath>..\..\packages\FSharp.Formatting.1.0.15\lib\net40\FSharp.CodeFormat.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="FSharp.CompilerBinding">
+      <HintPath>..\..\packages\FSharp.Formatting.1.0.15\lib\net40\FSharp.CompilerBinding.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="FSharp.Markdown">
+      <HintPath>..\..\packages\FSharp.Formatting.1.0.15\lib\net40\FSharp.Markdown.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="mscorlib" />
@@ -49,8 +90,6 @@
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
     <Reference Include="System.Numerics" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\FSharp\FSharp.fsproj">
       <Name>FSharp</Name>
       <Project>{37e8e802-a354-4114-bfc1-6e1357da605b}</Project>

@@ -1,12 +1,42 @@
-﻿using System;
-using MathNet.Numerics.LinearAlgebra.Generic;
+﻿// <copyright file="MatrixStructureTheory.Access.cs" company="Math.NET">
+// Math.NET Numerics, part of the Math.NET Project
+// http://numerics.mathdotnet.com
+// http://github.com/mathnet/mathnet-numerics
+// http://mathnetnumerics.codeplex.com
+//
+// Copyright (c) 2009-2013 Math.NET
+//
+// Permission is hereby granted, free of charge, to any person
+// obtaining a copy of this software and associated documentation
+// files (the "Software"), to deal in the Software without
+// restriction, including without limitation the rights to use,
+// copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following
+// conditions:
+//
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+// OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+// HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+// WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+// OTHER DEALINGS IN THE SOFTWARE.
+// </copyright>
+
+using MathNet.Numerics.LinearAlgebra;
 using NUnit.Framework;
+using System;
 
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
 {
     partial class MatrixStructureTheory<T>
     {
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanGetFieldsByIndex(Matrix<T> matrix)
         {
             Assert.That(() => matrix[0, 0], Throws.Nothing);
@@ -18,7 +48,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             Assert.That(() => matrix[0, matrix.ColumnCount], Throws.InstanceOf<ArgumentOutOfRangeException>());
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanGetRow(Matrix<T> matrix)
         {
             // First Row
@@ -42,7 +72,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             Assert.That(() => matrix.Row(matrix.RowCount), Throws.InstanceOf<ArgumentOutOfRangeException>());
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanGetRowIntoResult(Matrix<T> matrix)
         {
             var row = CreateVectorZero(matrix.ColumnCount);
@@ -58,7 +88,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             Assert.That(() => matrix.Row(matrix.RowCount, row), Throws.InstanceOf<ArgumentOutOfRangeException>());
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanGetRowWithRange(Matrix<T> matrix)
         {
             // First Row, Columns 0..1
@@ -93,7 +123,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             Assert.That(() => matrix.Row(0, 0, matrix.ColumnCount + 1), Throws.InstanceOf<ArgumentOutOfRangeException>());
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanGetRowWithRangeIntoResult(Matrix<T> matrix)
         {
             var row = CreateVectorZero(matrix.ColumnCount - 1);
@@ -110,7 +140,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             Assert.That(() => matrix.Row(0, 0, matrix.ColumnCount, row), Throws.InstanceOf<ArgumentOutOfRangeException>());
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanGetColumn(Matrix<T> matrix)
         {
             // First Column
@@ -134,7 +164,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             Assert.That(() => matrix.Column(matrix.ColumnCount), Throws.InstanceOf<ArgumentOutOfRangeException>());
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanGetColumnIntoResult(Matrix<T> matrix)
         {
             var col = CreateVectorZero(matrix.RowCount);
@@ -150,7 +180,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             Assert.That(() => matrix.Column(matrix.ColumnCount, col), Throws.InstanceOf<ArgumentOutOfRangeException>());
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanGetColumnWithRange(Matrix<T> matrix)
         {
             // First Column, Rows 0..1
@@ -185,7 +215,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             Assert.That(() => matrix.Column(0, 0, matrix.RowCount + 1), Throws.InstanceOf<ArgumentOutOfRangeException>());
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanGetColumnWithRangeIntoResult(Matrix<T> matrix)
         {
             var col = CreateVectorZero(matrix.RowCount - 1);
@@ -202,7 +232,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             Assert.That(() => matrix.Column(0, 0, matrix.RowCount, col), Throws.InstanceOf<ArgumentOutOfRangeException>());
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanSetRow(Matrix<T> matrix)
         {
             // First Row
@@ -237,7 +267,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             Assert.That(() => matrix.SetRow(0, CreateVectorZero(matrix.ColumnCount + 1)), Throws.ArgumentException);
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanSetRowArray(Matrix<T> matrix)
         {
             // First Row
@@ -270,7 +300,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             Assert.That(() => matrix.SetRow(0, new T[matrix.ColumnCount + 1]), Throws.ArgumentException);
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanSetColumn(Matrix<T> matrix)
         {
             // First Column
@@ -305,7 +335,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             Assert.That(() => matrix.SetColumn(0, CreateVectorZero(matrix.RowCount + 1)), Throws.ArgumentException);
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanSetColumnArray(Matrix<T> matrix)
         {
             // First Column
@@ -338,7 +368,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             Assert.That(() => matrix.SetColumn(0, new T[matrix.RowCount + 1]), Throws.ArgumentException);
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanGetUpperTriangle(Matrix<T> matrix)
         {
             var upper = matrix.UpperTriangle();
@@ -351,7 +381,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             }
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanGetUpperTriangleIntoResult(Matrix<T> matrix)
         {
             var dense = CreateDenseZero(matrix.RowCount, matrix.ColumnCount);
@@ -379,7 +409,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             Assert.That(() => matrix.UpperTriangle(CreateDenseZero(matrix.RowCount, matrix.ColumnCount + 1)), Throws.ArgumentException);
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanGetLowerTriangle(Matrix<T> matrix)
         {
             var upper = matrix.LowerTriangle();
@@ -392,7 +422,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             }
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanGetLowerTriangleIntoResult(Matrix<T> matrix)
         {
             var dense = CreateDenseZero(matrix.RowCount, matrix.ColumnCount);
@@ -420,7 +450,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             Assert.That(() => matrix.LowerTriangle(CreateDenseZero(matrix.RowCount, matrix.ColumnCount + 1)), Throws.ArgumentException);
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanGetStrictlyUpperTriangle(Matrix<T> matrix)
         {
             var upper = matrix.StrictlyUpperTriangle();
@@ -433,7 +463,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             }
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanGetStrictlyUpperTriangleIntoResult(Matrix<T> matrix)
         {
             var dense = CreateDenseZero(matrix.RowCount, matrix.ColumnCount);
@@ -461,7 +491,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             Assert.That(() => matrix.StrictlyUpperTriangle(CreateDenseZero(matrix.RowCount, matrix.ColumnCount + 1)), Throws.ArgumentException);
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanGetStrictlyLowerTriangle(Matrix<T> matrix)
         {
             var upper = matrix.StrictlyLowerTriangle();
@@ -474,7 +504,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             }
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanGetStrictlyLowerTriangleIntoResult(Matrix<T> matrix)
         {
             var dense = CreateDenseZero(matrix.RowCount, matrix.ColumnCount);
@@ -502,7 +532,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             Assert.That(() => matrix.StrictlyLowerTriangle(CreateDenseZero(matrix.RowCount, matrix.ColumnCount + 1)), Throws.ArgumentException);
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanGetDiagonal(Matrix<T> matrix)
         {
             var diag = matrix.Diagonal();
@@ -513,7 +543,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             }
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanSetDiagonal(Matrix<T> matrix)
         {
             var m = matrix.Clone();
@@ -533,7 +563,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             Assert.That(() => matrix.SetDiagonal(CreateVectorZero(Math.Min(matrix.RowCount, matrix.ColumnCount) + 1)), Throws.ArgumentException);
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanSetDiagonalArray(Matrix<T> matrix)
         {
             var m = matrix.Clone();
@@ -552,7 +582,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             Assert.That(() => matrix.SetDiagonal(new T[Math.Min(matrix.RowCount, matrix.ColumnCount) + 1]), Throws.ArgumentException);
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanGetSubmatrix(Matrix<T> matrix)
         {
             // Top Left Corner 2x2
@@ -594,7 +624,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             Assert.That(() => matrix.SubMatrix(0, 1, 0, 0), Throws.InstanceOf<ArgumentOutOfRangeException>());
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanSetSubmatrix(Matrix<T> matrix)
         {
             // Top Left Corner 2x2
@@ -623,7 +653,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
 
             // Invalid
             m = matrix.Clone();
-            Assert.That(() => m.SetSubMatrix(0, 1, 0, 1, default(Matrix<T>)), Throws.InstanceOf<ArgumentNullException>());
+            Assert.That(() => m.SetSubMatrix(0, 1, 0, 1, default(Matrix<T>)), Throws.InstanceOf<NullReferenceException>());
             Assert.That(() => m.SetSubMatrix(-1, 1, 0, 1, CreateDenseZero(1,1)), Throws.InstanceOf<ArgumentOutOfRangeException>());
             Assert.That(() => m.SetSubMatrix(matrix.RowCount, 1, 0, 1, CreateDenseZero(1, 1)), Throws.InstanceOf<ArgumentOutOfRangeException>());
             Assert.That(() => m.SetSubMatrix(0, 0, 0, 1, CreateDenseZero(1, 1)), Throws.InstanceOf<ArgumentOutOfRangeException>());

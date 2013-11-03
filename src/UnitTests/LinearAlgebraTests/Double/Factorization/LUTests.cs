@@ -24,13 +24,12 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using MathNet.Numerics.LinearAlgebra.Double;
+using NUnit.Framework;
+using System;
+
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Factorization
 {
-    using System;
-    using LinearAlgebra.Double;
-    using LinearAlgebra.Generic.Factorization;
-    using NUnit.Framework;
-
     /// <summary>
     /// LU factorization tests for a dense matrix.
     /// </summary>
@@ -45,7 +44,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Factorization
         [TestCase(100)]
         public void CanFactorizeIdentity(int order)
         {
-            var matrixI = DenseMatrix.Identity(order);
+            var matrixI = DenseMatrix.CreateIdentity(order);
             var factorLU = matrixI.LU();
 
             // Check lower triangular part.
@@ -92,7 +91,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Factorization
         [TestCase(100)]
         public void IdentityDeterminantIsOne(int order)
         {
-            var matrixI = DenseMatrix.Identity(order);
+            var matrixI = DenseMatrix.CreateIdentity(order);
             var lu = matrixI.LU();
             Assert.AreEqual(1.0, lu.Determinant);
         }

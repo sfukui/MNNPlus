@@ -1,4 +1,4 @@
-// <copyright file="EvdTests.cs" company="Math.NET">
+﻿// <copyright file="EvdTests.cs" company="Math.NET">
 // Math.NET Numerics, part of the Math.NET Project
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
@@ -24,30 +24,24 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using MathNet.Numerics.LinearAlgebra.Complex32;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
 {
-    using System;
-    using System.Numerics;
-    using LinearAlgebra.Complex32;
-    using LinearAlgebra.Complex32.Factorization;
-    using LinearAlgebra.Generic.Factorization;
-    using NUnit.Framework;
-    using Complex32 = Numerics.Complex32;
+    using Numerics;
+
+#if NOSYSNUMERICS
+    using Complex = Numerics.Complex;
+#else
+    using Complex = System.Numerics.Complex;
+#endif
 
     /// <summary>
     /// Eigenvalues factorization tests for a dense matrix.
     /// </summary>
     public class EvdTests
     {
-        /// <summary>
-        /// Constructor <c>null</c> throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void ConstructorNullThrowsArgumentNullException()
-        {
-            Assert.Throws<ArgumentNullException>(() => new DenseEvd(null));
-        }
-
         /// <summary>
         /// Can factorize identity matrix.
         /// </summary>
@@ -57,11 +51,11 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
         [TestCase(100)]
         public void CanFactorizeIdentity(int order)
         {
-            var matrixI = DenseMatrix.Identity(order);
+            var matrixI = DenseMatrix.CreateIdentity(order);
             var factorEvd = matrixI.Evd();
-            var eigenValues = factorEvd.EigenValues();
-            var eigenVectors = factorEvd.EigenVectors();
-            var d = factorEvd.D();
+            var eigenValues = factorEvd.EigenValues;
+            var eigenVectors = factorEvd.EigenVectors;
+            var d = factorEvd.D;
 
             Assert.AreEqual(matrixI.RowCount, eigenVectors.RowCount);
             Assert.AreEqual(matrixI.RowCount, eigenVectors.ColumnCount);
@@ -69,7 +63,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
             Assert.AreEqual(matrixI.ColumnCount, d.RowCount);
             Assert.AreEqual(matrixI.ColumnCount, d.ColumnCount);
 
-            for (var i = 0; i < factorEvd.EigenValues().Count; i++)
+            for (var i = 0; i < factorEvd.EigenValues.Count; i++)
             {
                 Assert.AreEqual(Complex.One, eigenValues[i]);
             }
@@ -89,8 +83,8 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
         {
             var matrixA = MatrixLoader.GenerateRandomDenseMatrix(order, order);
             var factorEvd = matrixA.Evd();
-            var eigenVectors = factorEvd.EigenVectors();
-            var d = factorEvd.D();
+            var eigenVectors = factorEvd.EigenVectors;
+            var d = factorEvd.D;
 
             Assert.AreEqual(order, eigenVectors.RowCount);
             Assert.AreEqual(order, eigenVectors.ColumnCount);
@@ -100,7 +94,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
 
             // Make sure the A*V = λ*V 
             var matrixAv = matrixA * eigenVectors;
-            var matrixLv = eigenVectors * factorEvd.D();
+            var matrixLv = eigenVectors * factorEvd.D;
 
             for (var i = 0; i < matrixAv.RowCount; i++)
             {
@@ -115,14 +109,14 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
         /// <summary>
         /// Can factorize a symmetric random square matrix.
         /// </summary> <param name="order">Matrix order.</param>
-        [Test, Ignore]
-        public void CanFactorizeRandomSymmetricMatrix([Values(1, 2, 5, 10, 50, 100)] int order)
+        [Test]
+        public void CanFactorizeRandomSymmetricMatrix([Values(1, 2, 5, 10)] int order)
         {
             var matrixA = MatrixLoader.GenerateRandomPositiveDefiniteHermitianDenseMatrix(order);
             MatrixHelpers.ForceConjugateSymmetric(matrixA);
             var factorEvd = matrixA.Evd();
-            var eigenVectors = factorEvd.EigenVectors();
-            var d = factorEvd.D();
+            var eigenVectors = factorEvd.EigenVectors;
+            var d = factorEvd.D;
 
             Assert.AreEqual(order, eigenVectors.RowCount);
             Assert.AreEqual(order, eigenVectors.ColumnCount);
@@ -137,7 +131,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
             {
                 for (var j = 0; j < matrix.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrix[i, j], matrixA[i, j], 3);
+                    AssertHelpers.AlmostEqualRelative(matrix[i, j], matrixA[i, j], 3);
                 }
             }
         }
@@ -192,7 +186,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
         [TestCase(100)]
         public void IdentityDeterminantIsOne(int order)
         {
-            var matrixI = DenseMatrix.Identity(order);
+            var matrixI = DenseMatrix.CreateIdentity(order);
             var factorEvd = matrixI.Evd();
             Assert.AreEqual(Complex32.One, factorEvd.Determinant);
         }
@@ -201,13 +195,12 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
         /// Can solve a system of linear equations for a random vector and symmetric matrix (Ax=b).
         /// </summary>
         /// <param name="order">Matrix order.</param>
-        [Test, Ignore]
+        [Test]
         [TestCase(1)]
         [TestCase(2)]
         [TestCase(5)]
         [TestCase(10)]
         [TestCase(50)]
-        [TestCase(100)]
         public void CanSolveForRandomVectorAndSymmetricMatrix(int order)
         {
             var matrixA = MatrixLoader.GenerateRandomPositiveDefiniteHermitianDenseMatrix(order);
@@ -249,7 +242,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
         [TestCase(5)]
         [TestCase(10)]
         [TestCase(50)]
-        [TestCase(100)]
         public void CanSolveForRandomMatrixAndSymmetricMatrix(int order)
         {
             var matrixA = MatrixLoader.GenerateRandomPositiveDefiniteHermitianDenseMatrix(order);
@@ -292,13 +284,12 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
         /// Can solve a system of linear equations for a random vector and symmetric matrix (Ax=b) into a result vector.
         /// </summary>
         /// <param name="order">Matrix order.</param>
-        [Test, Ignore]
+        [Test]
         [TestCase(1)]
         [TestCase(2)]
         [TestCase(5)]
         [TestCase(10)]
         [TestCase(50)]
-        [TestCase(100)]
         public void CanSolveForRandomVectorAndSymmetricMatrixWhenResultVectorGiven(int order)
         {
             var matrixA = MatrixLoader.GenerateRandomPositiveDefiniteHermitianDenseMatrix(order);

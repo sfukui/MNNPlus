@@ -24,12 +24,13 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using MathNet.Numerics.LinearAlgebra;
+using MathNet.Numerics.LinearAlgebra.Double;
+using MathNet.Numerics.LinearAlgebra.Solvers;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Solvers.Preconditioners
 {
-    using LinearAlgebra.Double;
-    using LinearAlgebra.Double.Solvers.Preconditioners;
-    using NUnit.Framework;
-
     /// <summary>
     /// Unit precondition tests
     /// </summary>
@@ -40,9 +41,9 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Solvers.Precondit
         /// Create preconditioner.
         /// </summary>
         /// <returns>New preconditioner instance.</returns>
-        internal override IPreConditioner CreatePreconditioner()
+        internal override IPreconditioner<double> CreatePreconditioner()
         {
-            return new UnitPreconditioner();
+            return new UnitPreconditioner<double>();
         }
 
         /// <summary>
@@ -52,9 +53,9 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Solvers.Precondit
         /// <param name="matrix">Source matrix.</param>
         /// <param name="vector">Initial vector.</param>
         /// <param name="result">Result vector.</param>
-        protected override void CheckResult(IPreConditioner preconditioner, SparseMatrix matrix, Vector vector, Vector result)
+        protected override void CheckResult(IPreconditioner<double> preconditioner, SparseMatrix matrix, Vector<double> vector, Vector<double> result)
         {
-            Assert.AreEqual(typeof(UnitPreconditioner), preconditioner.GetType(), "#01");
+            Assert.AreEqual(typeof (UnitPreconditioner<double>), preconditioner.GetType(), "#01");
 
             // Unit preconditioner is doing nothing. Vector and result should be equal
             for (var i = 0; i < vector.Count; i++)

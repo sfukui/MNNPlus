@@ -24,40 +24,23 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using MathNet.Numerics.LinearAlgebra;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
 {
-    using System;
-    using System.Numerics;
-    using LinearAlgebra.Generic;
-    using NUnit.Framework;
+#if NOSYSNUMERICS
+    using Complex = Numerics.Complex;
+#else
+    using Complex = System.Numerics.Complex;
+#endif
 
     /// <summary>
     /// Abstract class with the common arithmetic set of vector tests.
     /// </summary>
     public abstract partial class VectorTests
     {
-        /// <summary>
-        /// Can call Plus.
-        /// </summary>
-        [Test]
-        public void CanCallPlus()
-        {
-            var vector = CreateVector(Data);
-            var other = vector.Plus();
-            CollectionAssert.AreEqual(vector, other);
-        }
-
-        /// <summary>
-        /// Operator "+" throws <c>ArgumentNullException</c> when call on <c>null</c> vector.
-        /// </summary>
-        [Test]
-        public void OperatorPlusWhenVectorIsNullThrowsArgumentNullException()
-        {
-            Vector<Complex> vector = null;
-            Vector<Complex> other = null;
-            Assert.Throws<ArgumentNullException>(() => other = +vector);
-        }
-
         /// <summary>
         /// Can call unary "+" operator.
         /// </summary>
@@ -111,16 +94,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
         }
 
         /// <summary>
-        /// Adding scalar to a vector when result vector is <c>null</c> throws an exception.
-        /// </summary>
-        [Test]
-        public void AddingScalarWithNullResultVectorThrowsArgumentNullException()
-        {
-            var vector = CreateVector(Data.Length);
-            Assert.Throws<ArgumentNullException>(() => vector.Add(0.0, null));
-        }
-
-        /// <summary>
         /// Adding scalar to a vector using result vector with wrong size throws an exception.
         /// </summary>
         [Test]
@@ -129,16 +102,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
             var vector = CreateVector(Data.Length);
             var result = CreateVector(Data.Length + 1);
             Assert.Throws<ArgumentException>(() => vector.Add(0.0, result));
-        }
-
-        /// <summary>
-        /// Adding two vectors when one is <c>null</c> throws an exception.
-        /// </summary>
-        [Test]
-        public void AddingTwoVectorsAndOneIsNullThrowsArgumentNullException()
-        {
-            var vector = CreateVector(Data);
-            Assert.Throws<ArgumentNullException>(() => vector.Add(null));
         }
 
         /// <summary>
@@ -153,17 +116,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
         }
 
         /// <summary>
-        /// Adding two vectors when a result vector is <c>null</c> throws an exception.
-        /// </summary>
-        [Test]
-        public void AddingTwoVectorsAndResultIsNullThrowsArgumentNullException()
-        {
-            var vector = CreateVector(Data.Length);
-            var other = CreateVector(Data.Length + 1);
-            Assert.Throws<ArgumentNullException>(() => vector.Add(other, null));
-        }
-
-        /// <summary>
         /// Adding two vectors when a result vector is different size throws an exception.
         /// </summary>
         [Test]
@@ -173,21 +125,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
             var other = CreateVector(Data.Length);
             var result = CreateVector(Data.Length + 1);
             Assert.Throws<ArgumentException>(() => vector.Add(other, result));
-        }
-
-        /// <summary>
-        /// Addition operator throws <c>ArgumentNullException</c> if a vector is <c>null</c>.
-        /// </summary>
-        [Test]
-        public void AdditionOperatorIfAVectorIsNullThrowsArgumentNullException()
-        {
-            Vector<Complex> a = null;
-            var b = CreateVector(Data.Length);
-            Assert.Throws<ArgumentNullException>(() => a += b);
-
-            a = b;
-            b = null;
-            Assert.Throws<ArgumentNullException>(() => a += b);
         }
 
         /// <summary>
@@ -318,17 +255,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
         }
 
         /// <summary>
-        /// Negate operator throws <c>ArgumentNullException</c> when call on <c>null</c> vector.
-        /// </summary>
-        [Test]
-        public void OperatorNegateWhenVectorIsNullThrowsArgumentNullException()
-        {
-            Vector<Complex> vector = null;
-            Vector<Complex> other = null;
-            Assert.Throws<ArgumentNullException>(() => other = -vector);
-        }
-
-        /// <summary>
         /// Can call unary negation operator.
         /// </summary>
         [Test]
@@ -388,16 +314,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
         }
 
         /// <summary>
-        /// Subtracting a scalar with <c>null</c> result vector throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void SubtractingScalarWithNullResultVectorThrowsArgumentNullException()
-        {
-            var vector = CreateVector(Data.Length);
-            Assert.Throws<ArgumentNullException>(() => vector.Subtract(0.0, null));
-        }
-
-        /// <summary>
         /// Subtracting a scalar with wrong size result vector throws <c>ArgumentException</c>.
         /// </summary>
         [Test]
@@ -406,16 +322,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
             var vector = CreateVector(Data.Length);
             var result = CreateVector(Data.Length + 1);
             Assert.Throws<ArgumentException>(() => vector.Subtract(0.0, result));
-        }
-
-        /// <summary>
-        /// Subtracting two vectors when one is <c>null</c> throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void SubtractingTwoVectorsAndOneIsNullThrowsArgumentNullException()
-        {
-            var vector = CreateVector(Data);
-            Assert.Throws<ArgumentNullException>(() => vector.Subtract(null));
         }
 
         /// <summary>
@@ -430,17 +336,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
         }
 
         /// <summary>
-        /// Subtracting two vectors when a result vector is <c>null</c> throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void SubtractingTwoVectorsAndResultIsNullThrowsArgumentNullException()
-        {
-            var vector = CreateVector(Data.Length);
-            var other = CreateVector(Data.Length + 1);
-            Assert.Throws<ArgumentNullException>(() => vector.Subtract(other, null));
-        }
-
-        /// <summary>
         /// Subtracting two vectors when a result vector is different size throws <c>ArgumentException</c>.
         /// </summary>
         [Test]
@@ -450,21 +345,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
             var other = CreateVector(Data.Length);
             var result = CreateVector(Data.Length + 1);
             Assert.Throws<ArgumentException>(() => vector.Subtract(other, result));
-        }
-
-        /// <summary>
-        /// Subtraction operator throws <c>ArgumentNullException</c> if a vector is <c>null</c>.
-        /// </summary>
-        [Test]
-        public void SubtractionOperatorIfAVectorIsNullThrowsArgumentNullException()
-        {
-            Vector<Complex> a = null;
-            var b = CreateVector(Data.Length);
-            Assert.Throws<ArgumentNullException>(() => a -= b);
-
-            a = b;
-            b = null;
-            Assert.Throws<ArgumentNullException>(() => a -= b);
         }
 
         /// <summary>
@@ -669,26 +549,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
         }
 
         /// <summary>
-        /// Multiplying by scalar with <c>null</c> result vector throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void MultiplyingScalarWithNullResultVectorThrowsArgumentNullException()
-        {
-            var vector = CreateVector(Data.Length);
-            Assert.Throws<ArgumentNullException>(() => vector.Multiply(1.0, null));
-        }
-
-        /// <summary>
-        /// Dividing by scalar with <c>null</c> result vector throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void DividingScalarWithNullResultVectorThrowsArgumentNullException()
-        {
-            var vector = CreateVector(Data.Length);
-            Assert.Throws<ArgumentNullException>(() => vector.Divide(1.0, null));
-        }
-
-        /// <summary>
         /// Multiplying by scalar with wrong result vector size throws <c>ArgumentException</c>.
         /// </summary>
         [Test]
@@ -767,28 +627,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
         }
 
         /// <summary>
-        /// Operator multiply throws <c>ArgumentNullException</c> when a vector is <c>null</c>.
-        /// </summary>
-        [Test]
-        public void OperatorMultiplyWhenVectorIsNullThrowsArgumentNullException()
-        {
-            Vector<Complex> vector = null;
-            Vector<Complex> result = null;
-            Assert.Throws<ArgumentNullException>(() => result = vector * 2.0);
-            Assert.Throws<ArgumentNullException>(() => result = 2.0 * vector);
-        }
-
-        /// <summary>
-        /// Operator divide throws <c>ArgumentNullException</c> when a vector is <c>null</c>.
-        /// </summary>
-        [Test]
-        public void OperatorDivideWhenVectorIsNullThrowsArgumentNullException()
-        {
-            Vector<Complex> vector = null;
-            Assert.Throws<ArgumentNullException>(() => vector = vector / 2.0);
-        }
-
-        /// <summary>
         /// Can calculate the dot product
         /// </summary>
         [Test]
@@ -798,18 +636,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
             var dataB = CreateVector(Data);
 
             Assert.AreEqual(new Complex(50, 30), dataA.DotProduct(dataB));
-        }
-
-        /// <summary>
-        /// Dot product throws <c>ArgumentNullException</c> when an argument is null
-        /// </summary>
-        [Test]
-        public void DotProductWhenArgumentIsNullThrowsArgumentNullException()
-        {
-            var dataA = CreateVector(Data);
-            Vector<Complex> dataB = null;
-
-            Assert.Throws<ArgumentNullException>(() => dataA.DotProduct(dataB));
         }
 
         /// <summary>
@@ -834,30 +660,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
             var dataB = CreateVector(Data);
 
             Assert.AreEqual(new Complex(50, 30), dataA * dataB);
-        }
-
-        /// <summary>
-        /// Operator "*" throws <c>ArgumentNullException</c> when the left argument is <c>null</c>.
-        /// </summary>
-        [Test]
-        public void OperatorDotProductWhenLeftArgumentIsNullThrowsArgumentNullException()
-        {
-            var dataA = CreateVector(Data);
-            Vector<Complex> dataB = null;
-
-            Assert.Throws<ArgumentNullException>(() => { var d = dataA * dataB; });
-        }
-
-        /// <summary>
-        /// Operator "*" throws <c>ArgumentNullException</c> when the right argument is <c>null</c>.
-        /// </summary>
-        [Test]
-        public void OperatorDotProductWhenRightArgumentIsNullThrowsArgumentNullException()
-        {
-            Vector<Complex> dataA = null;
-            var dataB = CreateVector(Data);
-
-            Assert.Throws<ArgumentNullException>(() => { var d = dataA * dataB; });
         }
 
         /// <summary>
@@ -904,30 +706,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
         }
 
         /// <summary>
-        /// Pointwise multiply with <c>null</c> throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void PointwiseMultiplyWithNullThrowsArgumentNullException()
-        {
-            var vector1 = CreateVector(Data);
-            Vector<Complex> vector2 = null;
-            var result = CreateVector(vector1.Count);
-            Assert.Throws<ArgumentNullException>(() => vector1.PointwiseMultiply(vector2, result));
-        }
-
-        /// <summary>
-        /// Pointwise multiply with a result vector is <c>null</c> throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void PointwiseMultiplyWithResultNullThrowsArgumentNullException()
-        {
-            var vector1 = CreateVector(Data);
-            var vector2 = vector1.Clone();
-            Vector<Complex> result = null;
-            Assert.Throws<ArgumentNullException>(() => vector1.PointwiseMultiply(vector2, result));
-        }
-
-        /// <summary>
         /// Pointwise multiply with a result vector wrong size throws <c>ArgumentException</c>.
         /// </summary>
         [Test]
@@ -971,30 +749,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
         }
 
         /// <summary>
-        /// Pointwise divide with <c>null</c> throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void PointwiseDivideWithNullThrowsArgumentNullException()
-        {
-            var vector1 = CreateVector(Data);
-            Vector<Complex> vector2 = null;
-            var result = CreateVector(vector1.Count);
-            Assert.Throws<ArgumentNullException>(() => vector1.PointwiseDivide(vector2, result));
-        }
-
-        /// <summary>
-        /// Pointwise divide with a result vector is <c>null</c> throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void PointwiseDivideWithResultNullThrowsArgumentNullException()
-        {
-            var vector1 = CreateVector(Data);
-            var vector2 = vector1.Clone();
-            Vector<Complex> result = null;
-            Assert.Throws<ArgumentNullException>(() => vector1.PointwiseDivide(vector2, result));
-        }
-
-        /// <summary>
         /// Pointwise divide with a result vector wrong size throws <c>ArgumentException</c>.
         /// </summary>
         [Test]
@@ -1025,28 +779,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
         }
 
         /// <summary>
-        /// Outer product with <c>null</c> first parameter throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void OuterProductWhenFirstIsNullThrowsArgumentNullException()
-        {
-            Vector<Complex> vector1 = null;
-            var vector2 = CreateVector(Data);
-            Assert.Throws<ArgumentNullException>(() => Vector<Complex>.OuterProduct(vector1, vector2));
-        }
-
-        /// <summary>
-        /// Outer product with <c>null</c> second parameter throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void OuterProductWhenSecondIsNullThrowsArgumentNullException()
-        {
-            var vector1 = CreateVector(Data);
-            Vector<Complex> vector2 = null;
-            Assert.Throws<ArgumentNullException>(() => Vector<Complex>.OuterProduct(vector1, vector2));
-        }
-
-        /// <summary>
         /// Can calculate the tensor multiply.
         /// </summary>
         [Test]
@@ -1062,17 +794,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
                     Assert.AreEqual(m[i, j], vector1[i] * vector2[j]);
                 }
             }
-        }
-
-        /// <summary>
-        /// Tensor multiply with <c>null</c> parameter throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void TensorMultiplyWithNullThrowsArgumentNullException()
-        {
-            var vector1 = CreateVector(Data);
-            Vector<Complex> vector2 = null;
-            Assert.Throws<ArgumentNullException>(() => vector1.OuterProduct(vector2));
         }
     }
 }

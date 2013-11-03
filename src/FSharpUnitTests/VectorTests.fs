@@ -2,37 +2,95 @@
 
 open NUnit.Framework
 open FsUnit
-open MathNet.Numerics.LinearAlgebra.Generic
-open MathNet.Numerics.LinearAlgebra.Double
+open MathNet.Numerics.LinearAlgebra
 
 /// Unit tests for the vector type.
 module VectorTests =
 
+    let approximately_equal tolerance = equalWithin (10.0 ** (float -tolerance))
+
     /// A small uniform vector.
-    let smallv = new DenseVector([|0.3;0.3;0.3;0.3;0.3|]) :> Vector<float>
+    let smallv = DenseVector.raw [|0.3;0.3;0.3;0.3;0.3|]
+
+    /// A small sparse vector.
+    let sparsev = SparseVector.ofListi 5 [(1,0.3)]
 
     /// A large vector with increasingly large entries
-    let largev = new DenseVector(Array.init 100 (fun i -> float i / 100.0)) :> Vector<float>
+    let largev = DenseVector.init 100 (fun i -> float i / 100.0)
+
+    [<Test>]
+    let ``Vector.GetSlice`` () =
+        largev.[*] |> should equal largev
+        largev.[0..99]  |> should equal largev
+        largev.[1..3]  |> should equal (DenseVector.raw [|0.01;0.02;0.03|])
+        largev.[97..]  |> should equal (DenseVector.raw [|0.97;0.98;0.99|])
+        largev.[..4]  |> should equal (DenseVector.raw [|0.00;0.01;0.02;0.03;0.04|])
+
+#if NOFSSLICESET1D
+#else
+// Vector SetSlice does not work properly in VisualStudio 2013 RTM
+    [<Test>]
+    let ``Vector.SetSlice`` () =
+        let v = smallv.Clone() in
+            v.[*] <- vector [0.1;0.2;0.3;0.4;0.5];
+            v |> should equal (DenseVector.raw [|0.1;0.2;0.3;0.4;0.5|])
+        let v = smallv.Clone() in
+            v.[0..4] <- vector [0.1;0.2;0.3;0.4;0.5];
+            v |> should equal (DenseVector.raw [|0.1;0.2;0.3;0.4;0.5|])
+        let v = smallv.Clone() in
+            v.[1..3] <- vector [7.0;8.0;9.0];
+            v |> should equal (DenseVector.raw [|0.3;7.0;8.0;9.0;0.3|])
+        let v = smallv.Clone() in
+            v.[2..] <- vector [7.0;8.0;9.0];
+            v |> should equal (DenseVector.raw [|0.3;0.3;7.0;8.0;9.0|])
+        let v = smallv.Clone() in
+            v.[..2] <- vector [7.0;8.0;9.0];
+            v |> should equal (DenseVector.raw [|7.0;8.0;9.0;0.3;0.3|])
+#endif
 
     [<Test>]
     let ``Vector.toArray`` () =
-        Vector.toArray smallv |> should array_equal [|0.3;0.3;0.3;0.3;0.3|]
+        Vector.toArray smallv |> should equal [|0.3;0.3;0.3;0.3;0.3|]
 
     [<Test>]
     let ``Vector.toList`` () =
         Vector.toList smallv |> should equal [0.3;0.3;0.3;0.3;0.3]
 
     [<Test>]
-    let ``Vector.mapInPlace`` () =
+    let ``Vector.mapInPlace.Dense`` () =
         let w = smallv.Clone()
-        Vector.mapInPlace (fun x -> 2.0 * x) w
+        w |> Vector.mapInPlace (fun x -> 2.0 * x)
         w |> should equal (2.0 * smallv)
 
     [<Test>]
-    let ``Vector.mapiInPlace`` () =
+    let ``Vector.mapInPlace.Sparse`` () =
+        let w = sparsev.Clone()
+        w |> Vector.mapInPlace (fun x -> 2.0 * x)
+        w |> should equal (2.0 * sparsev)
+
+    [<Test>]
+    let ``Vector.mapSkipZerosInPlace.Sparse`` () =
+        let w = sparsev.Clone()
+        w |> Vector.mapSkipZerosInPlace (fun x -> 2.0 * x)
+        w |> should equal (2.0 * sparsev)
+
+    [<Test>]
+    let ``Vector.mapiInPlace.Dense`` () =
         let w = largev.Clone()
-        Vector.mapiInPlace (fun i x -> float i / 100.0) w
+        w |> Vector.mapiInPlace (fun i x -> float i / 100.0)
         w |> should equal (largev)
+
+    [<Test>]
+    let ``Vector.mapiInPlace.Sparse`` () =
+        let w = sparsev.Clone()
+        w |> Vector.mapiInPlace (fun i x -> 2.0 * float i * x)
+        w |> should equal (2.0 * sparsev)
+
+    [<Test>]
+    let ``Vector.mapiSkipZerosInPlace.Sparse`` () =
+        let w = sparsev.Clone()
+        w |> Vector.mapiSkipZerosInPlace (fun i x -> 2.0 * float i * x)
+        w |> should equal (2.0 * sparsev)
 
     [<Test>]
     let ``Vector.addInPlace`` () =
@@ -51,8 +109,16 @@ module VectorTests =
         Vector.map (fun x -> 2.0 * x) largev |> should equal (2.0 * largev)
 
     [<Test>]
+    let ``Vector.mapSkipZeros`` () =
+        Vector.mapSkipZeros (fun x -> 2.0 * x) largev |> should equal (2.0 * largev)
+
+    [<Test>]
     let ``Vector.mapi`` () =
         Vector.mapi (fun i x -> float i / 100.0) largev |> should equal largev
+
+    [<Test>]
+    let ``Vector.mapiSkipZeros`` () =
+        Vector.mapiSkipZeros (fun i x -> float i / 100.0) largev |> should equal largev
 
     [<Test>]
     let ``Vector.fold`` () =
@@ -84,11 +150,11 @@ module VectorTests =
 
     [<Test>]
     let ``Vector.scan`` () =
-        Vector.scan (fun acc x -> acc + x) smallv |> should (approximately_vector_equal 14) (new DenseVector( [|0.3;0.6;0.9;1.2;1.5|] ) :> Vector<float>)
+        Vector.scan (fun acc x -> acc + x) 0.0 smallv |> should (approximately_equal 14) (DenseVector.raw [|0.0;0.3;0.6;0.9;1.2;1.5|])
 
     [<Test>]
     let ``Vector.scanBack`` () =
-        Vector.scanBack (fun x acc -> acc + x) smallv |> should (approximately_vector_equal 14) (new DenseVector( [|1.5;1.2;0.9;0.6;0.3|] ) :> Vector<float>)
+        Vector.scanBack (fun x acc -> acc + x) 0.0 smallv |> should (approximately_equal 14) (DenseVector.raw [|0.0;0.3;0.6;0.9;1.2;1.5|])
 
     [<Test>]
     let ``Vector.reduce`` () =
@@ -100,4 +166,19 @@ module VectorTests =
 
     [<Test>]
     let ``Vector.insert`` () =
-        Vector.insert 2 0.5 smallv |> should (approximately_vector_equal 14) (new DenseVector ( [|0.3;0.3;0.5;0.3;0.3;0.3|] ) :> Vector<float>)
+        Vector.insert 2 0.5 smallv |> should (approximately_equal 14) (DenseVector.raw [|0.3;0.3;0.5;0.3;0.3;0.3|])
+
+    [<Test>]
+    let ``Pointwise Multiplication using .* Operator`` () =
+        let z = largev .* largev
+        z |> should equal (DenseVector.init 100 (fun i -> (float i / 100.0) ** 2.0))
+
+    [<Test>]
+    let ``Pointwise Division using ./ Operator`` () =
+        let z = largev ./ DenseVector.create 100 2.0
+        z |> should equal (largev * 0.5)
+
+    [<Test>]
+    let ``Pointwise Modulus using .% Operator`` () =
+        let z = largev .% DenseVector.create 100 2.0
+        z |> should equal (largev % 2.0)

@@ -1,4 +1,4 @@
-// <copyright file="WeibullTests.cs" company="Math.NET">
+﻿// <copyright file="WeibullTests.cs" company="Math.NET">
 // Math.NET Numerics, part of the Math.NET Project
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
@@ -24,12 +24,14 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using System.Linq;
+using MathNet.Numerics.Distributions;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
 {
-    using System;
-    using System.Linq;
-    using Distributions;
-    using NUnit.Framework;
+    using Random = System.Random;
 
     /// <summary>
     /// Weibull distribution tests.
@@ -87,8 +89,8 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [Test]
         public void ValidateToString()
         {
-            var n = new Weibull(1.0, 2.0);
-            Assert.AreEqual("Weibull(Shape = 1, Scale = 2)", n.ToString());
+            var n = new Weibull(1d, 2d);
+            Assert.AreEqual("Weibull(k = 1, λ = 2)", n.ToString());
         }
 
         /// <summary>
@@ -162,7 +164,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateMean(double shape, double scale, double mean)
         {
             var n = new Weibull(shape, scale);
-            AssertHelpers.AlmostEqual(mean, n.Mean, 13);
+            AssertHelpers.AlmostEqualRelative(mean, n.Mean, 13);
         }
 
         /// <summary>
@@ -178,7 +180,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateVariance(double shape, double scale, double var)
         {
             var n = new Weibull(shape, scale);
-            AssertHelpers.AlmostEqual(var, n.Variance, 13);
+            AssertHelpers.AlmostEqualRelative(var, n.Variance, 12);
         }
 
         /// <summary>
@@ -194,7 +196,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateStdDev(double shape, double scale, double sdev)
         {
             var n = new Weibull(shape, scale);
-            AssertHelpers.AlmostEqual(sdev, n.StdDev, 13);
+            AssertHelpers.AlmostEqualRelative(sdev, n.StdDev, 12);
         }
 
         /// <summary>
@@ -210,7 +212,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateSkewness(double shape, double scale, double skewness)
         {
             var n = new Weibull(shape, scale);
-            AssertHelpers.AlmostEqual(skewness, n.Skewness, 11);
+            AssertHelpers.AlmostEqualRelative(skewness, n.Skewness, 10);
         }
 
         /// <summary>
@@ -242,7 +244,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateMedian(double shape, double scale, double median)
         {
             var n = new Weibull(shape, scale);
-            AssertHelpers.AlmostEqual(median, n.Median, 13);
+            AssertHelpers.AlmostEqualRelative(median, n.Median, 13);
         }
 
         /// <summary>
@@ -287,7 +289,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateDensity(double shape, double scale, double x, double pdf)
         {
             var n = new Weibull(shape, scale);
-            AssertHelpers.AlmostEqual(pdf, n.Density(x), 14);
+            AssertHelpers.AlmostEqualRelative(pdf, n.Density(x), 13);
         }
 
         /// <summary>
@@ -312,7 +314,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateDensityLn(double shape, double scale, double x, double pdfln)
         {
             var n = new Weibull(shape, scale);
-            AssertHelpers.AlmostEqual(pdfln, n.DensityLn(x), 14);
+            AssertHelpers.AlmostEqualRelative(pdfln, n.DensityLn(x), 14);
         }
 
         /// <summary>
@@ -395,7 +397,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateCumulativeDistribution(double shape, double scale, double x, double cdf)
         {
             var n = new Weibull(shape, scale);
-            AssertHelpers.AlmostEqual(cdf, n.CumulativeDistribution(x), 15);
+            AssertHelpers.AlmostEqualRelative(cdf, n.CumulativeDistribution(x), 14);
         }
     }
 }

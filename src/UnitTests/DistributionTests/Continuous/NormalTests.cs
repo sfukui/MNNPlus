@@ -1,4 +1,4 @@
-// <copyright file="NormalTests.cs" company="Math.NET">
+﻿// <copyright file="NormalTests.cs" company="Math.NET">
 // Math.NET Numerics, part of the Math.NET Project
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
@@ -24,12 +24,14 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using System.Linq;
+using MathNet.Numerics.Distributions;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
 {
-    using System;
-    using System.Linq;
-    using Distributions;
-    using NUnit.Framework;
+    using Random = System.Random;
 
     /// <summary>
     /// Normal distribution tests.
@@ -121,8 +123,8 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void CanCreateNormalFromMeanAndVariance(double mean, double var)
         {
             var n = Normal.WithMeanVariance(mean, var);
-            AssertHelpers.AlmostEqual(mean, n.Mean, 16);
-            AssertHelpers.AlmostEqual(var, n.Variance, 16);
+            AssertHelpers.AlmostEqualRelative(mean, n.Mean, 15);
+            AssertHelpers.AlmostEqualRelative(var, n.Variance, 15);
         }
 
         /// <summary>
@@ -139,8 +141,8 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void CanCreateNormalFromMeanAndPrecision(double mean, double prec)
         {
             var n = Normal.WithMeanPrecision(mean, prec);
-            AssertHelpers.AlmostEqual(mean, n.Mean, 15);
-            AssertHelpers.AlmostEqual(prec, n.Precision, 15);
+            AssertHelpers.AlmostEqualRelative(mean, n.Mean, 15);
+            AssertHelpers.AlmostEqualRelative(prec, n.Precision, 15);
         }
 
         /// <summary>
@@ -149,8 +151,8 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [Test]
         public void ValidateToString()
         {
-            var n = new Normal(1.0, 2.0);
-            Assert.AreEqual("Normal(Mean = 1, StdDev = 2)", n.ToString());
+            var n = new Normal(1d, 2d);
+            Assert.AreEqual("Normal(μ = 1, σ = 2)", n.ToString());
         }
 
         /// <summary>
@@ -366,6 +368,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
                 var d = (mean - x) / sdev;
                 var pdf = Math.Exp(-0.5 * d * d) / (sdev * Constants.Sqrt2Pi);
                 Assert.AreEqual(pdf, n.Density(x));
+                Assert.AreEqual(pdf, Normal.PDF(mean, sdev, x));
             }
         }
 
@@ -389,6 +392,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
                 var d = (mean - x) / sdev;
                 var pdfln = (-0.5 * (d * d)) - Math.Log(sdev) - Constants.LogSqrt2Pi;
                 Assert.AreEqual(pdfln, n.DensityLn(x));
+                Assert.AreEqual(pdfln, Normal.PDFLn(mean, sdev, x));
             }
         }
 
@@ -468,7 +472,8 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateCumulativeDistribution(double x, double f)
         {
             var n = Normal.WithMeanStdDev(5.0, 2.0);
-            AssertHelpers.AlmostEqual(f, n.CumulativeDistribution(x), 10);
+            AssertHelpers.AlmostEqualRelative(f, n.CumulativeDistribution(x), 9);
+            AssertHelpers.AlmostEqualRelative(f, Normal.CDF(5.0, 2.0, x), 9);
         }
 
         /// <summary>
@@ -489,7 +494,25 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateInverseCumulativeDistribution(double x, double f)
         {
             var n = Normal.WithMeanStdDev(5.0, 2.0);
-            AssertHelpers.AlmostEqual(x, n.InverseCumulativeDistribution(f), 15);
+            AssertHelpers.AlmostEqualRelative(x, n.InverseCumulativeDistribution(f), 14);
+            AssertHelpers.AlmostEqualRelative(x, Normal.InvCDF(5.0, 2.0, f), 14);
+        }
+
+        /// <summary>
+        /// Can estimate distribution parameters.
+        /// </summary>
+        [TestCase(0.0, 0.0)]
+        [TestCase(10.0, 0.1)]
+        [TestCase(-5.0, 1.0)]
+        [TestCase(0.0, 5.0)]
+        [TestCase(10.0, 50.0)]
+        public void CanEstimateParameters(double mean, double stddev)
+        {
+            var original = new Normal(mean, stddev, new Random(100));
+            var estimated = Normal.Estimate(original.Samples().Take(10000));
+
+            AssertHelpers.AlmostEqualRelative(mean, estimated.Mean, 1);
+            AssertHelpers.AlmostEqualRelative(stddev, estimated.StdDev, 1);
         }
     }
 }

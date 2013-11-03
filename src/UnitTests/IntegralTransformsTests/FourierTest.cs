@@ -24,15 +24,22 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using MathNet.Numerics.Distributions;
+using MathNet.Numerics.IntegralTransforms;
+using MathNet.Numerics.IntegralTransforms.Algorithms;
+using MathNet.Numerics.Signals;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.IntegralTransformsTests
 {
-    using System;
-    using System.Numerics;
-    using Distributions;
-    using IntegralTransforms;
-    using IntegralTransforms.Algorithms;
-    using NUnit.Framework;
-    using Signals;
+    using Random = System.Random;
+
+#if NOSYSNUMERICS
+    using Complex = Numerics.Complex;
+#else
+    using Complex = System.Numerics.Complex;
+#endif
 
     /// <summary>
     /// Fourier test.
@@ -43,12 +50,9 @@ namespace MathNet.Numerics.UnitTests.IntegralTransformsTests
         /// <summary>
         /// Continuous uniform distribution.
         /// </summary>
-        private IContinuousDistribution GetUniform(int seed)
+        IContinuousDistribution GetUniform(int seed)
         {
-            return new ContinuousUniform(-1, 1)
-            {
-                RandomSource = new Random(seed)
-            };
+            return new ContinuousUniform(-1, 1, new Random(seed));
         }
 
         /// <summary>
@@ -97,20 +101,10 @@ namespace MathNet.Numerics.UnitTests.IntegralTransformsTests
 
             var dft = new DiscreteFourierTransform();
 
-            Assert.Throws(
-                typeof(ArgumentException),
-                () => dft.Radix2Forward(samples, FourierOptions.Default));
-
-            Assert.Throws(
-                typeof(ArgumentException),
-                () => dft.Radix2Inverse(samples, FourierOptions.Default));
-
-            Assert.Throws(
-                typeof(ArgumentException),
-                () => DiscreteFourierTransform.Radix2(samples, -1));
-            Assert.Throws(
-                typeof(ArgumentException),
-                () => DiscreteFourierTransform.Radix2Parallel(samples, -1));
+            Assert.Throws(typeof (ArgumentException), () => dft.Radix2Forward(samples, FourierOptions.Default));
+            Assert.Throws(typeof (ArgumentException), () => dft.Radix2Inverse(samples, FourierOptions.Default));
+            Assert.Throws(typeof (ArgumentException), () => DiscreteFourierTransform.Radix2(samples, -1));
+            Assert.Throws(typeof (ArgumentException), () => DiscreteFourierTransform.Radix2Parallel(samples, -1));
         }
     }
 }

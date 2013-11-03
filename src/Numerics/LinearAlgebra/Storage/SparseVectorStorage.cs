@@ -30,6 +30,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using MathNet.Numerics.Properties;
 
 namespace MathNet.Numerics.LinearAlgebra.Storage
@@ -61,6 +62,14 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             Indices = new int[0];
             Values = new T[0];
             ValueCount = 0;
+        }
+
+        /// <summary>
+        /// True if the vector storage format is dense.
+        /// </summary>
+        public override bool IsDense
+        {
+            get { return false; }
         }
 
         /// <summary>
@@ -265,7 +274,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
         /// Returns a hash code for this instance.
         /// </summary>
         /// <returns>
-        /// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table. 
+        /// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table.
         /// </returns>
         public override int GetHashCode()
         {
@@ -282,28 +291,98 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             return hash;
         }
 
-        // ENUMERATION
+        // INITIALIZATION
 
-        public override IEnumerable<T> Enumerate()
+        public static SparseVectorStorage<T> OfVector(VectorStorage<T> vector)
         {
-            int k = 0;
-            for (int i = 0; i < Length; i++)
-            {
-                yield return k < ValueCount && Indices[k] == i
-                    ? Values[k++]
-                    : Zero;
-            }
+            var storage = new SparseVectorStorage<T>(vector.Length);
+            vector.CopyToUnchecked(storage, skipClearing: true);
+            return storage;
         }
 
-        public override IEnumerable<Tuple<int, T>> EnumerateNonZero()
+        public static SparseVectorStorage<T> OfInit(int length, Func<int, T> init)
         {
-            for (var i = 0; i < ValueCount; i++)
+            if (length < 1)
             {
-                if (!Zero.Equals(Values[i]))
+                throw new ArgumentOutOfRangeException("length", string.Format(Resources.ArgumentLessThanOne, length));
+            }
+
+            var indices = new List<int>();
+            var values = new List<T>();
+            for (int i = 0; i < length; i++)
+            {
+                var item = init(i);
+                if (!Zero.Equals(item))
                 {
-                    yield return new Tuple<int, T>(Indices[i], Values[i]);
+                    values.Add(item);
+                    indices.Add(i);
                 }
             }
+            return new SparseVectorStorage<T>(length)
+                {
+                    Indices = indices.ToArray(),
+                    Values = values.ToArray(),
+                    ValueCount = values.Count
+                };
+        }
+
+        public static SparseVectorStorage<T> OfEnumerable(IEnumerable<T> data)
+        {
+            if (data == null)
+            {
+                throw new ArgumentNullException("data");
+            }
+
+            var indices = new List<int>();
+            var values = new List<T>();
+            int index = 0;
+
+            foreach (T item in data)
+            {
+                if (!Zero.Equals(item))
+                {
+                    values.Add(item);
+                    indices.Add(index);
+                }
+                index++;
+            }
+
+            return new SparseVectorStorage<T>(index)
+                {
+                    Indices = indices.ToArray(),
+                    Values = values.ToArray(),
+                    ValueCount = values.Count
+                };
+        }
+
+        public static SparseVectorStorage<T> OfIndexedEnumerable(int length, IEnumerable<Tuple<int, T>> data)
+        {
+            if (data == null)
+            {
+                throw new ArgumentNullException("data");
+            }
+
+            var indices = new List<int>();
+            var values = new List<T>();
+            foreach (var item in data)
+            {
+                if (!Zero.Equals(item.Item2))
+                {
+                    values.Add(item.Item2);
+                    indices.Add(item.Item1);
+                }
+            }
+
+            var indicesArray = indices.ToArray();
+            var valuesArray = values.ToArray();
+            Sorting.Sort(indicesArray, valuesArray);
+
+            return new SparseVectorStorage<T>(length)
+                {
+                    Indices = indicesArray,
+                    Values = valuesArray,
+                    ValueCount = values.Count
+                };
         }
 
         // VECTOR COPY
@@ -390,7 +469,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             {
                 return;
             }
-            
+
             for (int i = 0; i < ValueCount; i++)
             {
                 target.At(Indices[i], columnIndex, Values[i]);
@@ -466,7 +545,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
 
                 return;
             }
-            
+
             // special case for empty target - much faster
             if (target.ValueCount == 0)
             {
@@ -495,6 +574,116 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             {
                 target.At(Indices[i] + offset, Values[i]);
             }
+        }
+
+        // ENUMERATION
+
+        public override IEnumerable<T> Enumerate()
+        {
+            int k = 0;
+            for (int i = 0; i < Length; i++)
+            {
+                yield return k < ValueCount && Indices[k] == i
+                    ? Values[k++]
+                    : Zero;
+            }
+        }
+
+        public override IEnumerable<Tuple<int, T>> EnumerateIndexed()
+        {
+            int k = 0;
+            for (int i = 0; i < Length; i++)
+            {
+                yield return k < ValueCount && Indices[k] == i
+                    ? new Tuple<int, T>(i, Values[k++])
+                    : new Tuple<int, T>(i, Zero);
+            }
+        }
+
+        public override IEnumerable<T> EnumerateNonZero()
+        {
+            return Values.Take(ValueCount).Where(x => !Zero.Equals(x));
+        }
+
+        public override IEnumerable<Tuple<int, T>> EnumerateNonZeroIndexed()
+        {
+            for (var i = 0; i < ValueCount; i++)
+            {
+                if (!Zero.Equals(Values[i]))
+                {
+                    yield return new Tuple<int, T>(Indices[i], Values[i]);
+                }
+            }
+        }
+
+        // FUNCTIONAL COMBINATORS
+
+        public override void MapInplace(Func<T, T> f, bool forceMapZeros = false)
+        {
+            var indices = new List<int>();
+            var values = new List<T>();
+            if (forceMapZeros || !Zero.Equals(f(Zero)))
+            {
+                int k = 0;
+                for (int i = 0; i < Length; i++)
+                {
+                    var item = k < ValueCount && (Indices[k]) == i ? f(Values[k++]) : f(Zero);
+                    if (!Zero.Equals(item))
+                    {
+                        values.Add(item);
+                        indices.Add(i);
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < ValueCount; i++)
+                {
+                    var item = f(Values[i]);
+                    if (!Zero.Equals(item))
+                    {
+                        values.Add(item);
+                        indices.Add(Indices[i]);
+                    }
+                }
+            }
+            Indices = indices.ToArray();
+            Values = values.ToArray();
+            ValueCount = values.Count;
+        }
+
+        public override void MapIndexedInplace(Func<int, T, T> f, bool forceMapZeros = false)
+        {
+            var indices = new List<int>();
+            var values = new List<T>();
+            if (forceMapZeros || !Zero.Equals(f(0, Zero)))
+            {
+                int k = 0;
+                for (int i = 0; i < Length; i++)
+                {
+                    var item = k < ValueCount && (Indices[k]) == i ? f(i, Values[k++]) : f(i, Zero);
+                    if (!Zero.Equals(item))
+                    {
+                        values.Add(item);
+                        indices.Add(i);
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < ValueCount; i++)
+                {
+                    var item = f(Indices[i], Values[i]);
+                    if (!Zero.Equals(item))
+                    {
+                        values.Add(item);
+                        indices.Add(Indices[i]);
+                    }
+                }
+            }
+            Indices = indices.ToArray();
+            Values = values.ToArray();
+            ValueCount = values.Count;
         }
     }
 }

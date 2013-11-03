@@ -68,7 +68,7 @@ namespace Examples.LinearAlgebraExamples
             formatProvider.TextInfo.ListSeparator = " ";
 
             // Create square matrix
-            var matrix = new DenseMatrix(new[,] { { 1.0, 2.0, 3.0 }, { 6.0, 5.0, 4.0 }, { 8.0, 9.0, 7.0 } });
+            var matrix = DenseMatrix.OfArray(new[,] { { 1.0, 2.0, 3.0 }, { 6.0, 5.0, 4.0 }, { 8.0, 9.0, 7.0 } });
             Console.WriteLine(@"Initial square matrix");
             Console.WriteLine(matrix.ToString("#0.00\t", formatProvider));
             Console.WriteLine();
@@ -95,34 +95,34 @@ namespace Examples.LinearAlgebraExamples
 
             // 5. Normalize matrix columns
             Console.WriteLine(@"5. Normalize matrix columns: before normalize");
-            foreach (var keyValuePair in matrix.ColumnEnumerator())
+            foreach (var keyValuePair in matrix.EnumerateColumnsIndexed())
             {
-                Console.WriteLine(@"Column {0} 2-nd norm is: {1}", keyValuePair.Item1, keyValuePair.Item2.Norm(2));
+                Console.WriteLine(@"Column {0} 2-nd norm is: {1}", keyValuePair.Item1, keyValuePair.Item2.L2Norm());
             }
 
             Console.WriteLine();
             var normalized = matrix.NormalizeColumns(2);
             Console.WriteLine(@"5. Normalize matrix columns: after normalize");
-            foreach (var keyValuePair in normalized.ColumnEnumerator())
+            foreach (var keyValuePair in normalized.EnumerateColumnsIndexed())
             {
-                Console.WriteLine(@"Column {0} 2-nd norm is: {1}", keyValuePair.Item1, keyValuePair.Item2.Norm(2));
+                Console.WriteLine(@"Column {0} 2-nd norm is: {1}", keyValuePair.Item1, keyValuePair.Item2.L2Norm());
             }
 
             Console.WriteLine();
 
             // 6. Normalize matrix columns
             Console.WriteLine(@"6. Normalize matrix rows: before normalize");
-            foreach (var keyValuePair in matrix.RowEnumerator())
+            foreach (var keyValuePair in matrix.EnumerateRowsIndexed())
             {
-                Console.WriteLine(@"Row {0} 2-nd norm is: {1}", keyValuePair.Item1, keyValuePair.Item2.Norm(2));
+                Console.WriteLine(@"Row {0} 2-nd norm is: {1}", keyValuePair.Item1, keyValuePair.Item2.L2Norm());
             }
 
             Console.WriteLine();
             normalized = matrix.NormalizeRows(2);
             Console.WriteLine(@"6. Normalize matrix rows: after normalize");
-            foreach (var keyValuePair in normalized.RowEnumerator())
+            foreach (var keyValuePair in normalized.EnumerateRowsIndexed())
             {
-                Console.WriteLine(@"Row {0} 2-nd norm is: {1}", keyValuePair.Item1, keyValuePair.Item2.Norm(2));
+                Console.WriteLine(@"Row {0} 2-nd norm is: {1}", keyValuePair.Item1, keyValuePair.Item2.L2Norm());
             }
         }
     }

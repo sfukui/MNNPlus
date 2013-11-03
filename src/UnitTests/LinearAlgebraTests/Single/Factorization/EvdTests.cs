@@ -1,4 +1,4 @@
-// <copyright file="EvdTests.cs" company="Math.NET">
+﻿// <copyright file="EvdTests.cs" company="Math.NET">
 // Math.NET Numerics, part of the Math.NET Project
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
@@ -24,28 +24,22 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using MathNet.Numerics.LinearAlgebra.Single;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Factorization
 {
-    using System;
-    using System.Numerics;
-    using LinearAlgebra.Single;
-    using LinearAlgebra.Single.Factorization;
-    using NUnit.Framework;
+#if NOSYSNUMERICS
+    using Complex = Numerics.Complex;
+#else
+    using Complex = System.Numerics.Complex;
+#endif
 
     /// <summary>
     /// Eigenvalues factorization tests for a dense matrix.
     /// </summary>
     public class EvdTests
     {
-        /// <summary>
-        /// Constructor <c>null</c> throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void ConstructorNullThrowsArgumentNullException()
-        {
-            Assert.Throws<ArgumentNullException>(() => new DenseEvd(null));
-        }
-
         /// <summary>
         /// Can factorize identity matrix.
         /// </summary>
@@ -55,11 +49,11 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Factorization
         [TestCase(100)]
         public void CanFactorizeIdentity(int order)
         {
-            var matrixI = DenseMatrix.Identity(order);
+            var matrixI = DenseMatrix.CreateIdentity(order);
             var factorEvd = matrixI.Evd();
-            var eigenValues = factorEvd.EigenValues();
-            var eigenVectors = factorEvd.EigenVectors();
-            var d = factorEvd.D();
+            var eigenValues = factorEvd.EigenValues;
+            var eigenVectors = factorEvd.EigenVectors;
+            var d = factorEvd.D;
 
             Assert.AreEqual(matrixI.RowCount, eigenVectors.RowCount);
             Assert.AreEqual(matrixI.RowCount, eigenVectors.ColumnCount);
@@ -77,13 +71,13 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Factorization
         /// Can factorize a random square matrix.
         /// </summary>
         /// <param name="order">Matrix order.</param>
-        [Test, Ignore]
+        [Test]
         public void CanFactorizeRandomMatrix([Values(1, 2, 5, 10, 50, 100)] int order)
         {
             var matrixA = MatrixLoader.GenerateRandomDenseMatrix(order, order);
             var factorEvd = matrixA.Evd();
-            var eigenVectors = factorEvd.EigenVectors();
-            var d = factorEvd.D();
+            var eigenVectors = factorEvd.EigenVectors;
+            var d = factorEvd.D;
 
             Assert.AreEqual(order, eigenVectors.RowCount);
             Assert.AreEqual(order, eigenVectors.ColumnCount);
@@ -108,14 +102,14 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Factorization
         /// Can factorize a symmetric random square matrix.
         /// </summary>
         /// <param name="order">Matrix order.</param>
-        [Test, Ignore]
-        public void CanFactorizeRandomSymmetricMatrix([Values(1, 2, 5, 10, 50, 100)] int order)
+        [Test]
+        public void CanFactorizeRandomSymmetricMatrix([Values(1, 2, 5, 10, 50)] int order)
         {
             var matrixA = MatrixLoader.GenerateRandomPositiveDefiniteDenseMatrix(order);
             MatrixHelpers.ForceSymmetric(matrixA);
             var factorEvd = matrixA.Evd();
-            var eigenVectors = factorEvd.EigenVectors();
-            var d = factorEvd.D();
+            var eigenVectors = factorEvd.EigenVectors;
+            var d = factorEvd.D;
 
             Assert.AreEqual(order, eigenVectors.RowCount);
             Assert.AreEqual(order, eigenVectors.ColumnCount);
@@ -169,7 +163,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Factorization
                 matrixA[i - 1, i] = 1;
                 matrixA[i + 1, i] = 1;
             }
-
             var factorEvd = matrixA.Evd();
 
             Assert.AreEqual(factorEvd.Determinant, 0);
@@ -185,7 +178,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Factorization
         [TestCase(100)]
         public void IdentityDeterminantIsOne(int order)
         {
-            var matrixI = DenseMatrix.Identity(order);
+            var matrixI = DenseMatrix.CreateIdentity(order);
             var factorEvd = matrixI.Evd();
             Assert.AreEqual(1.0, factorEvd.Determinant);
         }

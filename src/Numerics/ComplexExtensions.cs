@@ -32,10 +32,13 @@ namespace MathNet.Numerics
 {
     using System;
     using System.Collections.Generic;
-    using System.Numerics;
 
 #if !PORTABLE
     using System.Runtime;
+#endif
+
+#if !NOSYSNUMERICS
+    using Complex = System.Numerics.Complex;
 #endif
 
     /// <summary>
@@ -129,7 +132,7 @@ namespace MathNet.Numerics
         /// The exponential of this complex number.
         /// </returns>
         [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
-        public static Complex Exponential(this Complex complex)
+        public static Complex Exp(this Complex complex)
         {
             return Complex.Exp(complex);
         }
@@ -142,7 +145,7 @@ namespace MathNet.Numerics
         /// The natural logarithm of this complex number.
         /// </returns>
         [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
-        public static Complex NaturalLogarithm(this Complex complex)
+        public static Complex Ln(this Complex complex)
         {
             return Complex.Log(complex);
         }
@@ -152,7 +155,7 @@ namespace MathNet.Numerics
         /// </summary>
         /// <returns>The common logarithm of this complex number.</returns>
         [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
-        public static Complex CommonLogarithm(this Complex complex)
+        public static Complex Log10(this Complex complex)
         {
             return Complex.Log10(complex);
         }
@@ -162,7 +165,7 @@ namespace MathNet.Numerics
         /// </summary>
         /// <returns>The logarithm of this complex number.</returns>
         [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
-        public static Complex Logarithm(this Complex complex, double baseValue)
+        public static Complex Log(this Complex complex, double baseValue)
         {
             return Complex.Log(complex, baseValue);
         }
@@ -373,23 +376,36 @@ namespace MathNet.Numerics
         /// Returns a Norm of a value of this type, which is appropriate for measuring how
         /// close this value is to zero.
         /// </summary>
-        /// <param name="complex">The <see cref="Complex"/> number to perfom this operation on.</param>
-        /// <returns>A norm of this value.</returns>
         public static double Norm(this Complex complex)
         {
             return complex.MagnitudeSquared();
         }
 
         /// <summary>
+        /// Returns a Norm of a value of this type, which is appropriate for measuring how
+        /// close this value is to zero.
+        /// </summary>
+        public static double Norm(this Complex32 complex)
+        {
+            return complex.MagnitudeSquared;
+        }
+
+        /// <summary>
         /// Returns a Norm of the difference of two values of this type, which is
         /// appropriate for measuring how close together these two values are.
         /// </summary>
-        /// <param name="complex">The <see cref="Complex"/> number to perfom this operation on.</param>
-        /// <param name="otherValue">The value to compare with.</param>
-        /// <returns>A norm of the difference between this and the other value.</returns>
         public static double NormOfDifference(this Complex complex, Complex otherValue)
         {
             return (complex - otherValue).MagnitudeSquared();
+        }
+
+        /// <summary>
+        /// Returns a Norm of the difference of two values of this type, which is
+        /// appropriate for measuring how close together these two values are.
+        /// </summary>
+        public static double NormOfDifference(this Complex32 complex, Complex32 otherValue)
+        {
+            return (complex - otherValue).MagnitudeSquared;
         }
 
         /// <summary>

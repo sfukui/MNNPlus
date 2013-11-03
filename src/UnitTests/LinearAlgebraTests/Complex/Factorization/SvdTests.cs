@@ -24,29 +24,23 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using MathNet.Numerics.LinearAlgebra.Complex;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
 {
-    using System;
-    using System.Numerics;
-    using LinearAlgebra.Complex;
-    using LinearAlgebra.Complex.Factorization;
-    using LinearAlgebra.Generic.Factorization;
-    using NUnit.Framework;
+#if NOSYSNUMERICS
+    using Complex = Numerics.Complex;
+#else
+    using Complex = System.Numerics.Complex;
+#endif
 
     /// <summary>
     /// Svd factorization tests for a dense matrix.
     /// </summary>
     public class SvdTests
     {
-        /// <summary>
-        /// Constructor with <c>null</c> throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void ConstructorNull()
-        {
-            Assert.Throws<ArgumentNullException>(() => new DenseSvd(null, true));
-        }
-
         /// <summary>
         /// Can factorize identity matrix.
         /// </summary>
@@ -56,11 +50,11 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
         [TestCase(100)]
         public void CanFactorizeIdentity(int order)
         {
-            var matrixI = DenseMatrix.Identity(order);
-            var factorSvd = matrixI.Svd(true);
-            var u = factorSvd.U();
-            var vt = factorSvd.VT();
-            var w = factorSvd.W();
+            var matrixI = DenseMatrix.CreateIdentity(order);
+            var factorSvd = matrixI.Svd();
+            var u = factorSvd.U;
+            var vt = factorSvd.VT;
+            var w = factorSvd.W;
 
             Assert.AreEqual(matrixI.RowCount, u.RowCount);
             Assert.AreEqual(matrixI.RowCount, u.ColumnCount);
@@ -94,10 +88,10 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
         public void CanFactorizeRandomMatrix(int row, int column)
         {
             var matrixA = MatrixLoader.GenerateRandomDenseMatrix(row, column);
-            var factorSvd = matrixA.Svd(true);
-            var u = factorSvd.U();
-            var vt = factorSvd.VT();
-            var w = factorSvd.W();
+            var factorSvd = matrixA.Svd();
+            var u = factorSvd.U;
+            var vt = factorSvd.VT;
+            var w = factorSvd.W;
 
             // Make sure the U has the right dimensions.
             Assert.AreEqual(row, u.RowCount);
@@ -112,12 +106,12 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
             Assert.AreEqual(column, w.ColumnCount);
 
             // Make sure the U*W*VT is the original matrix.
-            var matrix = u * w * vt;
+            var matrix = u*w*vt;
             for (var i = 0; i < matrix.RowCount; i++)
             {
                 for (var j = 0; j < matrix.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrixA[i, j], matrix[i, j], 9);
+                    AssertHelpers.AlmostEqualRelative(matrixA[i, j], matrix[i, j], 9);
                 }
             }
         }
@@ -133,7 +127,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
         public void CanCheckRankOfNonSquare(int row, int column)
         {
             var matrixA = MatrixLoader.GenerateRandomDenseMatrix(row, column);
-            var factorSvd = matrixA.Svd(true);
+            var factorSvd = matrixA.Svd();
 
             var mn = Math.Min(row, column);
             Assert.AreEqual(factorSvd.Rank, mn);
@@ -152,7 +146,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
         public void CanCheckRankSquare(int order)
         {
             var matrixA = MatrixLoader.GenerateRandomDenseMatrix(order, order);
-            var factorSvd = matrixA.Svd(true);
+            var factorSvd = matrixA.Svd();
 
             if (factorSvd.Determinant != 0)
             {
@@ -184,7 +178,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
                 matrixA[i + 1, i] = 1;
             }
 
-            var factorSvd = matrixA.Svd(true);
+            var factorSvd = matrixA.Svd();
 
             Assert.AreEqual(factorSvd.Determinant, Complex.Zero);
             Assert.AreEqual(factorSvd.Rank, order - 1);
@@ -231,19 +225,19 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
         {
             var matrixA = MatrixLoader.GenerateRandomDenseMatrix(row, column);
             var matrixACopy = matrixA.Clone();
-            var factorSvd = matrixA.Svd(true);
+            var factorSvd = matrixA.Svd();
 
             var vectorb = MatrixLoader.GenerateRandomDenseVector(row);
             var resultx = factorSvd.Solve(vectorb);
 
             Assert.AreEqual(matrixA.ColumnCount, resultx.Count);
 
-            var matrixBReconstruct = matrixA * resultx;
+            var matrixBReconstruct = matrixA*resultx;
 
             // Check the reconstruction.
             for (var i = 0; i < vectorb.Count; i++)
             {
-                AssertHelpers.AlmostEqual(vectorb[i], matrixBReconstruct[i], 9);
+                AssertHelpers.AlmostEqual(vectorb[i], matrixBReconstruct[i], 10);
             }
 
             // Make sure A didn't change.
@@ -271,7 +265,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
         {
             var matrixA = MatrixLoader.GenerateRandomDenseMatrix(row, column);
             var matrixACopy = matrixA.Clone();
-            var factorSvd = matrixA.Svd(true);
+            var factorSvd = matrixA.Svd();
 
             var matrixB = MatrixLoader.GenerateRandomDenseMatrix(row, column);
             var matrixX = factorSvd.Solve(matrixB);
@@ -282,14 +276,14 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
             // The solution X has the same number of columns as B
             Assert.AreEqual(matrixB.ColumnCount, matrixX.ColumnCount);
 
-            var matrixBReconstruct = matrixA * matrixX;
+            var matrixBReconstruct = matrixA*matrixX;
 
             // Check the reconstruction.
             for (var i = 0; i < matrixB.RowCount; i++)
             {
                 for (var j = 0; j < matrixB.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrixB[i, j], matrixBReconstruct[i, j], 9);
+                    AssertHelpers.AlmostEqual(matrixB[i, j], matrixBReconstruct[i, j], 10);
                 }
             }
 
@@ -318,18 +312,18 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
         {
             var matrixA = MatrixLoader.GenerateRandomDenseMatrix(row, column);
             var matrixACopy = matrixA.Clone();
-            var factorSvd = matrixA.Svd(true);
+            var factorSvd = matrixA.Svd();
             var vectorb = MatrixLoader.GenerateRandomDenseVector(row);
             var vectorbCopy = vectorb.Clone();
             var resultx = new DenseVector(column);
             factorSvd.Solve(vectorb, resultx);
 
-            var matrixBReconstruct = matrixA * resultx;
+            var matrixBReconstruct = matrixA*resultx;
 
             // Check the reconstruction.
             for (var i = 0; i < vectorb.Count; i++)
             {
-                AssertHelpers.AlmostEqual(vectorb[i], matrixBReconstruct[i], 9);
+                AssertHelpers.AlmostEqual(vectorb[i], matrixBReconstruct[i], 10);
             }
 
             // Make sure A didn't change.
@@ -363,7 +357,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
         {
             var matrixA = MatrixLoader.GenerateRandomDenseMatrix(row, column);
             var matrixACopy = matrixA.Clone();
-            var factorSvd = matrixA.Svd(true);
+            var factorSvd = matrixA.Svd();
 
             var matrixB = MatrixLoader.GenerateRandomDenseMatrix(row, column);
             var matrixBCopy = matrixB.Clone();
@@ -377,14 +371,14 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
             // The solution X has the same number of columns as B
             Assert.AreEqual(matrixB.ColumnCount, matrixX.ColumnCount);
 
-            var matrixBReconstruct = matrixA * matrixX;
+            var matrixBReconstruct = matrixA*matrixX;
 
             // Check the reconstruction.
             for (var i = 0; i < matrixB.RowCount; i++)
             {
                 for (var j = 0; j < matrixB.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrixB[i, j], matrixBReconstruct[i, j], 9);
+                    AssertHelpers.AlmostEqual(matrixB[i, j], matrixBReconstruct[i, j], 10);
                 }
             }
 

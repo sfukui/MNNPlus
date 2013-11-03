@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2010 Math.NET
+// Copyright (c) 2009-2013 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -28,14 +28,13 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
-using MathNet.Numerics.LinearAlgebra.Generic.Factorization;
+using System;
+using MathNet.Numerics.LinearAlgebra.Factorization;
+using MathNet.Numerics.Properties;
 
 namespace MathNet.Numerics.LinearAlgebra.Complex32.Factorization
 {
-    using System;
-    using Generic;
     using Numerics;
-    using Properties;
 
     /// <summary>
     /// <para>A class which encapsulates the functionality of the QR decomposition.</para>
@@ -46,16 +45,12 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32.Factorization
     /// <remarks>
     /// The computation of the QR decomposition is done at construction time by Householder transformation.
     /// </remarks>
-    public class DenseQR : QR
+    internal sealed class DenseQR : QR
     {
         /// <summary>
         ///  Gets or sets Tau vector. Contains additional information on Q - used for native solver.
         /// </summary>
-        public Complex32[] Tau
-        {
-            get;
-            set;
-        }
+        Complex32[] Tau { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DenseQR"/> class. This object will compute the
@@ -65,35 +60,37 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32.Factorization
         /// <param name="method">The QR factorization method to use.</param>
         /// <exception cref="ArgumentNullException">If <paramref name="matrix"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">If <paramref name="matrix"/> row count is less then column count</exception>
-        public DenseQR(DenseMatrix matrix, QRMethod method = QRMethod.Full)
+        public static DenseQR Create(DenseMatrix matrix, QRMethod method = QRMethod.Full)
         {
-            if (matrix == null)
-            {
-                throw new ArgumentNullException("matrix");
-            }
-
             if (matrix.RowCount < matrix.ColumnCount)
             {
                 throw Matrix.DimensionsDontMatch<ArgumentException>(matrix);
             }
 
-            QrMethod = method;
-            Tau = new Complex32[Math.Min(matrix.RowCount, matrix.ColumnCount)];
+            var tau = new Complex32[Math.Min(matrix.RowCount, matrix.ColumnCount)];
+            Matrix<Complex32> q;
+            Matrix<Complex32> r;
 
             if (method == QRMethod.Full)
             {
-                MatrixR = matrix.Clone();
-                MatrixQ = new DenseMatrix(matrix.RowCount);
-                Control.LinearAlgebraProvider.QRFactor(((DenseMatrix)MatrixR).Values, matrix.RowCount, matrix.ColumnCount,
-                                                       ((DenseMatrix)MatrixQ).Values, Tau);
+                r = matrix.Clone();
+                q = new DenseMatrix(matrix.RowCount);
+                Control.LinearAlgebraProvider.QRFactor(((DenseMatrix) r).Values, matrix.RowCount, matrix.ColumnCount, ((DenseMatrix) q).Values, tau);
             }
             else
             {
-                MatrixQ = matrix.Clone();
-                MatrixR = new DenseMatrix(matrix.ColumnCount);
-                Control.LinearAlgebraProvider.ThinQRFactor(((DenseMatrix)MatrixQ).Values, matrix.RowCount, matrix.ColumnCount,
-                                                       ((DenseMatrix)MatrixR).Values, Tau);
+                q = matrix.Clone();
+                r = new DenseMatrix(matrix.ColumnCount);
+                Control.LinearAlgebraProvider.ThinQRFactor(((DenseMatrix) q).Values, matrix.RowCount, matrix.ColumnCount, ((DenseMatrix) r).Values, tau);
             }
+
+            return new DenseQR(q, r, method, tau);
+        }
+
+        DenseQR(Matrix<Complex32> q, Matrix<Complex32> rFull, QRMethod method, Complex32[] tau)
+            : base(q, rFull, method)
+        {
+            Tau = tau;
         }
 
         /// <summary>
@@ -103,17 +100,6 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32.Factorization
         /// <param name="result">The left hand side <see cref="Matrix{T}"/>, <b>X</b>.</param>
         public override void Solve(Matrix<Complex32> input, Matrix<Complex32> result)
         {
-            // Check for proper arguments.
-            if (input == null)
-            {
-                throw new ArgumentNullException("input");
-            }
-
-            if (result == null)
-            {
-                throw new ArgumentNullException("result");
-            }
-
             // The solution X should have the same number of columns as B
             if (input.ColumnCount != result.ColumnCount)
             {
@@ -121,13 +107,13 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32.Factorization
             }
 
             // The dimension compatibility conditions for X = A\B require the two matrices A and B to have the same number of rows
-            if (MatrixQ.RowCount != input.RowCount)
+            if (Q.RowCount != input.RowCount)
             {
                 throw new ArgumentException(Resources.ArgumentMatrixSameRowDimension);
             }
 
             // The solution X row dimension is equal to the column dimension of A
-            if (MatrixR.ColumnCount != result.RowCount)
+            if (FullR.ColumnCount != result.RowCount)
             {
                 throw new ArgumentException(Resources.ArgumentMatrixSameColumnDimension);
             }
@@ -144,7 +130,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32.Factorization
                 throw new NotSupportedException("Can only do QR factorization for dense matrices at the moment.");
             }
 
-            Control.LinearAlgebraProvider.QRSolveFactored(((DenseMatrix)MatrixQ).Values, ((DenseMatrix)MatrixR).Values, MatrixQ.RowCount, MatrixR.ColumnCount, Tau, dinput.Values, input.ColumnCount, dresult.Values, QrMethod);
+            Control.LinearAlgebraProvider.QRSolveFactored(((DenseMatrix) Q).Values, ((DenseMatrix) FullR).Values, Q.RowCount, FullR.ColumnCount, Tau, dinput.Values, input.ColumnCount, dresult.Values, Method);
         }
 
         /// <summary>
@@ -154,27 +140,17 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32.Factorization
         /// <param name="result">The left hand side <see cref="Matrix{T}"/>, <b>x</b>.</param>
         public override void Solve(Vector<Complex32> input, Vector<Complex32> result)
         {
-            if (input == null)
-            {
-                throw new ArgumentNullException("input");
-            }
-
-            if (result == null)
-            {
-                throw new ArgumentNullException("result");
-            }
-
             // Ax=b where A is an m x n matrix
             // Check that b is a column vector with m entries
-            if (MatrixQ.RowCount != input.Count)
+            if (Q.RowCount != input.Count)
             {
                 throw new ArgumentException(Resources.ArgumentVectorsSameLength);
             }
 
             // Check that x is a column vector with n entries
-            if (MatrixR.ColumnCount != result.Count)
+            if (FullR.ColumnCount != result.Count)
             {
-                throw Matrix.DimensionsDontMatch<ArgumentException>(MatrixR, result);
+                throw Matrix.DimensionsDontMatch<ArgumentException>(FullR, result);
             }
 
             var dinput = input as DenseVector;
@@ -189,7 +165,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32.Factorization
                 throw new NotSupportedException("Can only do QR factorization for dense vectors at the moment.");
             }
 
-            Control.LinearAlgebraProvider.QRSolveFactored(((DenseMatrix)MatrixQ).Values, ((DenseMatrix)MatrixR).Values, MatrixQ.RowCount, MatrixR.ColumnCount, Tau, dinput.Values, 1, dresult.Values, QrMethod);
+            Control.LinearAlgebraProvider.QRSolveFactored(((DenseMatrix) Q).Values, ((DenseMatrix) FullR).Values, Q.RowCount, FullR.ColumnCount, Tau, dinput.Values, 1, dresult.Values, Method);
         }
     }
 }

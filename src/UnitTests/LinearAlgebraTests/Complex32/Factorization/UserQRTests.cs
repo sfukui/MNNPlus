@@ -1,4 +1,4 @@
-// <copyright file="UserQRTests.cs" company="Math.NET">
+﻿// <copyright file="UserQRTests.cs" company="Math.NET">
 // Math.NET Numerics, part of the Math.NET Project
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
@@ -24,15 +24,14 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
-using MathNet.Numerics.LinearAlgebra.Generic.Factorization;
+using System;
+using MathNet.Numerics.LinearAlgebra.Complex32.Factorization;
+using MathNet.Numerics.LinearAlgebra.Factorization;
+using NUnit.Framework;
 
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
 {
-    using System;
-    using LinearAlgebra.Complex32;
-    using LinearAlgebra.Complex32.Factorization;
-    using NUnit.Framework;
-    using Complex32 = Numerics.Complex32;
+    using Numerics;
 
     /// <summary>
     /// QR factorization tests for a user matrix.
@@ -40,21 +39,12 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
     public class UserQRTests
     {
         /// <summary>
-        /// Constructor with <c>null</c> throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void ConstructorNull()
-        {
-            Assert.Throws<ArgumentNullException>(() => new UserQR(null));
-        }
-
-        /// <summary>
         /// Constructor with wide matrix throws <c>ArgumentException</c>.
         /// </summary>
         [Test]
         public void ConstructorWideMatrixThrowsInvalidMatrixOperationException()
         {
-            Assert.Throws<ArgumentException>(() => new UserQR(new UserDefinedMatrix(3, 4)));
+            Assert.Throws<ArgumentException>(() => UserQR.Create(new UserDefinedMatrix(3, 4)));
         }
 
         /// <summary>
@@ -149,7 +139,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
         public void CanFactorizeRandomMatrix(int row, int column)
         {
             var matrixA = MatrixLoader.GenerateRandomUserDefinedMatrix(row, column);
-            var factorQR = matrixA.QR();
+            var factorQR = matrixA.QR(QRMethod.Full);
             var q = factorQR.Q;
             var r = factorQR.R;
 

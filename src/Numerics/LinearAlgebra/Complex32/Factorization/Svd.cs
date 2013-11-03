@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2010 Math.NET
+// Copyright (c) 2009-2013 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -28,14 +28,14 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using System.Linq;
+using MathNet.Numerics.LinearAlgebra.Factorization;
+using MathNet.Numerics.Properties;
+
 namespace MathNet.Numerics.LinearAlgebra.Complex32.Factorization
 {
-    using System;
-    using System.Linq;
-    using Generic;
-    using Generic.Factorization;
     using Numerics;
-    using Properties;
 
     /// <summary>
     /// <para>A class which encapsulates the functionality of the singular value decomposition (SVD).</para>
@@ -51,8 +51,13 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32.Factorization
     /// <remarks>
     /// The computation of the singular value decomposition is done at construction time.
     /// </remarks>
-    public abstract class Svd : Svd<Complex32>
+    internal abstract class Svd : Svd<Complex32>
     {
+        protected Svd(Vector<Complex32> s, Matrix<Complex32> u, Matrix<Complex32> vt, bool vectorsComputed)
+            : base(s, u, vt, vectorsComputed)
+        {
+        }
+
         /// <summary>
         /// Gets the effective numerical matrix rank.
         /// </summary>
@@ -61,7 +66,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32.Factorization
         {
             get
             {
-                return VectorS.Count(t => !t.Magnitude.AlmostEqual(0.0f));
+                return S.Count(t => !t.Magnitude.AlmostEqual(0.0f));
             }
         }
 
@@ -69,11 +74,11 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32.Factorization
         /// Gets the two norm of the <see cref="Matrix{T}"/>.
         /// </summary>
         /// <returns>The 2-norm of the <see cref="Matrix{T}"/>.</returns>
-        public override Complex32 Norm2
+        public override double L2Norm
         {
             get
             {
-                return VectorS[0].Magnitude;
+                return S[0].Magnitude;
             }
         }
 
@@ -85,8 +90,8 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32.Factorization
         {
             get
             {
-                var tmp = Math.Min(MatrixU.RowCount, MatrixVT.ColumnCount) - 1;
-                return VectorS[0].Magnitude / VectorS[tmp].Magnitude;
+                var tmp = Math.Min(U.RowCount, VT.ColumnCount) - 1;
+                return S[0].Magnitude / S[tmp].Magnitude;
             }
         }
 
@@ -97,13 +102,13 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32.Factorization
         {
             get
             {
-                if (MatrixU.RowCount != MatrixVT.ColumnCount)
+                if (U.RowCount != VT.ColumnCount)
                 {
                     throw new ArgumentException(Resources.ArgumentMatrixSquare);
                 }
 
                 var det = Complex32.One;
-                foreach (var value in VectorS)
+                foreach (var value in S)
                 {
                     det *= value;
                     if (value.Magnitude.AlmostEqual(0.0f))

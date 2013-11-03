@@ -1,13 +1,43 @@
-﻿using System;
-using System.Linq;
-using MathNet.Numerics.LinearAlgebra.Generic;
+﻿// <copyright file="MatrixStructureTheory.Reform.cs" company="Math.NET">
+// Math.NET Numerics, part of the Math.NET Project
+// http://numerics.mathdotnet.com
+// http://github.com/mathnet/mathnet-numerics
+// http://mathnetnumerics.codeplex.com
+//
+// Copyright (c) 2009-2013 Math.NET
+//
+// Permission is hereby granted, free of charge, to any person
+// obtaining a copy of this software and associated documentation
+// files (the "Software"), to deal in the Software without
+// restriction, including without limitation the rights to use,
+// copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following
+// conditions:
+//
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+// OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+// HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+// WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+// OTHER DEALINGS IN THE SOFTWARE.
+// </copyright>
+
+using MathNet.Numerics.LinearAlgebra;
 using NUnit.Framework;
+using System;
+using System.Linq;
 
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
 {
     partial class MatrixStructureTheory<T>
     {
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanPermuteRows(Matrix<T> matrix)
         {
             var m = matrix.Clone();
@@ -36,7 +66,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             }
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanPermuteColumns(Matrix<T> matrix)
         {
             var m = matrix.Clone();
@@ -65,7 +95,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             }
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanInsertRow(Matrix<T> matrix)
         {
             var row = CreateVectorRandom(matrix.ColumnCount, 0);
@@ -101,7 +131,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             Assert.That(() => matrix.InsertRow(0, CreateVectorZero(matrix.ColumnCount + 1)), Throws.ArgumentException);
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanInsertColumn(Matrix<T> matrix)
         {
             var column = CreateVectorRandom(matrix.RowCount, 0);
@@ -137,7 +167,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             Assert.That(() => matrix.InsertColumn(0, CreateVectorZero(matrix.RowCount + 1)), Throws.ArgumentException);
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanAppend(Matrix<T> left, Matrix<T> right)
         {
             // IF
@@ -159,7 +189,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             Assert.That(() => left.Append(default(Matrix<T>)), Throws.InstanceOf<ArgumentNullException>());
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanAppendIntoResult(Matrix<T> left, Matrix<T> right)
         {
             // IF
@@ -186,7 +216,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             Assert.That(() => left.Append(right, CreateDenseZero(left.RowCount, left.ColumnCount + right.ColumnCount - 1)), Throws.ArgumentException);
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanStack(Matrix<T> top, Matrix<T> bottom)
         {
             // IF
@@ -208,7 +238,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             Assert.That(() => top.Stack(default(Matrix<T>)), Throws.InstanceOf<ArgumentNullException>());
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanStackIntoResult(Matrix<T> top, Matrix<T> bottom)
         {
             // IF
@@ -235,7 +265,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             Assert.That(() => top.Stack(bottom, CreateDenseZero(top.RowCount + bottom.RowCount, top.ColumnCount - 1)), Throws.ArgumentException);
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanDiagonalStack(Matrix<T> left, Matrix<T> right)
         {
             var result = left.DiagonalStack(right);
@@ -261,7 +291,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             Assert.That(() => left.DiagonalStack(default(Matrix<T>)), Throws.InstanceOf<ArgumentNullException>(), "{0}+{1}->{2}", left.GetType(), right.GetType(), result.GetType());
         }
 
-        [Theory, Timeout(200)]
+        [Theory]
         public void CanDiagonalStackIntoResult(Matrix<T> left, Matrix<T> right)
         {
             var result = CreateDenseZero(left.RowCount + right.RowCount, left.ColumnCount + right.ColumnCount);

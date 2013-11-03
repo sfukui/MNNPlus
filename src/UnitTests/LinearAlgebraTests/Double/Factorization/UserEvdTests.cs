@@ -24,28 +24,21 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Factorization
 {
-    using System;
-    using System.Numerics;
-    using LinearAlgebra.Double;
-    using LinearAlgebra.Double.Factorization;
-    using NUnit.Framework;
+#if NOSYSNUMERICS
+    using Complex = Numerics.Complex;
+#else
+    using Complex = System.Numerics.Complex;
+#endif
 
     /// <summary>
     /// Eigenvalues factorization tests for an user matrix.
     /// </summary>
     public class UserEvdTests
     {
-        /// <summary>
-        /// Constructor <c>null</c> throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void ConstructorNull()
-        {
-            Assert.Throws<ArgumentNullException>(() => new UserEvd(null));
-        }
-
         /// <summary>
         /// Can factorize identity matrix.
         /// </summary>
@@ -57,9 +50,9 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Factorization
         {
             var matrixI = UserDefinedMatrix.Identity(order);
             var factorEvd = matrixI.Evd();
-            var eigenValues = factorEvd.EigenValues();
-            var eigenVectors = factorEvd.EigenVectors();
-            var d = factorEvd.D();
+            var eigenValues = factorEvd.EigenValues;
+            var eigenVectors = factorEvd.EigenVectors;
+            var d = factorEvd.D;
 
             Assert.AreEqual(matrixI.RowCount, eigenVectors.RowCount);
             Assert.AreEqual(matrixI.RowCount, eigenVectors.ColumnCount);
@@ -87,8 +80,8 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Factorization
         {
             var matrixA = MatrixLoader.GenerateRandomUserDefinedMatrix(order, order);
             var factorEvd = matrixA.Evd();
-            var eigenVectors = factorEvd.EigenVectors();
-            var d = factorEvd.D();
+            var eigenVectors = factorEvd.EigenVectors;
+            var d = factorEvd.D;
 
             Assert.AreEqual(order, eigenVectors.RowCount);
             Assert.AreEqual(order, eigenVectors.ColumnCount);
@@ -123,8 +116,8 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Factorization
         {
             var matrixA = MatrixLoader.GenerateRandomPositiveDefiniteUserDefinedMatrix(order);
             var factorEvd = matrixA.Evd();
-            var eigenVectors = factorEvd.EigenVectors();
-            var d = factorEvd.D();
+            var eigenVectors = factorEvd.EigenVectors;
+            var d = factorEvd.D;
 
             Assert.AreEqual(order, eigenVectors.RowCount);
             Assert.AreEqual(order, eigenVectors.ColumnCount);

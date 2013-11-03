@@ -24,12 +24,12 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using MathNet.Numerics.LinearAlgebra.Complex32;
+using MathNet.Numerics.LinearAlgebra.Storage;
+
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
 {
-    using LinearAlgebra.Complex32;
-    using LinearAlgebra.Generic;
-    using LinearAlgebra.Storage;
-    using Complex32 = Numerics.Complex32;
+    using Numerics;
 
     /// <summary>
     /// User-defined vector implementation (internal class for testing purposes)
@@ -50,6 +50,11 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
                 : base(size)
             {
                 Data = data;
+            }
+
+            public override bool IsDense
+            {
+                get { return true; }
             }
 
             public override Complex32 At(int index)
@@ -79,27 +84,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         public UserDefinedVector(Complex32[] data)
             : base(new UserDefinedVectorStorage(data.Length, (Complex32[])data.Clone()))
         {
-        }
-
-        /// <summary>
-        /// Creates a matrix with the given dimensions using the same storage type as this vector.
-        /// </summary>
-        /// <param name="rows">The number of rows.</param>
-        /// <param name="columns">The number of columns.</param>
-        /// <returns>A matrix with the given dimensions.</returns>
-        public override Matrix<Complex32> CreateMatrix(int rows, int columns)
-        {
-            return new UserDefinedMatrix(rows, columns);
-        }
-
-        /// <summary>
-        /// Creates a <strong>Vector</strong> of the given size using the same storage type as this vector.
-        /// </summary>
-        /// <param name="size">The size of the <strong>Vector</strong> to create.</param>
-        /// <returns>The new <c>Vector</c>.</returns>
-        public override Vector<Complex32> CreateVector(int size)
-        {
-            return new UserDefinedVector(size);
         }
     }
 }

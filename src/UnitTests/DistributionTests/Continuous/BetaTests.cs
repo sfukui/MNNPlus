@@ -1,4 +1,4 @@
-// <copyright file="BetaTests.cs" company="Math.NET">
+﻿// <copyright file="BetaTests.cs" company="Math.NET">
 // Math.NET Numerics, part of the Math.NET Project
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
@@ -24,12 +24,14 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using System.Linq;
+using MathNet.Numerics.Distributions;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
 {
-    using System;
-    using System.Linq;
-    using Distributions;
-    using NUnit.Framework;
+    using Random = System.Random;
 
     /// <summary>
     /// Beta distribution tests.
@@ -88,8 +90,8 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [Test]
         public void ValidateToString()
         {
-            var n = new Beta(1.0, 2.0);
-            Assert.AreEqual("Beta(A = 1, B = 2)", n.ToString());
+            var n = new Beta(1d, 2d);
+            Assert.AreEqual("Beta(α = 1, β = 2)", n.ToString());
         }
 
         /// <summary>
@@ -189,7 +191,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateEntropy(double a, double b, double entropy)
         {
             var n = new Beta(a, b);
-            AssertHelpers.AlmostEqual(entropy, n.Entropy, 14);
+            AssertHelpers.AlmostEqualRelative(entropy, n.Entropy, 13);
         }
 
         /// <summary>
@@ -211,7 +213,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateSkewness(double a, double b, double skewness)
         {
             var n = new Beta(a, b);
-            AssertHelpers.AlmostEqual(skewness, n.Skewness, 15);
+            AssertHelpers.AlmostEqualRelative(skewness, n.Skewness, 14);
         }
 
         /// <summary>
@@ -366,7 +368,8 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateDensity(double a, double b, double x, double pdf)
         {
             var n = new Beta(a, b);
-            AssertHelpers.AlmostEqual(pdf, n.Density(x), 13);
+            AssertHelpers.AlmostEqualRelative(pdf, n.Density(x), 12);
+            AssertHelpers.AlmostEqualRelative(pdf, Beta.PDF(a, b, x), 12);
         }
 
         /// <summary>
@@ -411,7 +414,8 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateDensityLn(double a, double b, double x, double pdfln)
         {
             var n = new Beta(a, b);
-            AssertHelpers.AlmostEqual(pdfln, n.DensityLn(x), 14);
+            AssertHelpers.AlmostEqualRelative(pdfln, n.DensityLn(x), 13);
+            AssertHelpers.AlmostEqualRelative(pdfln, Beta.PDFLn(a, b, x), 13);
         }
 
         /// <summary>
@@ -454,7 +458,8 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateCumulativeDistribution(double a, double b, double x, double cdf)
         {
             var n = new Beta(a, b);
-            AssertHelpers.AlmostEqual(cdf, n.CumulativeDistribution(x), 13);
+            AssertHelpers.AlmostEqualRelative(cdf, n.CumulativeDistribution(x), 13);
+            AssertHelpers.AlmostEqualRelative(cdf, Beta.CDF(a, b, x), 13);
         }
     }
 }

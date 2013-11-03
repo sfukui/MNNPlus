@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2010 Math.NET
+// Copyright (c) 2009-2013 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -28,10 +28,11 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using MathNet.Numerics.LinearAlgebra.Factorization;
+
 namespace MathNet.Numerics.LinearAlgebra.Single.Factorization
 {
     using System;
-    using Generic.Factorization;
 
     /// <summary>
     /// <para>A class which encapsulates the functionality of a Cholesky factorization.</para>
@@ -42,8 +43,13 @@ namespace MathNet.Numerics.LinearAlgebra.Single.Factorization
     /// The computation of the Cholesky factorization is done at construction time. If the matrix is not symmetric
     /// or positive definite, the constructor will throw an exception.
     /// </remarks>
-    public abstract class Cholesky : Cholesky<float>
+    internal abstract class Cholesky : Cholesky<float>
     {
+        protected Cholesky(Matrix<float> factor)
+            : base(factor)
+        {
+        }
+
         /// <summary>
         /// Gets the determinant of the matrix for which the Cholesky matrix was computed.
         /// </summary>
@@ -52,10 +58,10 @@ namespace MathNet.Numerics.LinearAlgebra.Single.Factorization
             get
             {
                 var det = 1.0f;
-                for (var j = 0; j < CholeskyFactor.RowCount; j++)
+                for (var j = 0; j < Factor.RowCount; j++)
                 {
-                    var d = CholeskyFactor.At(j, j);
-                    det *= d * d;
+                    var d = Factor.At(j, j);
+                    det *= d*d;
                 }
 
                 return det;
@@ -70,9 +76,9 @@ namespace MathNet.Numerics.LinearAlgebra.Single.Factorization
             get
             {
                 var det = 0.0f;
-                for (var j = 0; j < CholeskyFactor.RowCount; j++)
+                for (var j = 0; j < Factor.RowCount; j++)
                 {
-                    det += 2.0f * Convert.ToSingle(Math.Log(CholeskyFactor.At(j, j)));
+                    det += 2.0f*Convert.ToSingle(Math.Log(Factor.At(j, j)));
                 }
 
                 return det;

@@ -72,53 +72,53 @@ namespace Examples.LinearAlgebra.FactorizationExamples
         public void Run()
         {
             // Format matrix output to console
-            var formatProvider = (CultureInfo)CultureInfo.InvariantCulture.Clone();
+            var formatProvider = (CultureInfo) CultureInfo.InvariantCulture.Clone();
             formatProvider.TextInfo.ListSeparator = " ";
 
             // Create square matrix
-            var matrix = new DenseMatrix(new[,] { { 4.0, 1.0 }, { 3.0, 2.0 } });
+            var matrix = DenseMatrix.OfArray(new[,] {{4.0, 1.0}, {3.0, 2.0}});
             Console.WriteLine(@"Initial square matrix");
             Console.WriteLine(matrix.ToString("#0.00\t", formatProvider));
             Console.WriteLine();
 
             // Perform full SVD decomposition
-            var svd = matrix.Svd(true);
+            var svd = matrix.Svd();
             Console.WriteLine(@"Perform full SVD decomposition");
 
             // 1. Left singular vectors
             Console.WriteLine(@"1. Left singular vectors");
-            Console.WriteLine(svd.U().ToString("#0.00\t", formatProvider));
+            Console.WriteLine(svd.U.ToString("#0.00\t", formatProvider));
             Console.WriteLine();
 
             // 2. Singular values as vector
             Console.WriteLine(@"2. Singular values as vector");
-            Console.WriteLine(svd.S().ToString("#0.00\t", formatProvider));
+            Console.WriteLine(svd.S.ToString("#0.00\t", formatProvider));
             Console.WriteLine();
 
             // 3. Singular values as diagonal matrix
             Console.WriteLine(@"3. Singular values as diagonal matrix");
-            Console.WriteLine(svd.W().ToString("#0.00\t", formatProvider));
+            Console.WriteLine(svd.W.ToString("#0.00\t", formatProvider));
             Console.WriteLine();
 
             // 4. Right singular vectors
             Console.WriteLine(@"4. Right singular vectors");
-            Console.WriteLine(svd.VT().ToString("#0.00\t", formatProvider));
+            Console.WriteLine(svd.VT.ToString("#0.00\t", formatProvider));
             Console.WriteLine();
 
             // 5. Multiply U matrix by its transpose
-            var identinty = svd.U() * svd.U().Transpose();
+            var identinty = svd.U*svd.U.Transpose();
             Console.WriteLine(@"5. Multiply U matrix by its transpose");
             Console.WriteLine(identinty.ToString("#0.00\t", formatProvider));
             Console.WriteLine();
 
             // 6. Multiply V matrix by its transpose
-            identinty = svd.VT().TransposeAndMultiply(svd.VT());
+            identinty = svd.VT.TransposeAndMultiply(svd.VT);
             Console.WriteLine(@"6. Multiply V matrix by its transpose");
             Console.WriteLine(identinty.ToString("#0.00\t", formatProvider));
             Console.WriteLine();
 
             // 7. Reconstruct initial matrix: A = U*Σ*VT
-            var reconstruct = svd.U() * svd.W() * svd.VT();
+            var reconstruct = svd.U*svd.W*svd.VT;
             Console.WriteLine(@"7. Reconstruct initial matrix: A = U*S*VT");
             Console.WriteLine(reconstruct.ToString("#0.00\t", formatProvider));
             Console.WriteLine();
@@ -135,7 +135,7 @@ namespace Examples.LinearAlgebra.FactorizationExamples
 
             // 10. 2-norm of the matrix
             Console.WriteLine(@"10. 2-norm of the matrix");
-            Console.WriteLine(svd.Norm2);
+            Console.WriteLine(svd.L2Norm);
             Console.WriteLine();
 
             // 11. Rank of the matrix
@@ -149,19 +149,19 @@ namespace Examples.LinearAlgebra.FactorizationExamples
 
             // 12. Singular values as vector
             Console.WriteLine(@"12. Singular values as vector");
-            Console.WriteLine(svd.S().ToString("#0.00\t", formatProvider));
+            Console.WriteLine(svd.S.ToString("#0.00\t", formatProvider));
             Console.WriteLine();
 
             // 13. Singular values as diagonal matrix
             Console.WriteLine(@"13. Singular values as diagonal matrix");
-            Console.WriteLine(svd.W().ToString("#0.00\t", formatProvider));
+            Console.WriteLine(svd.W.ToString("#0.00\t", formatProvider));
             Console.WriteLine();
 
             // 14. Access to left singular vectors when partial SVD decomposition was performed
             try
             {
                 Console.WriteLine(@"14. Access to left singular vectors when partial SVD decomposition was performed");
-                Console.WriteLine(svd.U().ToString("#0.00\t", formatProvider));
+                Console.WriteLine(svd.U.ToString("#0.00\t", formatProvider));
             }
             catch (Exception ex)
             {
@@ -173,7 +173,7 @@ namespace Examples.LinearAlgebra.FactorizationExamples
             try
             {
                 Console.WriteLine(@"15. Access to right singular vectors when partial SVD decomposition was performed");
-                Console.WriteLine(svd.VT().ToString("#0.00\t", formatProvider));
+                Console.WriteLine(svd.VT.ToString("#0.00\t", formatProvider));
             }
             catch (Exception ex)
             {

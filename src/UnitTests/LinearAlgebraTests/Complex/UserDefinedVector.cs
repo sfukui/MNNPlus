@@ -24,12 +24,16 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using MathNet.Numerics.LinearAlgebra.Complex;
+using MathNet.Numerics.LinearAlgebra.Storage;
+
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
 {
-    using System.Numerics;
-    using LinearAlgebra.Complex;
-    using LinearAlgebra.Generic;
-    using LinearAlgebra.Storage;
+#if NOSYSNUMERICS
+    using Complex = Numerics.Complex;
+#else
+    using Complex = System.Numerics.Complex;
+#endif
 
     /// <summary>
     /// User-defined vector implementation (internal class for testing purposes)
@@ -50,6 +54,11 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
                 : base(size)
             {
                 Data = data;
+            }
+
+            public override bool IsDense
+            {
+                get { return true; }
             }
 
             public override Complex At(int index)
@@ -79,27 +88,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
         public UserDefinedVector(Complex[] data)
             : base(new UserDefinedVectorStorage(data.Length, (Complex[])data.Clone()))
         {
-        }
-
-        /// <summary>
-        /// Creates a matrix with the given dimensions using the same storage type as this vector.
-        /// </summary>
-        /// <param name="rows">The number of rows.</param>
-        /// <param name="columns">The number of columns.</param>
-        /// <returns>A matrix with the given dimensions.</returns>
-        public override Matrix<Complex> CreateMatrix(int rows, int columns)
-        {
-            return new UserDefinedMatrix(rows, columns);
-        }
-
-        /// <summary>
-        /// Creates a <strong>Vector</strong> of the given size using the same storage type as this vector.
-        /// </summary>
-        /// <param name="size">The size of the <strong>Vector</strong> to create.</param>
-        /// <returns>The new <c>Vector</c>.</returns>
-        public override Vector<Complex> CreateVector(int size)
-        {
-            return new UserDefinedVector(size);
         }
     }
 }

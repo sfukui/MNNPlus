@@ -29,6 +29,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using MathNet.Numerics.Properties;
 
 namespace MathNet.Numerics.LinearAlgebra.Storage
@@ -39,7 +40,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
     {
         // [ruegg] public fields are OK here
 
-        protected static readonly T Zero = Common.ZeroOf<T>();
+        protected static readonly T Zero = BuilderInstance<T>.Matrix.Zero;
         public readonly int RowCount;
         public readonly int ColumnCount;
 
@@ -58,6 +59,23 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             RowCount = rowCount;
             ColumnCount = columnCount;
         }
+
+        /// <summary>
+        /// True if the matrix storage format is dense.
+        /// </summary>
+        public abstract bool IsDense { get; }
+
+        /// <summary>
+        /// True if all fields of this matrix can be set to any value.
+        /// False if some fields are fixed, like on a diagonal matrix.
+        /// </summary>
+        public abstract bool IsFullyMutable { get; }
+
+        /// <summary>
+        /// True if the specified field can be set to any value.
+        /// False if the field is fixed, like an off-diagonal field on a diagonal matrix.
+        /// </summary>
+        public abstract bool IsMutableAt(int row, int column);
 
         /// <summary>
         /// Gets or sets the value at the given row and column, with range checking.
@@ -109,24 +127,6 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
         /// <param name="value"> The value to set the element to. </param>
         /// <remarks>WARNING: This method is not thread safe. Use "lock" with it and be sure to avoid deadlocks.</remarks>
         public abstract void At(int row, int column, T value);
-
-        /// <summary>
-        /// True if all fields of this matrix can be set to any value.
-        /// False if some fields are fixed, like on a diagonal matrix.
-        /// </summary>
-        public virtual bool IsFullyMutable
-        {
-            get { return true; }
-        }
-
-        /// <summary>
-        /// True if the specified field can be set to any value.
-        /// False if the field is fixed, like an off-diagonal field on a diagonal matrix.
-        /// </summary>
-        public virtual bool IsMutable(int row, int column)
-        {
-            return true;
-        }
 
         public virtual void Clear()
         {
@@ -410,6 +410,84 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
                 }
             }
             return ret;
+        }
+
+        // ENUMERATION
+
+        public virtual IEnumerable<T> Enumerate()
+        {
+            for (int i = 0; i < RowCount; i++)
+            {
+                for (int j = 0; j < ColumnCount; j++)
+                {
+                    yield return At(i, j);
+                }
+            }
+        }
+
+        public virtual IEnumerable<Tuple<int, int, T>> EnumerateIndexed()
+        {
+            for (int i = 0; i < RowCount; i++)
+            {
+                for (int j = 0; j < ColumnCount; j++)
+                {
+                    yield return new Tuple<int, int, T>(i, j, At(i, j));
+                }
+            }
+        }
+
+        public virtual IEnumerable<T> EnumerateNonZero()
+        {
+            for (int i = 0; i < RowCount; i++)
+            {
+                for (int j = 0; j < ColumnCount; j++)
+                {
+                    var x = At(i, j);
+                    if (!Zero.Equals(x))
+                    {
+                        yield return x;
+                    }
+                }
+            }
+        }
+
+        public virtual IEnumerable<Tuple<int, int, T>> EnumerateNonZeroIndexed()
+        {
+            for (int i = 0; i < RowCount; i++)
+            {
+                for (int j = 0; j < ColumnCount; j++)
+                {
+                    var x = At(i, j);
+                    if (!Zero.Equals(x))
+                    {
+                        yield return new Tuple<int, int, T>(i, j, x);
+                    }
+                }
+            }
+        }
+
+        // FUNCTIONAL COMBINATORS
+
+        public virtual void MapInplace(Func<T, T> f, bool forceMapZeros = false)
+        {
+            for (int i = 0; i < RowCount; i++)
+            {
+                for (int j = 0; j < ColumnCount; j++)
+                {
+                    At(i, j, f(At(i, j)));
+                }
+            }
+        }
+
+        public virtual void MapIndexedInplace(Func<int, int, T, T> f, bool forceMapZeros = false)
+        {
+            for (int i = 0; i < RowCount; i++)
+            {
+                for (int j = 0; j < ColumnCount; j++)
+                {
+                    At(i, j, f(i, j, At(i, j)));
+                }
+            }
         }
     }
 }

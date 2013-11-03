@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2010 Math.NET
+// Copyright (c) 2009-2013 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -28,19 +28,21 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using MathNet.Numerics.LinearAlgebra;
+using MathNet.Numerics.Properties;
+
 namespace MathNet.Numerics.Statistics
 {
-    using System;
-    using System.Collections.Generic;
-    using Properties;
-
     /// <summary>
     /// A class with correlation measures between two datasets.
     /// </summary>
     public static class Correlation
     {
         /// <summary>
-        /// Computes the Pearson product-moment correlation coefficient.
+        /// Computes the Pearson Product-Moment Correlation coefficient.
         /// </summary>
         /// <param name="dataA">Sample data A.</param>
         /// <param name="dataB">Sample data B.</param>
@@ -62,15 +64,15 @@ namespace MathNet.Numerics.Statistics
                 {
                     if (!ieB.MoveNext())
                     {
-                        throw new ArgumentOutOfRangeException("dataB", "Datasets dataA and dataB need to have the same length. dataB is shorter.");
+                        throw new ArgumentOutOfRangeException("dataB", Resources.ArgumentArraysSameLength);
                     }
-                    double Acurrent = ieA.Current;
-                    double Bcurrent = ieB.Current;
+                    double currentA = ieA.Current;
+                    double currentB = ieB.Current;
 
-                    double deltaA = Acurrent - meanA;
+                    double deltaA = currentA - meanA;
                     double scaleDeltaA = deltaA / ++n;
 
-                    double deltaB = Bcurrent - meanB;
+                    double deltaB = currentB - meanB;
                     double scaleDeltaB = deltaB / n;
 
                     meanA += scaleDeltaA;
@@ -82,11 +84,113 @@ namespace MathNet.Numerics.Statistics
                 }
                 if (ieB.MoveNext())
                 {
-                    throw new ArgumentOutOfRangeException("dataA", "Datasets dataA and dataB need to have the same length. dataA is shorter.");
+                    throw new ArgumentOutOfRangeException("dataA", Resources.ArgumentArraysSameLength);
                 }
             }
 
             return r / Math.Sqrt(varA * varB);
+        }
+
+        /// <summary>
+        /// Computes the Pearson Product-Moment Correlation matrix.
+        /// </summary>
+        /// <param name="vectors">Array of sample data vectors.</param>
+        /// <returns>The Pearson product-moment correlation matrix.</returns>
+        public static Matrix<double> PearsonMatrix(params double[][] vectors)
+        {
+            var m = Matrix<double>.Build.DenseIdentity(vectors.Length);
+            for (int i = 0; i < vectors.Length; i++)
+                for (int j = i + 1; j < vectors.Length; j++)
+                {
+                    var c = Pearson(vectors[i], vectors[j]);
+                    m.At(i, j, c);
+                    m.At(j, i, c);
+                }
+            return m;
+        }
+
+        /// <summary>
+        /// Computes the Pearson Product-Moment Correlation matrix.
+        /// </summary>
+        /// <param name="vectors">Enumerable of sample data vectors.</param>
+        /// <returns>The Pearson product-moment correlation matrix.</returns>
+        public static Matrix<double> PearsonMatrix(IEnumerable<double[]> vectors)
+        {
+            return PearsonMatrix(vectors as double[][] ?? vectors.ToArray());
+        }
+
+        /// <summary>
+        /// Computes the Spearman Ranked Correlation coefficient.
+        /// </summary>
+        /// <param name="dataA">Sample data series A.</param>
+        /// <param name="dataB">Sample data series B.</param>
+        /// <returns>The Spearman ranked correlation coefficient.</returns>
+        public static double Spearman(IEnumerable<double> dataA, IEnumerable<double> dataB)
+        {
+            return Pearson(Rank(dataA), Rank(dataB));
+        }
+
+        /// <summary>
+        /// Computes the Spearman Ranked Correlation matrix.
+        /// </summary>
+        /// <param name="vectors">Array of sample data vectors.</param>
+        /// <returns>The Spearman ranked correlation matrix.</returns>
+        public static Matrix<double> SpearmanMatrix(params double[][] vectors)
+        {
+            return PearsonMatrix(vectors.Select(Rank).ToArray());
+        }
+
+        /// <summary>
+        /// Computes the Spearman Ranked Correlation matrix.
+        /// </summary>
+        /// <param name="vectors">Enumerable of sample data vectors.</param>
+        /// <returns>The Spearman ranked correlation matrix.</returns>
+        public static Matrix<double> SpearmanMatrix(IEnumerable<double[]> vectors)
+        {
+            return PearsonMatrix(vectors.Select(Rank).ToArray());
+        }
+
+        private static double[] Rank(IEnumerable<double> series)
+        {
+            if (series == null)
+            {
+                return new double[0];
+            }
+
+            var rankedSamples = series.Select((sample, index) => new {Sample = sample, RankIndex = index}).OrderBy(s => s.Sample).ToArray();
+            if (rankedSamples.Length == 0)
+            {
+                return new double[0];
+            }
+
+            var rankedArray = new double[rankedSamples.Length];
+
+            var previousSample = rankedSamples.Select((sampleIndex, index) => new { SampleIndex = sampleIndex, LoopIndex = index }).First();
+            foreach (var rankedSampleIndex in rankedSamples.Select((sampleIndex, index) => new { SampleIndex = sampleIndex, LoopIndex = index }))
+            {
+                var currentSample = rankedSampleIndex;
+
+                if (Math.Abs(currentSample.SampleIndex.Sample - previousSample.SampleIndex.Sample) <= 0)
+                {
+                    continue;
+                }
+
+                var rankedValue = (currentSample.LoopIndex + previousSample.LoopIndex - 1) / 2d + 1;
+                foreach (var index in Enumerable.Range(previousSample.LoopIndex, currentSample.LoopIndex - previousSample.LoopIndex))
+                {
+                    rankedArray[rankedSamples[index].RankIndex] = rankedValue;
+                }
+
+                previousSample = currentSample;
+            }
+
+            var finalValue = (rankedSamples.Length + previousSample.LoopIndex - 1) / 2d + 1;
+            foreach (var index in Enumerable.Range(previousSample.LoopIndex, rankedSamples.Length - previousSample.LoopIndex))
+            {
+                rankedArray[rankedSamples[index].RankIndex] = finalValue;
+            }
+
+            return rankedArray;
         }
     }
 }

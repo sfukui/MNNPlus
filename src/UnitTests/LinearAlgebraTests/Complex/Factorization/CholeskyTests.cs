@@ -24,13 +24,17 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using MathNet.Numerics.LinearAlgebra.Complex;
+using NUnit.Framework;
+using System;
+
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
 {
-    using System;
-    using System.Numerics;
-    using LinearAlgebra.Complex;
-    using LinearAlgebra.Generic.Factorization;
-    using NUnit.Framework;
+#if NOSYSNUMERICS
+    using Complex = Numerics.Complex;
+#else
+    using Complex = System.Numerics.Complex;
+#endif
 
     /// <summary>
     /// Cholesky factorization tests for a dense matrix.
@@ -46,7 +50,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
         [TestCase(100)]
         public void CanFactorizeIdentity(int order)
         {
-            var matrixI = DenseMatrix.Identity(order);
+            var matrixI = DenseMatrix.CreateIdentity(order);
             var factorC = matrixI.Cholesky().Factor;
 
             Assert.AreEqual(matrixI.RowCount, factorC.RowCount);
@@ -67,7 +71,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
         [Test]
         public void CholeskyFailsWithDiagonalNonPositiveDefiniteMatrix()
         {
-            var matrixI = DenseMatrix.Identity(8);
+            var matrixI = DenseMatrix.CreateIdentity(8);
             matrixI[3, 3] = -4.0;
             Assert.Throws<ArgumentException>(() => matrixI.Cholesky());
         }
@@ -91,7 +95,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
         [TestCase(100)]
         public void IdentityDeterminantIsOne(int order)
         {
-            var matrixI = DenseMatrix.Identity(order);
+            var matrixI = DenseMatrix.CreateIdentity(order);
             var factorC = matrixI.Cholesky();
             Assert.AreEqual(Complex.One, factorC.Determinant);
             Assert.AreEqual(Complex.Zero, factorC.DeterminantLn);
@@ -132,7 +136,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
             {
                 for (var j = 0; j < matrixXfromC.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrixX[i, j], matrixXfromC[i, j], 8);
+                    AssertHelpers.AlmostEqualRelative(matrixX[i, j], matrixXfromC[i, j], 8);
                 }
             }
         }
@@ -162,7 +166,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
             // Check the reconstruction.
             for (var i = 0; i < order; i++)
             {
-                AssertHelpers.AlmostEqual(matrixB[i], matrixBReconstruct[i], 8);
+                AssertHelpers.AlmostEqual(matrixB[i], matrixBReconstruct[i], 10);
             }
 
             // Make sure A didn't change.
@@ -204,7 +208,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
             {
                 for (var j = 0; j < matrixB.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrixB[i, j], matrixBReconstruct[i, j], 7);
+                    AssertHelpers.AlmostEqual(matrixB[i, j], matrixBReconstruct[i, j], 10);
                 }
             }
 
@@ -245,7 +249,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
             // Check the reconstruction.
             for (var i = 0; i < order; i++)
             {
-                AssertHelpers.AlmostEqual(matrixB[i], matrixBReconstruct[i], 8);
+                AssertHelpers.AlmostEqual(matrixB[i], matrixBReconstruct[i], 10);
             }
 
             // Make sure A didn't change.
@@ -295,7 +299,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
             {
                 for (var j = 0; j < matrixB.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrixB[i, j], matrixBReconstruct[i, j], 7);
+                    AssertHelpers.AlmostEqual(matrixB[i, j], matrixBReconstruct[i, j], 10);
                 }
             }
 

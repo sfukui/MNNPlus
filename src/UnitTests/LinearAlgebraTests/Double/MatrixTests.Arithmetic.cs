@@ -24,14 +24,14 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using MathNet.Numerics.Distributions;
+using MathNet.Numerics.LinearAlgebra;
+using MathNet.Numerics.LinearAlgebra.Double;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
 {
-    using System;
-    using Distributions;
-    using LinearAlgebra.Double;
-    using LinearAlgebra.Generic;
-    using NUnit.Framework;
-
     /// <summary>
     /// Abstract class with the common set of matrix tests
     /// </summary>
@@ -121,18 +121,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         }
 
         /// <summary>
-        /// Multiply with vector into result fails when result is <c>null</c>.
-        /// </summary>
-        [Test]
-        public void MultiplyWithVectorIntoNullResultThrowsArgumentNullException()
-        {
-            var matrix = TestMatrices["Singular3x3"];
-            var x = new DenseVector(new[] { 1.0, 2.0, 3.0 });
-            Vector<double> y = null;
-            Assert.Throws<ArgumentNullException>(() => matrix.Multiply(x, y));
-        }
-
-        /// <summary>
         /// Multiply with a vector into too large result throws <c>ArgumentException</c>.
         /// </summary>
         [Test]
@@ -209,17 +197,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         }
 
         /// <summary>
-        /// Multiply with a scalar into <c>null</c> result throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void MultiplyWithScalarIntoNullResultThrowsArgumentNullException()
-        {
-            var matrix = TestMatrices["Singular3x3"];
-            Matrix<double> result = null;
-            Assert.Throws<ArgumentNullException>(() => matrix.Multiply(2.3, result));
-        }
-
-        /// <summary>
         /// Multiply with a scalar when result has more rows throws <c>ArgumentException</c>.
         /// </summary>
         [Test]
@@ -239,26 +216,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             var matrix = TestMatrices["Singular3x3"];
             var result = CreateMatrix(matrix.RowCount, matrix.ColumnCount + 1);
             Assert.Throws<ArgumentException>(() => matrix.Multiply(2.3, result));
-        }
-
-        /// <summary>
-        /// Operator left multiply with a scalar when matrix is <c>null</c> throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void OperatorLeftMultiplyWithScalarWhenMatrixIsNullThrowsArgumentNullException()
-        {
-            Matrix<double> matrix = null;
-            Assert.Throws<ArgumentNullException>(() => { var result = 2.3 * matrix; });
-        }
-
-        /// <summary>
-        /// Operator right multiply with a scalar when matrix is <c>null</c> throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void OperatorRightMultiplyWithScalarWhenMatrixIsNullThrowsArgumentNullException()
-        {
-            Matrix<double> matrix = null;
-            Assert.Throws<ArgumentNullException>(() => { var result = matrix * 2.3; });
         }
 
         /// <summary>
@@ -282,17 +239,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
                     Assert.AreEqual(matrix[i, j], matrixA[i, j] + matrixB[i, j]);
                 }
             }
-        }
-
-        /// <summary>
-        /// Adding a matrix when argument is <c>null</c> throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void AddNullMatrixThrowsArgumentNullException()
-        {
-            var matrix = TestMatrices["Singular4x4"];
-            Matrix<double> other = null;
-            Assert.Throws<ArgumentNullException>(() => matrix.Add(other));
         }
 
         /// <summary>
@@ -337,28 +283,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
                     Assert.AreEqual(result[i, j], matrixA[i, j] + matrixB[i, j]);
                 }
             }
-        }
-
-        /// <summary>
-        /// Add operator when left side is <c>null</c> throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void AddOperatorWhenLeftSideIsNullThrowsArgumentNullException()
-        {
-            Matrix<double> matrix = null;
-            var other = TestMatrices["Singular3x3"];
-            Assert.Throws<ArgumentNullException>(() => { var result = matrix + other; });
-        }
-
-        /// <summary>
-        /// Add operator when right side is <c>null</c> throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void AddOperatorWhenRightSideIsNullThrowsArgumentNullException()
-        {
-            var matrix = TestMatrices["Singular3x3"];
-            Matrix<double> other = null;
-            Assert.Throws<ArgumentNullException>(() => { var result = matrix + other; });
         }
 
         /// <summary>
@@ -407,17 +331,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         }
 
         /// <summary>
-        /// Subtract <c>null</c> matrix throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void SubtractNullMatrixThrowsArgumentNullException()
-        {
-            var matrix = TestMatrices["Singular4x4"];
-            Matrix<double> other = null;
-            Assert.Throws<ArgumentNullException>(() => matrix.Subtract(other));
-        }
-
-        /// <summary>
         /// Subtract a matrix when right side has fewer columns throws <c>ArgumentOutOfRangeException</c>.
         /// </summary>
         [Test]
@@ -459,28 +372,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
                     Assert.AreEqual(result[i, j], matrixA[i, j] - matrixB[i, j]);
                 }
             }
-        }
-
-        /// <summary>
-        /// Subtract operator when left side is <c>null</c> throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void SubtractOperatorWhenLeftSideIsNullThrowsArgumentNullException()
-        {
-            Matrix<double> matrix = null;
-            var other = TestMatrices["Singular3x3"];
-            Assert.Throws<ArgumentNullException>(() => { var result = matrix - other; });
-        }
-
-        /// <summary>
-        /// Subtract operator when right side is <c>null</c> throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void SubtractOperatorWhenRightSideIsNullThrowsArgumentNullException()
-        {
-            var matrix = TestMatrices["Singular3x3"];
-            Matrix<double> other = null;
-            Assert.Throws<ArgumentNullException>(() => { var result = matrix - other; });
         }
 
         /// <summary>
@@ -528,7 +419,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             {
                 for (var j = 0; j < matrixC.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrixA.Row(i) * matrixB.Column(j), matrixC[i, j], 15);
+                    AssertHelpers.AlmostEqualRelative(matrixA.Row(i) * matrixB.Column(j), matrixC[i, j], 15);
                 }
             }
         }
@@ -554,7 +445,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             {
                 for (var j = 0; j < matrixC.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrixA.Row(i) * matrixB.Row(j), matrixC[i, j], 15);
+                    AssertHelpers.AlmostEqualRelative(matrixA.Row(i) * matrixB.Row(j), matrixC[i, j], 15);
                 }
             }
         }
@@ -588,7 +479,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             {
                 for (var j = 0; j < matrixC.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrixA.Row(i) * matrixB.Row(j), matrixC[i, j], 15);
+                    AssertHelpers.AlmostEqualRelative(matrixA.Row(i) * matrixB.Row(j), matrixC[i, j], 15);
                 }
             }
         }
@@ -602,17 +493,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             var matrix = TestMatrices["Singular3x3"];
             var other = TestMatrices["Tall3x2"];
             Assert.Throws<ArgumentException>(() => matrix.TransposeAndMultiply(other));
-        }
-
-        /// <summary>
-        /// Transpose and multiply a matrix with <c>null</c> matrix throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void TransposeAndMultiplyMatrixWithNullMatrixThrowsArgumentNullException()
-        {
-            var matrix = TestMatrices["Wide2x3"];
-            Matrix<double> other = null;
-            Assert.Throws<ArgumentNullException>(() => matrix.TransposeAndMultiply(other));
         }
 
         /// <summary>
@@ -637,7 +517,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             {
                 for (var j = 0; j < matrixC.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrixA.Row(i) * matrixB.Row(j), matrixC[i, j], 15);
+                    AssertHelpers.AlmostEqualRelative(matrixA.Row(i) * matrixB.Row(j), matrixC[i, j], 15);
                 }
             }
         }
@@ -651,28 +531,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             var matrix = TestMatrices["Singular3x3"];
             var other = TestMatrices["Wide2x3"];
             Assert.Throws<ArgumentException>(() => { var result = matrix * other; });
-        }
-
-        /// <summary>
-        /// Multiply <c>null</c> matrix with matrix throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void MultiplyNullMatrixWithMatrixThrowsArgumentNullException()
-        {
-            Matrix<double> matrix = null;
-            var other = TestMatrices["Wide2x3"];
-            Assert.Throws<ArgumentNullException>(() => { var result = matrix * other; });
-        }
-
-        /// <summary>
-        /// Multiply a matrix with <c>null</c> matrix throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void MultiplyMatrixWithNullMatrixThrowsArgumentNullException()
-        {
-            var matrix = TestMatrices["Wide2x3"];
-            Matrix<double> other = null;
-            Assert.Throws<ArgumentNullException>(() => { var result = matrix * other; });
         }
 
         /// <summary>
@@ -699,7 +557,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             {
                 for (var j = 0; j < matrixC.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrixA.Row(i) * matrixB.Column(j), matrixC[i, j], 15);
+                    AssertHelpers.AlmostEqualRelative(matrixA.Row(i) * matrixB.Column(j), matrixC[i, j], 15);
                 }
             }
         }
@@ -766,18 +624,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         }
 
         /// <summary>
-        /// Multiply transposed matrix with vector into result fails when result is <c>null</c>.
-        /// </summary>
-        [Test]
-        public void TransposeThisAndMultiplyWithVectorIntoNullResultThrowsArgumentNullException()
-        {
-            var matrix = TestMatrices["Singular3x3"];
-            var x = new DenseVector(new[] { 1.0, 2.0, 3.0 });
-            Vector<double> y = null;
-            Assert.Throws<ArgumentNullException>(() => matrix.TransposeThisAndMultiply(x, y));
-        }
-
-        /// <summary>
         /// Multiply transposed matrix with a vector into too large result throws <c>ArgumentException</c>.
         /// </summary>
         [Test]
@@ -810,7 +656,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             {
                 for (var j = 0; j < matrixC.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrixA.Column(i) * matrixB.Column(j), matrixC[i, j], 15);
+                    AssertHelpers.AlmostEqualRelative(matrixA.Column(i) * matrixB.Column(j), matrixC[i, j], 15);
                 }
             }
         }
@@ -824,17 +670,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             var matrix = TestMatrices["Wide2x3"];
             var other = TestMatrices["Singular3x3"];
             Assert.Throws<ArgumentException>(() => matrix.TransposeThisAndMultiply(other));
-        }
-
-        /// <summary>
-        /// Multiply the transpose of matrix with another matrix <c>null</c> matrix throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void TransposeThisAndMultiplyMatrixWithNullMatrixThrowsArgumentNullException()
-        {
-            var matrix = TestMatrices["Wide2x3"];
-            Matrix<double> other = null;
-            Assert.Throws<ArgumentNullException>(() => matrix.TransposeThisAndMultiply(other));
         }
 
         /// <summary>
@@ -859,7 +694,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             {
                 for (var j = 0; j < matrixC.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrixA.Column(i) * matrixB.Column(j), matrixC[i, j], 15);
+                    AssertHelpers.AlmostEqualRelative(matrixA.Column(i) * matrixB.Column(j), matrixC[i, j], 15);
                 }
             }
         }
@@ -912,17 +747,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
                     Assert.AreEqual(-matrix[i, j], copy[i, j]);
                 }
             }
-        }
-
-        /// <summary>
-        /// Negate into <c>null</c> result throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void NegateIntoNullResultThrowsArgumentNullException()
-        {
-            var matrix = TestMatrices["Singular3x3"];
-            Matrix<double> copy = null;
-            Assert.Throws<ArgumentNullException>(() => matrix.Negate(copy));
         }
 
         /// <summary>
@@ -1078,29 +902,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         }
 
         /// <summary>
-        /// Pointwise multiply <c>null</c> matrices into a result throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void PointwiseMultiplyNullIntoResultThrowsArgumentNullException()
-        {
-            var matrix = TestMatrices["Wide2x3"];
-            Matrix<double> other = null;
-            var result = matrix.Clone();
-            Assert.Throws<ArgumentNullException>(() => matrix.PointwiseMultiply(other, result));
-        }
-
-        /// <summary>
-        /// Pointwise multiply matrices into <c>null</c> result throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void PointwiseMultiplyIntoNullResultThrowsArgumentNullException()
-        {
-            var matrix = TestMatrices["Wide2x3"];
-            var other = matrix.Clone();
-            Assert.Throws<ArgumentNullException>(() => matrix.PointwiseMultiply(other, null));
-        }
-
-        /// <summary>
         /// Pointwise multiply matrices with invalid dimensions into a result throws <c>ArgumentException</c>.
         /// </summary>
         [Test]
@@ -1150,29 +951,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
                     Assert.AreEqual(data[i, j] / other[i, j], result[i, j]);
                 }
             }
-        }
-
-        /// <summary>
-        /// Pointwise divide <c>null</c> matrices into a result throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void PointwiseDivideNullIntoResultThrowsArgumentNullException()
-        {
-            var matrix = TestMatrices["Wide2x3"];
-            Matrix<double> other = null;
-            var result = matrix.Clone();
-            Assert.Throws<ArgumentNullException>(() => matrix.PointwiseDivide(other, result));
-        }
-
-        /// <summary>
-        /// Pointwise divide matrices into <c>null</c> result throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void PointwiseDivideIntoNullResultThrowsArgumentNullException()
-        {
-            var matrix = TestMatrices["Wide2x3"];
-            var other = matrix.Clone();
-            Assert.Throws<ArgumentNullException>(() => matrix.PointwiseDivide(other, null));
         }
 
         /// <summary>
@@ -1243,7 +1021,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             {
                 for (var column = 0; column < matrix.ColumnCount; column++)
                 {
-                    AssertHelpers.AlmostEqual(matrix[row, column] % 3.2, mod[row, column], 14);
+                    AssertHelpers.AlmostEqualRelative(matrix[row, column] % 3.2, mod[row, column], 14);
                 }
             }
         }
@@ -1262,7 +1040,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             {
                 for (var column = 0; column < matrix.ColumnCount; column++)
                 {
-                    AssertHelpers.AlmostEqual(matrix[row, column] % 3.2, mod[row, column], 14);
+                    AssertHelpers.AlmostEqualRelative(matrix[row, column] % 3.2, mod[row, column], 14);
                 }
             }
         }
@@ -1281,7 +1059,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             {
                 for (var column = 0; column < matrix.ColumnCount; column++)
                 {
-                    AssertHelpers.AlmostEqual(data[row, column] % 3.2, matrix[row, column], 14);
+                    AssertHelpers.AlmostEqualRelative(data[row, column] % 3.2, matrix[row, column], 14);
                 }
             }
         }
@@ -1298,7 +1076,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             {
                 for (var column = 0; column < matrix.ColumnCount; column++)
                 {
-                    AssertHelpers.AlmostEqual(matrix[row, column] % 3.2, mod[row, column], 14);
+                    AssertHelpers.AlmostEqualRelative(matrix[row, column] % 3.2, mod[row, column], 14);
                 }
             }
         }

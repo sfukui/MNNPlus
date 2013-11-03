@@ -24,12 +24,16 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
 {
-    using System;
-    using System.Numerics;
-    using LinearAlgebra.Complex;
-    using NUnit.Framework;
+#if NOSYSNUMERICS
+    using Complex = Numerics.Complex;
+#else
+    using Complex = System.Numerics.Complex;
+#endif
 
     /// <summary>
     /// LU factorization tests for a user matrix.
@@ -147,7 +151,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
             {
                 for (var j = 0; j < matrixXfromLU.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrixX[i, j], matrixXfromLU[i, j], 9);
+                    AssertHelpers.AlmostEqualRelative(matrixX[i, j], matrixXfromLU[i, j], 9);
                 }
             }
         }
@@ -178,7 +182,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
             // Check the reconstruction.
             for (var i = 0; i < order; i++)
             {
-                AssertHelpers.AlmostEqual(vectorb[i], matrixBReconstruct[i], 9);
+                AssertHelpers.AlmostEqual(vectorb[i], matrixBReconstruct[i], 10);
             }
 
             // Make sure A didn't change.
@@ -223,7 +227,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
             {
                 for (var j = 0; j < matrixB.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrixB[i, j], matrixBReconstruct[i, j], 9);
+                    AssertHelpers.AlmostEqual(matrixB[i, j], matrixBReconstruct[i, j], 10);
                 }
             }
 
@@ -264,7 +268,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
             // Check the reconstruction.
             for (var i = 0; i < vectorb.Count; i++)
             {
-                AssertHelpers.AlmostEqual(vectorb[i], matrixBReconstruct[i], 9);
+                AssertHelpers.AlmostEqual(vectorb[i], matrixBReconstruct[i], 10);
             }
 
             // Make sure A didn't change.
@@ -318,7 +322,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
             {
                 for (var j = 0; j < matrixB.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrixB[i, j], matrixBReconstruct[i, j], 9);
+                    AssertHelpers.AlmostEqual(matrixB[i, j], matrixBReconstruct[i, j], 10);
                 }
             }
 
@@ -377,7 +381,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
             // Check if multiplication of A and AI produced identity matrix.
             for (var i = 0; i < matrixIdentity.RowCount; i++)
             {
-                AssertHelpers.AlmostEqual(matrixIdentity[i, i], Complex.One, 9);
+                AssertHelpers.AlmostEqualRelative(matrixIdentity[i, i], Complex.One, 9);
             }
         }
     }

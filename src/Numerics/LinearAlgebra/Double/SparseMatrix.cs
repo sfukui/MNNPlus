@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2010 Math.NET
+// Copyright (c) 2009-2013 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -28,24 +28,25 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using MathNet.Numerics.LinearAlgebra.Storage;
+
 namespace MathNet.Numerics.LinearAlgebra.Double
 {
-    using System;
-    using System.Collections.Generic;
-    using Generic;
-    using Properties;
-    using Storage;
-    using Threading;
-    
     /// <summary>
-    /// A Matrix class with sparse storage. The underlying storage scheme is 3-array compressed-sparse-row (CSR) Format.
+    /// A Matrix with sparse storage, intended for very large matrices where most of the cells are zero.
+    /// The underlying storage scheme is 3-array compressed-sparse-row (CSR) Format.
     /// <a href="http://en.wikipedia.org/wiki/Sparse_matrix#Compressed_sparse_row_.28CSR_or_CRS.29">Wikipedia - CSR</a>.
     /// </summary>
     [Serializable]
-    public class SparseMatrix : Matrix 
+    [DebuggerDisplay("SparseMatrix {RowCount}x{ColumnCount}-Double {NonZerosCount}-NonZero")]
+    public class SparseMatrix : Matrix
     {
         readonly SparseCompressedRowMatrixStorage<double> _storage;
-        
+
         /// <summary>
         /// Gets the number of non zero elements in the matrix.
         /// </summary>
@@ -56,7 +57,10 @@ namespace MathNet.Numerics.LinearAlgebra.Double
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SparseMatrix"/> class.
+        /// Create a new sparse matrix straight from an initialized matrix storage instance.
+        /// The storage is used directly without copying.
+        /// Intended for advanced scenarios where you're working directly with
+        /// storage for performance or interop reasons.
         /// </summary>
         public SparseMatrix(SparseCompressedRowMatrixStorage<double> storage)
             : base(storage)
@@ -65,157 +69,310 @@ namespace MathNet.Numerics.LinearAlgebra.Double
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SparseMatrix"/> class.
+        /// Create a new square sparse matrix with the given number of rows and columns.
+        /// All cells of the matrix will be initialized to zero.
+        /// Zero-length matrices are not supported.
         /// </summary>
-        /// <param name="rows">
-        /// The number of rows.
-        /// </param>
-        /// <param name="columns">
-        /// The number of columns.
-        /// </param>
-        public SparseMatrix(int rows, int columns)
-            : this(new SparseCompressedRowMatrixStorage<double>(rows, columns))
-        {
-        }
-        
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SparseMatrix"/> class. This matrix is square with a given size.
-        /// </summary>
-        /// <param name="order">the size of the square matrix.</param>
-        /// <exception cref="ArgumentException">
-        /// If <paramref name="order"/> is less than one.
-        /// </exception>
+        /// <exception cref="ArgumentException">If the order is less than one.</exception>
         public SparseMatrix(int order)
             : this(order, order)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SparseMatrix"/> class with all entries set to a particular value.
+        /// Create a new sparse matrix with the given number of rows and columns.
+        /// All cells of the matrix will be initialized to zero.
+        /// Zero-length matrices are not supported.
         /// </summary>
-        /// <param name="rows">
-        /// The number of rows.
-        /// </param>
-        /// <param name="columns">
-        /// The number of columns.
-        /// </param>
-        /// <param name="value">The value which we assign to each element of the matrix.</param>
-        [Obsolete("Use a dense matrix instead. Scheduled for removal in v3.0.")]
-        public SparseMatrix(int rows, int columns, double value)
-            : this(rows, columns)
+        /// <exception cref="ArgumentException">If the row or column count is less than one.</exception>
+        public SparseMatrix(int rows, int columns)
+            : this(new SparseCompressedRowMatrixStorage<double>(rows, columns))
         {
-            if (value == 0.0)
-            {
-                return;
-            }
-
-            var rowPointers = _storage.RowPointers;
-            var valueCount = _storage.ValueCount = rows * columns;
-            var columnIndices = _storage.ColumnIndices = new int[valueCount];
-            var values = _storage.Values = new double[valueCount];
-
-            for (int i = 0, j = 0; i < values.Length; i++, j++)
-            {
-                // Reset column position to "0"
-                if (j == columns)
-                {
-                    j = 0;
-                }
-
-                values[i] = value;
-                columnIndices[i] = j;
-            }
-            
-            // Set proper row pointers
-            for (var i = 0; i < rowPointers.Length; i++)
-            {
-                rowPointers[i] = ((i + 1) * columns) - columns;
-            }
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SparseMatrix"/> class from a one dimensional array. 
+        /// Create a new sparse matrix as a copy of the given other matrix.
+        /// This new matrix will be independent from the other matrix.
+        /// A new memory block will be allocated for storing the matrix.
         /// </summary>
-        /// <param name="rows">The number of rows.</param>
-        /// <param name="columns">The number of columns.</param>
-        /// <param name="array">The one dimensional array to create this matrix from. This array should store the matrix in column-major order. see: http://en.wikipedia.org/wiki/Column-major_order </param>
-        /// <exception cref="ArgumentOutOfRangeException">If <paramref name="array"/> length is less than <paramref name="rows"/> * <paramref name="columns"/>.
-        /// </exception>
-        public SparseMatrix(int rows, int columns, double[] array)
-            : this(rows, columns)
+        public static SparseMatrix OfMatrix(Matrix<double> matrix)
         {
-            if (rows * columns > array.Length)
+            return new SparseMatrix(SparseCompressedRowMatrixStorage<double>.OfMatrix(matrix.Storage));
+        }
+
+        /// <summary>
+        /// Create a new sparse matrix as a copy of the given two-dimensional array.
+        /// This new matrix will be independent from the provided array.
+        /// A new memory block will be allocated for storing the matrix.
+        /// </summary>
+        public static SparseMatrix OfArray(double[,] array)
+        {
+            return new SparseMatrix(SparseCompressedRowMatrixStorage<double>.OfArray(array));
+        }
+
+        /// <summary>
+        /// Create a new sparse matrix as a copy of the given indexed enumerable.
+        /// Keys must be provided at most once, zero is assumed if a key is omitted.
+        /// This new matrix will be independent from the enumerable.
+        /// A new memory block will be allocated for storing the matrix.
+        /// </summary>
+        public static SparseMatrix OfIndexed(int rows, int columns, IEnumerable<Tuple<int, int, double>> enumerable)
+        {
+            return new SparseMatrix(SparseCompressedRowMatrixStorage<double>.OfIndexedEnumerable(rows, columns, enumerable));
+        }
+
+        /// <summary>
+        /// Create a new sparse matrix as a copy of the given enumerable.
+        /// The enumerable is assumed to be in row-major order (row by row).
+        /// This new matrix will be independent from the enumerable.
+        /// A new memory block will be allocated for storing the vector.
+        /// </summary>
+        /// <seealso href="http://en.wikipedia.org/wiki/Row-major_order"/>
+        public static SparseMatrix OfRowMajor(int rows, int columns, IEnumerable<double> rowMajor)
+        {
+            return new SparseMatrix(SparseCompressedRowMatrixStorage<double>.OfRowMajorEnumerable(rows, columns, rowMajor));
+        }
+
+        /// <summary>
+        /// Create a new sparse matrix with the given number of rows and columns as a copy of the given array.
+        /// The array is assumed to be in column-major order (column by column).
+        /// This new matrix will be independent from the provided array.
+        /// A new memory block will be allocated for storing the matrix.
+        /// </summary>
+        /// <seealso href="http://en.wikipedia.org/wiki/Row-major_order"/>
+        public static SparseMatrix OfColumnMajor(int rows, int columns, IList<double> columnMajor)
+        {
+            return new SparseMatrix(SparseCompressedRowMatrixStorage<double>.OfColumnMajorList(rows, columns, columnMajor));
+        }
+
+        /// <summary>
+        /// Create a new sparse matrix as a copy of the given enumerable of enumerable columns.
+        /// Each enumerable in the master enumerable specifies a column.
+        /// This new matrix will be independent from the enumerables.
+        /// A new memory block will be allocated for storing the matrix.
+        /// </summary>
+        public static SparseMatrix OfColumns(IEnumerable<IEnumerable<double>> data)
+        {
+            return OfColumnArrays(data.Select(v => v.ToArray()).ToArray());
+        }
+
+        /// <summary>
+        /// Create a new sparse matrix as a copy of the given enumerable of enumerable columns.
+        /// Each enumerable in the master enumerable specifies a column.
+        /// This new matrix will be independent from the enumerables.
+        /// A new memory block will be allocated for storing the matrix.
+        /// </summary>
+        public static SparseMatrix OfColumns(int rows, int columns, IEnumerable<IEnumerable<double>> data)
+        {
+            return new SparseMatrix(SparseCompressedRowMatrixStorage<double>.OfColumnEnumerables(rows, columns, data));
+        }
+
+        /// <summary>
+        /// Create a new sparse matrix as a copy of the given column arrays.
+        /// This new matrix will be independent from the arrays.
+        /// A new memory block will be allocated for storing the matrix.
+        /// </summary>
+        public static SparseMatrix OfColumnArrays(params double[][] columns)
+        {
+            return new SparseMatrix(SparseCompressedRowMatrixStorage<double>.OfColumnArrays(columns));
+        }
+
+        /// <summary>
+        /// Create a new sparse matrix as a copy of the given column arrays.
+        /// This new matrix will be independent from the arrays.
+        /// A new memory block will be allocated for storing the matrix.
+        /// </summary>
+        public static SparseMatrix OfColumnArrays(IEnumerable<double[]> columns)
+        {
+            return new SparseMatrix(SparseCompressedRowMatrixStorage<double>.OfColumnArrays((columns as double[][]) ?? columns.ToArray()));
+        }
+
+        /// <summary>
+        /// Create a new sparse matrix as a copy of the given column vectors.
+        /// This new matrix will be independent from the vectors.
+        /// A new memory block will be allocated for storing the matrix.
+        /// </summary>
+        public static SparseMatrix OfColumnVectors(params Vector<double>[] columns)
+        {
+            var storage = new VectorStorage<double>[columns.Length];
+            for (int i = 0; i < columns.Length; i++)
             {
-                throw new ArgumentOutOfRangeException(Resources.ArgumentMatrixDimensions);
+                storage[i] = columns[i].Storage;
             }
+            return new SparseMatrix(SparseCompressedRowMatrixStorage<double>.OfColumnVectors(storage));
+        }
 
-            for (var i = 0; i < rows; i++)
+        /// <summary>
+        /// Create a new sparse matrix as a copy of the given column vectors.
+        /// This new matrix will be independent from the vectors.
+        /// A new memory block will be allocated for storing the matrix.
+        /// </summary>
+        public static SparseMatrix OfColumnVectors(IEnumerable<Vector<double>> columns)
+        {
+            return new SparseMatrix(SparseCompressedRowMatrixStorage<double>.OfColumnVectors(columns.Select(c => c.Storage).ToArray()));
+        }
+
+        /// <summary>
+        /// Create a new sparse matrix as a copy of the given enumerable of enumerable rows.
+        /// Each enumerable in the master enumerable specifies a row.
+        /// This new matrix will be independent from the enumerables.
+        /// A new memory block will be allocated for storing the matrix.
+        /// </summary>
+        public static SparseMatrix OfRows(IEnumerable<IEnumerable<double>> data)
+        {
+            return OfRowArrays(data.Select(v => v.ToArray()).ToArray());
+        }
+
+        /// <summary>
+        /// Create a new sparse matrix as a copy of the given enumerable of enumerable rows.
+        /// Each enumerable in the master enumerable specifies a row.
+        /// This new matrix will be independent from the enumerables.
+        /// A new memory block will be allocated for storing the matrix.
+        /// </summary>
+        public static SparseMatrix OfRows(int rows, int columns, IEnumerable<IEnumerable<double>> data)
+        {
+            return new SparseMatrix(SparseCompressedRowMatrixStorage<double>.OfRowEnumerables(rows, columns, data));
+        }
+
+        /// <summary>
+        /// Create a new sparse matrix as a copy of the given row arrays.
+        /// This new matrix will be independent from the arrays.
+        /// A new memory block will be allocated for storing the matrix.
+        /// </summary>
+        public static SparseMatrix OfRowArrays(params double[][] rows)
+        {
+            return new SparseMatrix(SparseCompressedRowMatrixStorage<double>.OfRowArrays(rows));
+        }
+
+        /// <summary>
+        /// Create a new sparse matrix as a copy of the given row arrays.
+        /// This new matrix will be independent from the arrays.
+        /// A new memory block will be allocated for storing the matrix.
+        /// </summary>
+        public static SparseMatrix OfRowArrays(IEnumerable<double[]> rows)
+        {
+            return new SparseMatrix(SparseCompressedRowMatrixStorage<double>.OfRowArrays((rows as double[][]) ?? rows.ToArray()));
+        }
+
+        /// <summary>
+        /// Create a new sparse matrix as a copy of the given row vectors.
+        /// This new matrix will be independent from the vectors.
+        /// A new memory block will be allocated for storing the matrix.
+        /// </summary>
+        public static SparseMatrix OfRowVectors(params Vector<double>[] rows)
+        {
+            var storage = new VectorStorage<double>[rows.Length];
+            for (int i = 0; i < rows.Length; i++)
             {
-                for (var j = 0; j < columns; j++)
-                {
-                    _storage.At(i, j, array[i + (j * rows)]);
-                }
+                storage[i] = rows[i].Storage;
             }
+            return new SparseMatrix(SparseCompressedRowMatrixStorage<double>.OfRowVectors(storage));
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SparseMatrix"/> class from a 2D array. 
+        /// Create a new sparse matrix as a copy of the given row vectors.
+        /// This new matrix will be independent from the vectors.
+        /// A new memory block will be allocated for storing the matrix.
         /// </summary>
-        /// <param name="array">The 2D array to create this matrix from.</param>
-        public SparseMatrix(double[,] array)
-            : this(array.GetLength(0), array.GetLength(1))
+        public static SparseMatrix OfRowVectors(IEnumerable<Vector<double>> rows)
         {
-            for (var i = 0; i < _storage.RowCount; i++)
-            {
-                for (var j = 0; j < _storage.ColumnCount; j++)
-                {
-                    _storage.At(i, j, array[i, j]);
-                }
-            }
+            return new SparseMatrix(SparseCompressedRowMatrixStorage<double>.OfRowVectors(rows.Select(r => r.Storage).ToArray()));
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SparseMatrix"/> class, copying
-        /// the values from the given matrix.
+        /// Create a new sparse matrix with the diagonal as a copy of the given vector.
+        /// This new matrix will be independent from the vector.
+        /// A new memory block will be allocated for storing the matrix.
         /// </summary>
-        /// <param name="matrix">The matrix to copy.</param>
-        public SparseMatrix(Matrix<double> matrix)
-            : this(matrix.RowCount, matrix.ColumnCount)
+        public static SparseMatrix OfDiagonalVector(Vector<double> diagonal)
         {
-            matrix.Storage.CopyToUnchecked(Storage, skipClearing: true);
+            var m = new SparseMatrix(diagonal.Count, diagonal.Count);
+            m.SetDiagonal(diagonal);
+            return m;
         }
 
         /// <summary>
-        /// Creates a <c>SparseMatrix</c> for the given number of rows and columns.
+        /// Create a new sparse matrix with the diagonal as a copy of the given vector.
+        /// This new matrix will be independent from the vector.
+        /// A new memory block will be allocated for storing the matrix.
         /// </summary>
-        /// <param name="numberOfRows">The number of rows.</param>
-        /// <param name="numberOfColumns">The number of columns.</param>
-        /// <param name="fullyMutable">True if all fields must be mutable (e.g. not a diagonal matrix).</param>
-        /// <returns>
-        /// A <c>SparseMatrix</c> with the given dimensions.
-        /// </returns>
-        public override Matrix<double> CreateMatrix(int numberOfRows, int numberOfColumns, bool fullyMutable = false)
+        public static SparseMatrix OfDiagonalVector(int rows, int columns, Vector<double> diagonal)
         {
-            return new SparseMatrix(numberOfRows, numberOfColumns);
+            var m = new SparseMatrix(rows, columns);
+            m.SetDiagonal(diagonal);
+            return m;
         }
 
         /// <summary>
-        /// Creates a <see cref="SparseVector"/> with a the given dimension.
+        /// Create a new sparse matrix with the diagonal as a copy of the given array.
+        /// This new matrix will be independent from the array.
+        /// A new memory block will be allocated for storing the matrix.
         /// </summary>
-        /// <param name="size">The size of the vector.</param>
-        /// <param name="fullyMutable">True if all fields must be mutable.</param>
-        /// <returns>
-        /// A <see cref="SparseVector"/> with the given dimension.
-        /// </returns>
-        public override Vector<double> CreateVector(int size, bool fullyMutable = false)
+        public static SparseMatrix OfDiagonalArray(double[] diagonal)
         {
-            return new SparseVector(size);
+            var m = new SparseMatrix(diagonal.Length, diagonal.Length);
+            m.SetDiagonal(diagonal);
+            return m;
+        }
+
+        /// <summary>
+        /// Create a new sparse matrix with the diagonal as a copy of the given array.
+        /// This new matrix will be independent from the array.
+        /// A new memory block will be allocated for storing the matrix.
+        /// </summary>
+        public static SparseMatrix OfDiagonalArray(int rows, int columns, double[] diagonal)
+        {
+            var m = new SparseMatrix(rows, columns);
+            m.SetDiagonal(diagonal);
+            return m;
+        }
+
+        /// <summary>
+        /// Create a new sparse matrix and initialize each value to the same provided value.
+        /// </summary>
+        public static SparseMatrix Create(int rows, int columns, double value)
+        {
+            if (value == 0d) return new SparseMatrix(rows, columns);
+            return new SparseMatrix(SparseCompressedRowMatrixStorage<double>.OfInit(rows, columns, (i, j) => value));
+        }
+
+        /// <summary>
+        /// Create a new sparse matrix and initialize each value using the provided init function.
+        /// </summary>
+        public static SparseMatrix Create(int rows, int columns, Func<int, int, double> init)
+        {
+            return new SparseMatrix(SparseCompressedRowMatrixStorage<double>.OfInit(rows, columns, init));
+        }
+
+        /// <summary>
+        /// Create a new diagonal sparse matrix and initialize each diagonal value to the same provided value.
+        /// </summary>
+        public static SparseMatrix CreateDiagonal(int rows, int columns, double value)
+        {
+            if (value == 0d) return new SparseMatrix(rows, columns);
+            return new SparseMatrix(SparseCompressedRowMatrixStorage<double>.OfDiagonalInit(rows, columns, i => value));
+        }
+
+        /// <summary>
+        /// Create a new diagonal sparse matrix and initialize each diagonal value using the provided init function.
+        /// </summary>
+        public static SparseMatrix CreateDiagonal(int rows, int columns, Func<int, double> init)
+        {
+            return new SparseMatrix(SparseCompressedRowMatrixStorage<double>.OfDiagonalInit(rows, columns, init));
+        }
+
+        /// <summary>
+        /// Create a new square sparse identity matrix where each diagonal value is set to One.
+        /// </summary>
+        public static SparseMatrix CreateIdentity(int order)
+        {
+            return new SparseMatrix(SparseCompressedRowMatrixStorage<double>.OfDiagonalInit(order, order, i => One));
         }
 
         /// <summary>
         /// Returns a new matrix containing the lower triangle of this matrix.
         /// </summary>
-        /// <returns>The lower triangle of this matrix.</returns>        
+        /// <returns>The lower triangle of this matrix.</returns>
         public override Matrix<double> LowerTriangle()
         {
             var result = CreateMatrix(RowCount, ColumnCount);
@@ -263,13 +420,11 @@ namespace MathNet.Numerics.LinearAlgebra.Double
             var rowPointers = _storage.RowPointers;
             var columnIndices = _storage.ColumnIndices;
             var values = _storage.Values;
-            var valueCount = _storage.ValueCount;
 
             for (var row = 0; row < result.RowCount; row++)
             {
-                var startIndex = rowPointers[row];
-                var endIndex = row < rowPointers.Length - 1 ? rowPointers[row + 1] : valueCount;
-                for (var j = startIndex; j < endIndex; j++)
+                var endIndex = rowPointers[row + 1];
+                for (var j = rowPointers[row]; j < endIndex; j++)
                 {
                     if (row >= columnIndices[j])
                     {
@@ -282,7 +437,7 @@ namespace MathNet.Numerics.LinearAlgebra.Double
         /// <summary>
         /// Returns a new matrix containing the upper triangle of this matrix.
         /// </summary>
-        /// <returns>The upper triangle of this matrix.</returns>   
+        /// <returns>The upper triangle of this matrix.</returns>
         public override Matrix<double> UpperTriangle()
         {
             var result = CreateMatrix(RowCount, ColumnCount);
@@ -330,13 +485,11 @@ namespace MathNet.Numerics.LinearAlgebra.Double
             var rowPointers = _storage.RowPointers;
             var columnIndices = _storage.ColumnIndices;
             var values = _storage.Values;
-            var valueCount = _storage.ValueCount;
 
             for (var row = 0; row < result.RowCount; row++)
             {
-                var startIndex = rowPointers[row];
-                var endIndex = row < rowPointers.Length - 1 ? rowPointers[row + 1] : valueCount;
-                for (var j = startIndex; j < endIndex; j++)
+                var endIndex = rowPointers[row + 1];
+                for (var j = rowPointers[row]; j < endIndex; j++)
                 {
                     if (row <= columnIndices[j])
                     {
@@ -398,13 +551,11 @@ namespace MathNet.Numerics.LinearAlgebra.Double
             var rowPointers = _storage.RowPointers;
             var columnIndices = _storage.ColumnIndices;
             var values = _storage.Values;
-            var valueCount = _storage.ValueCount;
 
             for (var row = 0; row < result.RowCount; row++)
             {
-                var startIndex = rowPointers[row];
-                var endIndex = row < rowPointers.Length - 1 ? rowPointers[row + 1] : valueCount;
-                for (var j = startIndex; j < endIndex; j++)
+                var endIndex = rowPointers[row + 1];
+                for (var j = rowPointers[row]; j < endIndex; j++)
                 {
                     if (row > columnIndices[j])
                     {
@@ -466,13 +617,11 @@ namespace MathNet.Numerics.LinearAlgebra.Double
             var rowPointers = _storage.RowPointers;
             var columnIndices = _storage.ColumnIndices;
             var values = _storage.Values;
-            var valueCount = _storage.ValueCount;
 
             for (var row = 0; row < result.RowCount; row++)
             {
-                var startIndex = rowPointers[row];
-                var endIndex = row < rowPointers.Length - 1 ? rowPointers[row + 1] : valueCount;
-                for (var j = startIndex; j < endIndex; j++)
+                var endIndex = rowPointers[row + 1];
+                for (var j = rowPointers[row]; j < endIndex; j++)
                 {
                     if (row < columnIndices[j])
                     {
@@ -484,29 +633,26 @@ namespace MathNet.Numerics.LinearAlgebra.Double
 
         /// <summary>
         /// Returns the transpose of this matrix.
-        /// </summary>        
+        /// </summary>
         /// <returns>The transpose of this matrix.</returns>
         public override Matrix<double> Transpose()
         {
             var rowPointers = _storage.RowPointers;
             var columnIndices = _storage.ColumnIndices;
             var values = _storage.Values;
-            var valueCount = _storage.ValueCount;
 
             var ret = new SparseCompressedRowMatrixStorage<double>(ColumnCount, RowCount)
                 {
-                    ColumnIndices = new int[valueCount],
-                    Values = new double[valueCount]
+                    ColumnIndices = new int[_storage.ValueCount],
+                    Values = new double[_storage.ValueCount]
                 };
 
             // Do an 'inverse' CopyTo iterate over the rows
-            for (var i = 0; i < rowPointers.Length; i++)
+            for (var i = 0; i < RowCount; i++)
             {
-                // Get the begin / end index for the current row
                 var startIndex = rowPointers[i];
-                var endIndex = i < rowPointers.Length - 1 ? rowPointers[i + 1] : valueCount;
+                var endIndex = rowPointers[i + 1];
 
-                // Get the values for the current row
                 if (startIndex == endIndex)
                 {
                     // Begin and end are equal. There are no values in the row, Move to the next row
@@ -522,20 +668,45 @@ namespace MathNet.Numerics.LinearAlgebra.Double
             return new SparseMatrix(ret);
         }
 
-        /// <summary>Calculates the Frobenius norm of this matrix.</summary>
-        /// <returns>The Frobenius norm of this matrix.</returns>
+        /// <summary>Calculates the induced infinity norm of this matrix.</summary>
+        /// <returns>The maximum absolute row sum of the matrix.</returns>
+        public override double InfinityNorm()
+        {
+            var rowPointers = _storage.RowPointers;
+            var values = _storage.Values;
+            var norm = 0d;
+            for (var i = 0; i < RowCount; i++)
+            {
+                var startIndex = rowPointers[i];
+                var endIndex = rowPointers[i + 1];
+
+                if (startIndex == endIndex)
+                {
+                    // Begin and end are equal. There are no values in the row, Move to the next row
+                    continue;
+                }
+
+                var s = 0d;
+                for (var j = startIndex; j < endIndex; j++)
+                {
+                    s += Math.Abs(values[j]);
+                }
+                norm = Math.Max(norm, s);
+            }
+            return norm;
+        }
+
+        /// <summary>Calculates the entry-wise Frobenius norm of this matrix.</summary>
+        /// <returns>The square root of the sum of the squared values.</returns>
         public override double FrobeniusNorm()
         {
             var aat = (SparseCompressedRowMatrixStorage<double>) (this*Transpose()).Storage;
             var norm = 0d;
-
-            for (var i = 0; i < aat.RowPointers.Length; i++)
+            for (var i = 0; i < aat.RowCount; i++)
             {
-                // Get the begin / end index for the current row
                 var startIndex = aat.RowPointers[i];
-                var endIndex = i < aat.RowPointers.Length - 1 ? aat.RowPointers[i + 1] : aat.ValueCount;
+                var endIndex = aat.RowPointers[i + 1];
 
-                // Get the values for the current row
                 if (startIndex == endIndex)
                 {
                     // Begin and end are equal. There are no values in the row, Move to the next row
@@ -550,72 +721,8 @@ namespace MathNet.Numerics.LinearAlgebra.Double
                     }
                 }
             }
-
             return Math.Sqrt(norm);
         }
-
-        /// <summary>Calculates the infinity norm of this matrix.</summary>
-        /// <returns>The infinity norm of this matrix.</returns>   
-        public override double InfinityNorm()
-        {
-            var rowPointers = _storage.RowPointers;
-            var values = _storage.Values;
-            var valueCount = _storage.ValueCount;
-
-            var norm = 0d;
-            for (var i = 0; i < rowPointers.Length; i++)
-            {
-                // Get the begin / end index for the current row
-                var startIndex = rowPointers[i];
-                var endIndex = i < rowPointers.Length - 1 ? rowPointers[i + 1] : valueCount;
-
-                // Get the values for the current row
-                if (startIndex == endIndex)
-                {
-                    // Begin and end are equal. There are no values in the row, Move to the next row
-                    continue;
-                }
-
-                var s = 0d;
-                for (var j = startIndex; j < endIndex; j++)
-                {
-                    s += Math.Abs(values[j]);
-                }
-
-                norm = Math.Max(norm, s);
-            }
-
-            return norm;
-        }
-
-        #region Static constructors for special matrices.
-        /// <summary>
-        /// Initializes a square <see cref="SparseMatrix"/> with all zero's except for ones on the diagonal.
-        /// </summary>
-        /// <param name="order">the size of the square matrix.</param>
-        /// <returns>Identity <c>SparseMatrix</c></returns>
-        /// <exception cref="ArgumentException">
-        /// If <paramref name="order"/> is less than one.
-        /// </exception>
-        public static SparseMatrix Identity(int order)
-        {
-            var m = new SparseCompressedRowMatrixStorage<double>(order, order)
-                {
-                    ValueCount = order,
-                    Values = new double[order],
-                    ColumnIndices = new int[order]
-                };
-
-            for (var i = 0; i < order; i++)
-            {
-                m.Values[i] = 1d;
-                m.ColumnIndices[i] = i;
-                m.RowPointers[i] = i;
-            }
-
-            return new SparseMatrix(m);
-        }
-        #endregion
 
         /// <summary>
         /// Adds another matrix to this matrix.
@@ -664,11 +771,8 @@ namespace MathNet.Numerics.LinearAlgebra.Double
             var leftStorage = left._storage;
             for (var i = 0; i < leftStorage.RowCount; i++)
             {
-                // Get the begin / end index for the current row
-                var startIndex = leftStorage.RowPointers[i];
-                var endIndex = i < leftStorage.RowPointers.Length - 1 ? leftStorage.RowPointers[i + 1] : leftStorage.ValueCount;
-
-                for (var j = startIndex; j < endIndex; j++)
+                var endIndex = leftStorage.RowPointers[i + 1];
+                for (var j = leftStorage.RowPointers[i]; j < endIndex; j++)
                 {
                     var columnIndex = leftStorage.ColumnIndices[j];
                     var resVal = leftStorage.Values[j] + result.At(i, columnIndex);
@@ -707,11 +811,8 @@ namespace MathNet.Numerics.LinearAlgebra.Double
             {
                 for (var i = 0; i < otherStorage.RowCount; i++)
                 {
-                    // Get the begin / end index for the current row
-                    var startIndex = otherStorage.RowPointers[i];
-                    var endIndex = i < otherStorage.RowPointers.Length - 1 ? otherStorage.RowPointers[i + 1] : otherStorage.ValueCount;
-
-                    for (var j = startIndex; j < endIndex; j++)
+                    var endIndex = otherStorage.RowPointers[i + 1];
+                    for (var j = otherStorage.RowPointers[i]; j < endIndex; j++)
                     {
                         var columnIndex = otherStorage.ColumnIndices[j];
                         var resVal = sparseResult.At(i, columnIndex) - otherStorage.Values[j];
@@ -731,15 +832,11 @@ namespace MathNet.Numerics.LinearAlgebra.Double
                 var rowPointers = _storage.RowPointers;
                 var columnIndices = _storage.ColumnIndices;
                 var values = _storage.Values;
-                var valueCount = _storage.ValueCount;
 
                 for (var i = 0; i < RowCount; i++)
                 {
-                    // Get the begin / end index for the current row
-                    var startIndex = rowPointers[i];
-                    var endIndex = i < rowPointers.Length - 1 ? rowPointers[i + 1] : valueCount;
-
-                    for (var j = startIndex; j < endIndex; j++)
+                    var endIndex = rowPointers[i + 1];
+                    for (var j = rowPointers[i]; j < endIndex; j++)
                     {
                         var columnIndex = columnIndices[j];
                         var resVal = sparseResult.At(i, columnIndex) + values[j];
@@ -762,7 +859,7 @@ namespace MathNet.Numerics.LinearAlgebra.Double
                 return;
             }
 
-            if (scalar == 0.0 || _storage.ValueCount == 0)
+            if (scalar == 0.0 || NonZerosCount == 0)
             {
                 result.Clear();
                 return;
@@ -801,7 +898,7 @@ namespace MathNet.Numerics.LinearAlgebra.Double
                     CopyTo(sparseResult);
                 }
 
-                CommonParallel.For(0, _storage.ValueCount, index => sparseResult._storage.Values[index] *= scalar);
+                Control.LinearAlgebraProvider.ScaleArray(scalar, sparseResult._storage.Values, sparseResult._storage.Values);
             }
         }
 
@@ -818,13 +915,12 @@ namespace MathNet.Numerics.LinearAlgebra.Double
             var rowPointers = _storage.RowPointers;
             var columnIndices = _storage.ColumnIndices;
             var values = _storage.Values;
-            var valueCount = _storage.ValueCount;
 
             for (var row = 0; row < RowCount; row++)
             {
-                // Get the begin / end index for the current row
                 var startIndex = rowPointers[row];
-                var endIndex = row < rowPointers.Length - 1 ? rowPointers[row + 1] : valueCount;
+                var endIndex = rowPointers[row + 1];
+
                 if (startIndex == endIndex)
                 {
                     continue;
@@ -856,13 +952,12 @@ namespace MathNet.Numerics.LinearAlgebra.Double
             var rowPointers = _storage.RowPointers;
             var columnIndices = _storage.ColumnIndices;
             var values = _storage.Values;
-            var valueCount = _storage.ValueCount;
 
             for (var row = 0; row < RowCount; row++)
             {
-                // Get the begin / end index for the current row
                 var startIndex = rowPointers[row];
-                var endIndex = row < rowPointers.Length - 1 ? rowPointers[row + 1] : valueCount;
+                var endIndex = rowPointers[row + 1];
+
                 if (startIndex == endIndex)
                 {
                     continue;
@@ -898,15 +993,14 @@ namespace MathNet.Numerics.LinearAlgebra.Double
 
             var rowPointers = _storage.RowPointers;
             var values = _storage.Values;
-            var valueCount = _storage.ValueCount;
 
             var otherStorage = otherSparse._storage;
 
             for (var j = 0; j < RowCount; j++)
             {
-                // Get the begin / end index for the row
                 var startIndexOther = otherStorage.RowPointers[j];
-                var endIndexOther = j < otherStorage.RowPointers.Length - 1 ? otherStorage.RowPointers[j + 1] : otherStorage.ValueCount;
+                var endIndexOther = otherStorage.RowPointers[j + 1];
+
                 if (startIndexOther == endIndexOther)
                 {
                     continue;
@@ -914,10 +1008,9 @@ namespace MathNet.Numerics.LinearAlgebra.Double
 
                 for (var i = 0; i < RowCount; i++)
                 {
-                    // Multiply row of matrix A on row of matrix B
-                    // Get the begin / end index for the row
                     var startIndexThis = rowPointers[i];
-                    var endIndexThis = i < rowPointers.Length - 1 ? rowPointers[i + 1] : valueCount;
+                    var endIndexThis = rowPointers[i + 1];
+
                     if (startIndexThis == endIndexThis)
                     {
                         continue;
@@ -960,15 +1053,11 @@ namespace MathNet.Numerics.LinearAlgebra.Double
             var rowPointers = _storage.RowPointers;
             var columnIndices = _storage.ColumnIndices;
             var values = _storage.Values;
-            var valueCount = _storage.ValueCount;
 
             for (var i = 0; i < RowCount; i++)
             {
-                // Get the begin / end index for the current row
-                var startIndex = rowPointers[i];
-                var endIndex = i < rowPointers.Length - 1 ? rowPointers[i + 1] : valueCount;
-
-                for (var j = startIndex; j < endIndex; j++)
+                var endIndex = rowPointers[i + 1];
+                for (var j = rowPointers[i]; j < endIndex; j++)
                 {
                     var resVal = values[j]*other.At(i, columnIndices[j]);
                     if (resVal != 0d)
@@ -982,28 +1071,24 @@ namespace MathNet.Numerics.LinearAlgebra.Double
         /// <summary>
         /// Pointwise divide this matrix by another matrix and stores the result into the result matrix.
         /// </summary>
-        /// <param name="other">The matrix to pointwise divide this one by.</param>
+        /// <param name="divisor">The matrix to pointwise divide this one by.</param>
         /// <param name="result">The matrix to store the result of the pointwise division.</param>
-        protected override void DoPointwiseDivide(Matrix<double> other, Matrix<double> result)
+        protected override void DoPointwiseDivide(Matrix<double> divisor, Matrix<double> result)
         {
             result.Clear();
 
             var rowPointers = _storage.RowPointers;
             var columnIndices = _storage.ColumnIndices;
             var values = _storage.Values;
-            var valueCount = _storage.ValueCount;
 
             for (var i = 0; i < RowCount; i++)
             {
-                // Get the begin / end index for the current row
-                var startIndex = rowPointers[i];
-                var endIndex = i < rowPointers.Length - 1 ? rowPointers[i + 1] : valueCount;
-
-                for (var j = startIndex; j < endIndex; j++)
+                var endIndex = rowPointers[i + 1];
+                for (var j = rowPointers[i]; j < endIndex; j++)
                 {
                     if (values[j] != 0d)
                     {
-                        result.At(i, columnIndices[j], values[j]/other.At(i, columnIndices[j]));
+                        result.At(i, columnIndices[j], values[j]/divisor.At(i, columnIndices[j]));
                     }
                 }
             }
@@ -1029,15 +1114,11 @@ namespace MathNet.Numerics.LinearAlgebra.Double
             var rowPointers = _storage.RowPointers;
             var columnIndices = _storage.ColumnIndices;
             var values = _storage.Values;
-            var valueCount = _storage.ValueCount;
 
             for (var i = 0; i < RowCount; i++)
             {
-                // Get the begin / end index for the current row
-                var startIndex = rowPointers[i];
-                var endIndex = i < rowPointers.Length - 1 ? rowPointers[i + 1] : valueCount;
-
-                for (var j = startIndex; j < endIndex; j++)
+                var endIndex = rowPointers[i + 1];
+                for (var j = rowPointers[i]; j < endIndex; j++)
                 {
                     if (values[j] != 0d)
                     {
@@ -1074,44 +1155,6 @@ namespace MathNet.Numerics.LinearAlgebra.Double
         }
 
         /// <summary>
-        /// Iterates throw each element in the matrix (row-wise).
-        /// </summary>
-        /// <returns>The value at the current iteration along with its position (row, column, value).</returns>
-        public override IEnumerable<Tuple<int, int, double>> IndexedEnumerator()
-        {
-            var rowPointers = _storage.RowPointers;
-            var columnIndices = _storage.ColumnIndices;
-            var values = _storage.Values;
-            var valueCount = _storage.ValueCount;
-
-            for (var row = 0; row < RowCount - 1; row++)
-            {
-                var start = rowPointers[row];
-                var end = rowPointers[row + 1];
-                
-                if (start == end)
-                {
-                    continue;
-                }
-
-                for (var index = start; index < end; index++)
-                {
-                    yield return new Tuple<int, int, double>(row, columnIndices[index], values[index]);
-                }
-            }
-
-            var lastRow = rowPointers.Length - 1;
-
-            if (rowPointers[lastRow] < valueCount)
-            {
-                for (var index = rowPointers[lastRow]; index < valueCount; index++)
-                {
-                    yield return new Tuple<int, int, double>(lastRow, columnIndices[index], values[index]);
-                }
-            }
-        }
-
-        /// <summary>
         /// Gets a value indicating whether this matrix is symmetric.
         /// </summary>
         public override bool IsSymmetric
@@ -1125,7 +1168,7 @@ namespace MathNet.Numerics.LinearAlgebra.Double
 
                 // todo: we might be able to speed this up by caching one half of the matrix
                 var rowPointers = _storage.RowPointers;
-                for (var row = 0; row < RowCount - 1; row++)
+                for (var row = 0; row < RowCount; row++)
                 {
                     var start = rowPointers[row];
                     var end = rowPointers[row + 1];
@@ -1136,16 +1179,6 @@ namespace MathNet.Numerics.LinearAlgebra.Double
                     }
 
                     if (!CheckIfOppositesAreEqual(start, end, row))
-                    {
-                        return false;
-                    }
-                }
-
-                var lastRow = rowPointers.Length - 1;
-
-                if (rowPointers[lastRow] < _storage.ValueCount)
-                {
-                    if (!CheckIfOppositesAreEqual(rowPointers[lastRow], _storage.ValueCount, lastRow))
                     {
                         return false;
                     }
@@ -1212,7 +1245,7 @@ namespace MathNet.Numerics.LinearAlgebra.Double
         }
 
         /// <summary>
-        /// Returns a <strong>Matrix</strong> containing the same values of <paramref name="rightSide"/>. 
+        /// Returns a <strong>Matrix</strong> containing the same values of <paramref name="rightSide"/>.
         /// </summary>
         /// <param name="rightSide">The matrix to get the values from.</param>
         /// <returns>A matrix containing a the same values as <paramref name="rightSide"/>.</returns>
@@ -1388,6 +1421,11 @@ namespace MathNet.Numerics.LinearAlgebra.Double
             }
 
             return (SparseMatrix)leftSide.Modulus(rightSide);
+        }
+
+        public override string ToTypeString()
+        {
+            return string.Format("SparseMatrix {0}x{1}-Double {2:P2} Filled", RowCount, ColumnCount, NonZerosCount / (RowCount * (double)ColumnCount));
         }
     }
 }

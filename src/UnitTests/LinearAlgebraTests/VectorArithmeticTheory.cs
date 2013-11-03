@@ -28,12 +28,12 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using MathNet.Numerics.LinearAlgebra;
+using NUnit.Framework;
+using System;
+
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
 {
-    using System;
-    using LinearAlgebra.Generic;
-    using NUnit.Framework;
-
     [TestFixture]
     public abstract class VectorArithmeticTheory<T>
         where T : struct, IEquatable<T>, IFormattable
@@ -73,22 +73,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests
             var c = vector.Clone();
             c.Subtract(vector, c);
             Assert.That(c.Equals(vector.CreateVector(vector.Count)));
-        }
-
-        [Theory, Timeout(200)]
-        public void CanPlusVector(Vector<T> vector)
-        {
-            var hash = vector.GetHashCode();
-
-            var result1 = +vector;
-            var result2 = vector.Plus();
-
-            Assert.That(vector.GetHashCode(), Is.EqualTo(hash));
-            Assert.That(result1, Is.Not.SameAs(vector));
-            Assert.That(result1.Equals(vector));
-            Assert.That(result2, Is.Not.SameAs(vector));
-            Assert.That(result2.Equals(vector));
-            Assert.That(result1.Equals(result2));
         }
 
         [Theory, Timeout(200)]

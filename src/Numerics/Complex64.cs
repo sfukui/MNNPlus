@@ -28,15 +28,14 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
-#if PORTABLE
-namespace System.Numerics
+#if NOSYSNUMERICS
+namespace MathNet.Numerics
 {
     using System;
     using System.Collections.Generic;
     using System.Runtime.InteropServices;
     using System.Text;
-    using MathNet.Numerics;
-    using MathNet.Numerics.Properties;
+    using Properties;
 
     /// <summary>
     /// 64-bit double precision complex numbers class.
@@ -102,52 +101,32 @@ namespace System.Numerics
             return new Complex(magnitude * Math.Cos(phase), magnitude * Math.Sin(phase));
         }
 
-        [Obsolete("Use the public constructor instead. Scheduled for removal in v3.0.")]
-        public static Complex WithRealImaginary(double real, double imaginary)
-        {
-            return new Complex(real, imaginary);
-        }
-
-        [Obsolete("Use static FromPolarCoordinates instead. Scheduled for removal in v3.0.")]
-        public static Complex WithModulusArgument(double modulus, double argument)
-        {
-            if (modulus < 0.0d)
-            {
-                throw new ArgumentOutOfRangeException("modulus", Resources.ArgumentNotNegative);
-            }
-
-            return new Complex(modulus * Math.Cos(argument), modulus * Math.Sin(argument));
-        }
-
         /// <summary>
-        /// Returns a new <see cref="T:System.Numerics.Complex" /> instance
+        /// Returns a new Complex instance
         /// with a real number equal to zero and an imaginary number equal to zero.
         /// </summary>
         public static readonly Complex Zero = new Complex(0.0f, 0.0f);
 
         /// <summary>
-        /// Returns a new <see cref="T:System.Numerics.Complex" /> instance
+        /// Returns a new Complex instance
         /// with a real number equal to one and an imaginary number equal to zero.
         /// </summary>
         public static readonly Complex One = new Complex(1.0f, 0.0f);
 
         /// <summary>
-        /// Returns a new <see cref="T:System.Numerics.Complex" /> instance
+        /// Returns a new Complex instance
         /// with a real number equal to zero and an imaginary number equal to one.
         /// </summary>
         public static readonly Complex ImaginaryOne = new Complex(0, 1);
 
         /// <summary>
-        /// Returns a new <see cref="T:System.Numerics.Complex" /> instance
+        /// Returns a new Complex instance
         /// with real and imaginary numbers positive infinite.
         /// </summary>
         public static readonly Complex PositiveInfinity = new Complex(float.PositiveInfinity, float.PositiveInfinity);
 
-        [Obsolete("Use PositiveInfinity instead. Scheduled for removal in v3.0.")]
-        public static readonly Complex Infinity = PositiveInfinity;
-
         /// <summary>
-        /// Returns a new <see cref="T:System.Numerics.Complex" /> instance
+        /// Returns a new Complex instance
         /// with real and imaginary numbers not a number.
         /// </summary>
         public static readonly Complex NaN = new Complex(float.NaN, float.NaN);
@@ -183,8 +162,9 @@ namespace System.Numerics
         /// <returns>The phase or argument of this <c>Complex</c></returns>
         public double Phase
         {
+            // NOTE: the special case for negative real numbers fixes negative-zero value behavior. Do not remove.
             [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
-            get { return Math.Atan2(_imag, _real); }
+            get { return _imag == 0d && _real < 0d ? Constants.Pi : Math.Atan2(_imag, _real); }
         }
 
         /// <summary>
@@ -1087,7 +1067,7 @@ namespace System.Numerics
                 return new Complex(exp, 0.0);
             }
 
-            return new Complex(exp * Trig.Cosine(value.Imaginary), exp * Trig.Sine(value.Imaginary));
+            return new Complex(exp * Trig.Cos(value.Imaginary), exp * Trig.Sin(value.Imaginary));
         }
 
         /// <summary>
@@ -1193,7 +1173,7 @@ namespace System.Numerics
         [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
         public static Complex Sin(Complex value)
         {
-            return Trig.Sine(value);
+            return Trig.Sin(value);
         }
 
         /// <summary>
@@ -1204,7 +1184,7 @@ namespace System.Numerics
         [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
         public static Complex Cos(Complex value)
         {
-            return Trig.Cosine(value);
+            return Trig.Cos(value);
         }
 
         /// <summary>
@@ -1215,7 +1195,7 @@ namespace System.Numerics
         [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
         public static Complex Tan(Complex value)
         {
-            return Trig.Tangent(value);
+            return Trig.Tan(value);
         }
 
         /// <summary>
@@ -1226,7 +1206,7 @@ namespace System.Numerics
         [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
         public static Complex Asin(Complex value)
         {
-            return Trig.InverseSine(value);
+            return Trig.Asin(value);
         }
 
         /// <summary>
@@ -1237,7 +1217,7 @@ namespace System.Numerics
         [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
         public static Complex Acos(Complex value)
         {
-            return Trig.InverseCosine(value);
+            return Trig.Acos(value);
         }
 
         /// <summary>
@@ -1248,7 +1228,7 @@ namespace System.Numerics
         [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
         public static Complex Atan(Complex value)
         {
-            return Trig.InverseTangent(value);
+            return Trig.Atan(value);
         }
 
         /// <summary>
@@ -1259,7 +1239,7 @@ namespace System.Numerics
         [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
         public static Complex Sinh(Complex value)
         {
-            return Trig.HyperbolicSine(value);
+            return Trig.Sinh(value);
         }
 
         /// <summary>
@@ -1270,7 +1250,7 @@ namespace System.Numerics
         [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
         public static Complex Cosh(Complex value)
         {
-            return Trig.HyperbolicCosine(value);
+            return Trig.Cosh(value);
         }
 
         /// <summary>
@@ -1281,7 +1261,7 @@ namespace System.Numerics
         [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
         public static Complex Tanh(Complex value)
         {
-            return Trig.HyperbolicTangent(value);
+            return Trig.Tanh(value);
         }
     }
 }

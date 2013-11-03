@@ -1,0 +1,101 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{1a8315ac-bcda-4294-b994-fdc4fed45bee}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>FSharpPortableUnitTests</RootNamespace>
+    <AssemblyName>MathNet.Numerics.FSharp.UnitTests136</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <Name>FSharpUnitTests-Portable136</Name>
+    <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
+    <TargetFSharpCoreVersion>4.3.0.0</TargetFSharpCoreVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DefineConstants>TRACE;PORTABLE;NOSYSNUMERICS</DefineConstants>
+    <OutputPath>..\..\out\test\Profile136\</OutputPath>
+    <IntermediateOutputPath>..\..\obj\test\Profile136\</IntermediateOutputPath>
+    <BaseIntermediateOutputPath>..\..\obj\test\Profile136\</BaseIntermediateOutputPath>
+    <Optimize>true</Optimize>
+    <Tailcalls>true</Tailcalls>
+    <DebugType>pdbonly</DebugType>
+    <WarningLevel>3</WarningLevel>
+    <DocumentationFile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DefineConstants>DEBUG;TRACE;PORTABLE;NOSYSNUMERICS</DefineConstants>
+    <OutputPath>..\..\out\test-debug\Profile136\</OutputPath>
+    <IntermediateOutputPath>..\..\obj\test-debug\Profile136\</IntermediateOutputPath>
+    <BaseIntermediateOutputPath>..\..\obj\test-debug\Profile136\</BaseIntermediateOutputPath>
+    <Optimize>false</Optimize>
+    <Tailcalls>false</Tailcalls>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <WarningLevel>3</WarningLevel>
+    <DocumentationFile />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '12.0' ">
+    <!-- Workaround - remove once no longer needed! -->
+    <DefineConstants>$(DefineConstants);NOFSSLICESET1D</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="mscorlib" />
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="nunit.framework">
+      <HintPath>..\..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="FsUnit.NUnit">
+      <HintPath>..\..\packages\FsUnit.1.2.1.0\Lib\Net40\FsUnit.NUnit.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+      <Private>True</Private>
+    </Reference>
+    <ProjectReference Include="..\FSharp\FSharp-Portable136.fsproj">
+      <Name>FSharp-Portable136</Name>
+      <Project>{d178918b-6ac0-4624-a515-4b99147b9ffd}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Numerics\Numerics-Portable136.csproj">
+      <Name>Numerics-Portable136</Name>
+      <Project>{c2581199-28c4-41aa-a26a-f0c076ea2a67}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="VectorTests.fs" />
+    <Compile Include="SparseVectorTests.fs" />
+    <Compile Include="DenseVectorTests.fs" />
+    <Compile Include="MatrixTests.fs" />
+    <Compile Include="SparseMatrixTests.fs" />
+    <Compile Include="DenseMatrixTests.fs" />
+    <Compile Include="Utilities.fs" />
+    <Compile Include="BigRationalTests.fs" />
+    <Compile Include="RandomVariableTests.fs" />
+    <Compile Include="PokerTests.fs" />
+    <Compile Include="FitTests.fs" />
+    <Compile Include="FindRootsTests.fs" />
+    <None Include="packages.config" />
+    <None Include="App.config" />
+  </ItemGroup>
+  <Choose>
+    <When Condition="'$(VisualStudioVersion)' == '11.0'">
+      <PropertyGroup>
+        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets</FSharpTargetsPath>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+  <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
+</Project>

@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2013 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -24,18 +28,22 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using MathNet.Numerics.Distributions;
+using MathNet.Numerics.LinearAlgebra;
+using MathNet.Numerics.LinearAlgebra.Complex;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
 {
-    using System;
-    using System.Collections;
-    using System.Collections.Generic;
-    using System.Globalization;
-    using System.Linq;
-    using System.Numerics;
-    using Distributions;
-    using LinearAlgebra.Complex;
-    using LinearAlgebra.Generic;
-    using NUnit.Framework;
+#if NOSYSNUMERICS
+    using Complex = Numerics.Complex;
+#else
+    using Complex = System.Numerics.Complex;
+#endif
 
     /// <summary>
     /// Abstract class with the common set of vector tests.
@@ -84,9 +92,8 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
         public void CanConvertVectorToString()
         {
             var vector = CreateVector(Data);
-            var str = vector.ToString();
-            var sep = CultureInfo.CurrentCulture.TextInfo.ListSeparator;
-            Assert.AreEqual(string.Format("(1{0} 1){1}(2{0} 1){1}(3{0} 1){1}(4{0} 1){1}(5{0} 1)", ",", sep), str);
+            var str = vector.ToVectorString(1, int.MaxValue, 1);
+            Assert.AreEqual("(1, 1) (2, 1) (3, 1) (4, 1) (5, 1)", str);
         }
 
         /// <summary>
@@ -100,11 +107,11 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
 
             vector.CopySubVectorTo(other, 2, 2, 2);
 
-            AssertHelpers.AreEqual(Complex.Zero, other[0]);
-            AssertHelpers.AreEqual(Complex.Zero, other[1]);
-            AssertHelpers.AreEqual(new Complex(3, 1), other[2]);
-            AssertHelpers.AreEqual(new Complex(4, 1), other[3]);
-            AssertHelpers.AreEqual(Complex.Zero, other[4]);
+            AssertHelpers.AlmostEqual(Complex.Zero, other[0]);
+            AssertHelpers.AlmostEqual(Complex.Zero, other[1]);
+            AssertHelpers.AlmostEqual(new Complex(3, 1), other[2]);
+            AssertHelpers.AlmostEqual(new Complex(4, 1), other[3]);
+            AssertHelpers.AlmostEqual(Complex.Zero, other[4]);
         }
 
         /// <summary>
@@ -116,11 +123,11 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
             var vector = CreateVector(Data);
             vector.CopySubVectorTo(vector, 0, 2, 2);
 
-            AssertHelpers.AreEqual(new Complex(1, 1), vector[0]);
-            AssertHelpers.AreEqual(new Complex(2, 1), vector[1]);
-            AssertHelpers.AreEqual(new Complex(1, 1), vector[2]);
-            AssertHelpers.AreEqual(new Complex(2, 1), vector[3]);
-            AssertHelpers.AreEqual(new Complex(5, 1), vector[4]);
+            AssertHelpers.AlmostEqual(new Complex(1, 1), vector[0]);
+            AssertHelpers.AlmostEqual(new Complex(2, 1), vector[1]);
+            AssertHelpers.AlmostEqual(new Complex(1, 1), vector[2]);
+            AssertHelpers.AlmostEqual(new Complex(2, 1), vector[3]);
+            AssertHelpers.AlmostEqual(new Complex(5, 1), vector[4]);
         }
 
         /// <summary>
@@ -156,7 +163,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
         {
             var expected = CreateVector(5);
             var actual = expected.CreateVector(5);
-            Assert.AreEqual(expected.GetType(), actual.GetType(), "vectors are same type.");
+            Assert.AreEqual(expected.Storage.IsDense, actual.Storage.IsDense, "vectors are same kind.");
         }
 
         /// <summary>
@@ -230,7 +237,9 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
         public void CanGetHashCode()
         {
             var vector = CreateVector(new[] { new Complex(1, 1), new Complex(2, 1), new Complex(3, 1), new Complex(4, 1), new Complex(5, 1) });
-            Assert.AreEqual(-344264403, vector.GetHashCode());
+            Assert.AreEqual(vector.GetHashCode(), vector.GetHashCode());
+            Assert.AreEqual(vector.GetHashCode(), CreateVector(new[] { new Complex(1, 1), new Complex(2, 1), new Complex(3, 1), new Complex(4, 1), new Complex(5, 1) }).GetHashCode());
+            Assert.AreNotEqual(vector.GetHashCode(), CreateVector(new[] { new Complex(1, 1) }).GetHashCode());
         }
 
         /// <summary>
@@ -240,9 +249,23 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
         public void CanEnumerateOverVectorUsingIndexedEnumerator()
         {
             var vector = CreateVector(Data);
-            foreach (var pair in vector.GetIndexedEnumerator())
+            foreach (var pair in vector.EnumerateIndexed())
             {
                 Assert.AreEqual(Data[pair.Item1], pair.Item2);
+            }
+        }
+
+        /// <summary>
+        /// Can enumerate over a vector using non-zero enumerator.
+        /// </summary>
+        [Test]
+        public void CanEnumerateOverVectorUsingNonZeroEnumerator()
+        {
+            var vector = CreateVector(Data);
+            foreach (var pair in vector.EnumerateNonZeroIndexed())
+            {
+                Assert.AreEqual(Data[pair.Item1], pair.Item2);
+                Assert.AreNotEqual(Complex.Zero, pair.Item2);
             }
         }
 
@@ -447,7 +470,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
             var vector = CreateVector(testData);
             var actual = vector.SumMagnitudes();
             var expected = testData.Sum(complex => complex.Magnitude);
-            Assert.AreEqual(expected, actual.Real);
+            Assert.AreEqual(expected, actual);
         }
 
         /// <summary>

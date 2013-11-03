@@ -1,4 +1,4 @@
-// <copyright file="UserEvdTests.cs" company="Math.NET">
+﻿// <copyright file="UserEvdTests.cs" company="Math.NET">
 // Math.NET Numerics, part of the Math.NET Project
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
@@ -24,28 +24,21 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
 {
-    using System;
-    using System.Numerics;
-    using LinearAlgebra.Complex;
-    using LinearAlgebra.Complex.Factorization;
-    using NUnit.Framework;
+#if NOSYSNUMERICS
+    using Complex = Numerics.Complex;
+#else
+    using Complex = System.Numerics.Complex;
+#endif
 
     /// <summary>
     /// Eigenvalues factorization tests for an user matrix.
     /// </summary>
     public class UserEvdTests
     {
-        /// <summary>
-        /// Constructor <c>null</c> throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void ConstructorNull()
-        {
-            Assert.Throws<ArgumentNullException>(() => new UserEvd(null));
-        }
-
         /// <summary>
         /// Can factorize identity matrix.
         /// </summary>
@@ -57,9 +50,9 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
         {
             var matrixI = UserDefinedMatrix.Identity(order);
             var factorEvd = matrixI.Evd();
-            var eigenValues = factorEvd.EigenValues();
-            var eigenVectors = factorEvd.EigenVectors();
-            var d = factorEvd.D();
+            var eigenValues = factorEvd.EigenValues;
+            var eigenVectors = factorEvd.EigenVectors;
+            var d = factorEvd.D;
 
             Assert.AreEqual(matrixI.RowCount, eigenVectors.RowCount);
             Assert.AreEqual(matrixI.RowCount, eigenVectors.ColumnCount);
@@ -87,8 +80,8 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
         {
             var matrixA = MatrixLoader.GenerateRandomUserDefinedMatrix(order, order);
             var factorEvd = matrixA.Evd();
-            var eigenVectors = factorEvd.EigenVectors();
-            var d = factorEvd.D();
+            var eigenVectors = factorEvd.EigenVectors;
+            var d = factorEvd.D;
 
             Assert.AreEqual(order, eigenVectors.RowCount);
             Assert.AreEqual(order, eigenVectors.ColumnCount);
@@ -104,7 +97,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
             {
                 for (var j = 0; j < matrixAv.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrixAv[i, j], matrixLv[i, j], 7);
+                    AssertHelpers.AlmostEqualRelative(matrixAv[i, j], matrixLv[i, j], 7);
                 }
             }
         }
@@ -123,8 +116,8 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
         {
             var matrixA = MatrixLoader.GenerateRandomPositiveDefiniteHermitianUserDefinedMatrix(order);
             var factorEvd = matrixA.Evd();
-            var eigenVectors = factorEvd.EigenVectors();
-            var d = factorEvd.D();
+            var eigenVectors = factorEvd.EigenVectors;
+            var d = factorEvd.D;
 
             Assert.AreEqual(order, eigenVectors.RowCount);
             Assert.AreEqual(order, eigenVectors.ColumnCount);
@@ -139,7 +132,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
             {
                 for (var j = 0; j < matrix.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrix[i, j], matrixA[i, j], 7);
+                    AssertHelpers.AlmostEqualRelative(matrix[i, j], matrixA[i, j], 7);
                 }
             }
         }
@@ -225,7 +218,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
             // Check the reconstruction.
             for (var i = 0; i < vectorb.Count; i++)
             {
-                AssertHelpers.AlmostEqual(vectorb[i], matrixBReconstruct[i], 7);
+                AssertHelpers.AlmostEqual(vectorb[i], matrixBReconstruct[i], 10);
             }
 
             // Make sure A didn't change.
@@ -270,7 +263,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
             {
                 for (var j = 0; j < matrixB.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrixB[i, j], matrixBReconstruct[i, j], 7);
+                    AssertHelpers.AlmostEqual(matrixB[i, j], matrixBReconstruct[i, j], 10);
                 }
             }
 
@@ -309,7 +302,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
             // Check the reconstruction.
             for (var i = 0; i < vectorb.Count; i++)
             {
-                AssertHelpers.AlmostEqual(vectorb[i], matrixBReconstruct[i], 7);
+                AssertHelpers.AlmostEqual(vectorb[i], matrixBReconstruct[i], 10);
             }
 
             // Make sure A didn't change.
@@ -363,7 +356,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
             {
                 for (var j = 0; j < matrixB.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrixB[i, j], matrixBReconstruct[i, j], 7);
+                    AssertHelpers.AlmostEqual(matrixB[i, j], matrixBReconstruct[i, j], 10);
                 }
             }
 

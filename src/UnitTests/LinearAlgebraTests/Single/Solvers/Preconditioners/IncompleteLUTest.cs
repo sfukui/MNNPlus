@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2013 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -23,14 +27,17 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
+
+using System;
+using System.Reflection;
+using MathNet.Numerics.LinearAlgebra;
+using MathNet.Numerics.LinearAlgebra.Single;
+using MathNet.Numerics.LinearAlgebra.Single.Solvers;
+using MathNet.Numerics.LinearAlgebra.Solvers;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Solvers.Preconditioners
 {
-    using System;
-    using System.Reflection;
-    using LinearAlgebra.Single;
-    using LinearAlgebra.Single.Solvers.Preconditioners;
-    using NUnit.Framework;
-
     /// <summary>
     /// Incomplete LU preconditioner test.
     /// </summary>
@@ -44,7 +51,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Solvers.Precondit
         /// <param name="ilu"><c>IncompleteLU</c> instance.</param>
         /// <param name="methodName">Method name.</param>
         /// <returns>Result of the method invocation.</returns>
-        private static T GetMethod<T>(IncompleteLU ilu, string methodName)
+        static T GetMethod<T>(ILU0Preconditioner ilu, string methodName)
         {
             var type = ilu.GetType();
             var methodInfo = type.GetMethod(
@@ -55,7 +62,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Solvers.Precondit
                 new Type[0],
                 null);
             var obj = methodInfo.Invoke(ilu, null);
-            return (T)obj;
+            return (T) obj;
         }
 
         /// <summary>
@@ -63,9 +70,9 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Solvers.Precondit
         /// </summary>
         /// <param name="ilu"><c>IncompleteLU</c> instance.</param>
         /// <returns>Upper triangle.</returns>
-        private static Matrix GetUpperTriangle(IncompleteLU ilu)
+        static Matrix<float> GetUpperTriangle(ILU0Preconditioner ilu)
         {
-            return GetMethod<Matrix>(ilu, "UpperTriangle");
+            return GetMethod<Matrix<float>>(ilu, "UpperTriangle");
         }
 
         /// <summary>
@@ -73,18 +80,18 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Solvers.Precondit
         /// </summary>
         /// <param name="ilu"><c>IncompleteLU</c> instance.</param>
         /// <returns>Lower triangle.</returns>
-        private static Matrix GetLowerTriangle(IncompleteLU ilu)
+        static Matrix<float> GetLowerTriangle(ILU0Preconditioner ilu)
         {
-            return GetMethod<Matrix>(ilu, "LowerTriangle");
+            return GetMethod<Matrix<float>>(ilu, "LowerTriangle");
         }
 
         /// <summary>
         /// Create preconditioner.
         /// </summary>
         /// <returns>New preconditioner instance.</returns>
-        internal override IPreConditioner CreatePreconditioner()
+        internal override IPreconditioner<float> CreatePreconditioner()
         {
-            return new IncompleteLU();
+            return new ILU0Preconditioner();
         }
 
         /// <summary>
@@ -94,9 +101,9 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Solvers.Precondit
         /// <param name="matrix">Source matrix.</param>
         /// <param name="vector">Initial vector.</param>
         /// <param name="result">Result vector.</param>
-        protected override void CheckResult(IPreConditioner preconditioner, SparseMatrix matrix, Vector vector, Vector result)
+        protected override void CheckResult(IPreconditioner<float> preconditioner, SparseMatrix matrix, Vector<float> vector, Vector<float> result)
         {
-            Assert.AreEqual(typeof(IncompleteLU), preconditioner.GetType(), "#01");
+            Assert.AreEqual(typeof (ILU0Preconditioner), preconditioner.GetType(), "#01");
 
             // Compute M * result = product
             // compare vector and product. Should be equal
@@ -105,7 +112,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Solvers.Precondit
 
             for (var i = 0; i < product.Count; i++)
             {
-                Assert.IsTrue(((double)vector[i]).AlmostEqual(product[i], -Epsilon.Magnitude()), "#02-" + i);
+                Assert.IsTrue(((double) vector[i]).AlmostEqualNumbersBetween(product[i], -Epsilon.Magnitude()), "#02-" + i);
             }
         }
 
@@ -125,7 +132,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Solvers.Precondit
             sparseMatrix[2, 0] = 6;
             sparseMatrix[2, 1] = 8;
             sparseMatrix[2, 2] = 9;
-            var ilu = new IncompleteLU();
+            var ilu = new ILU0Preconditioner();
             ilu.Initialize(sparseMatrix);
             var original = GetLowerTriangle(ilu).Multiply(GetUpperTriangle(ilu));
 
@@ -133,7 +140,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Solvers.Precondit
             {
                 for (var j = 0; j < sparseMatrix.ColumnCount; j++)
                 {
-                    Assert.IsTrue(sparseMatrix[i, j].AlmostEqual(original[i, j]), "#01-" + i + "-" + j);
+                    AssertHelpers.AlmostEqualRelative(sparseMatrix[i, j], original[i, j], 5);
                 }
             }
         }

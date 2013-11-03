@@ -130,16 +130,14 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Multivariate
             };
         }
 
-        /// <summary>
-        /// Fail set random source with <c>null</c> reference.
-        /// </summary>
         [Test]
-        public void FailSetRandomSourceWithNullReference()
+        public void HasRandomSourceEvenAfterSetToNull()
         {
             const int N = 2;
             const int P = 3;
             var d = new MatrixNormal(MatrixLoader.GenerateRandomDenseMatrix(N, P), MatrixLoader.GenerateRandomPositiveDefiniteDenseMatrix(N), MatrixLoader.GenerateRandomPositiveDefiniteDenseMatrix(P));
-            Assert.Throws<ArgumentNullException>(() => d.RandomSource = null);
+            Assert.DoesNotThrow(() => d.RandomSource = null);
+            Assert.IsNotNull(d.RandomSource);
         }
 
         /// <summary>
@@ -296,7 +294,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Multivariate
             x[0, 0] = 2;
             x[0, 1] = 2;
 
-            AssertHelpers.AlmostEqual(0.00015682927366491211, d.Density(x), 16);
+            AssertHelpers.AlmostEqualRelative(0.00015682927366491211, d.Density(x), 16);
         }
 
         /// <summary>

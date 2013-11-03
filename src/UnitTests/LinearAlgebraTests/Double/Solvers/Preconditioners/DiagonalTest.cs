@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2013 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -24,12 +28,14 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using MathNet.Numerics.LinearAlgebra;
+using MathNet.Numerics.LinearAlgebra.Double;
+using MathNet.Numerics.LinearAlgebra.Double.Solvers;
+using MathNet.Numerics.LinearAlgebra.Solvers;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Solvers.Preconditioners
 {
-    using LinearAlgebra.Double;
-    using LinearAlgebra.Double.Solvers.Preconditioners;
-    using NUnit.Framework;
-
     /// <summary>
     /// Diagonal preconditioner test.
     /// </summary>
@@ -40,9 +46,9 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Solvers.Precondit
         /// Create preconditioner.
         /// </summary>
         /// <returns>New preconditioner instance.</returns>
-        internal override IPreConditioner CreatePreconditioner()
+        internal override IPreconditioner<double> CreatePreconditioner()
         {
-            return new Diagonal();
+            return new DiagonalPreconditioner();
         }
 
         /// <summary>
@@ -52,17 +58,17 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Solvers.Precondit
         /// <param name="matrix">Source matrix.</param>
         /// <param name="vector">Initial vector.</param>
         /// <param name="result">Result vector.</param>
-        protected override void CheckResult(IPreConditioner preconditioner, SparseMatrix matrix, Vector vector, Vector result)
+        protected override void CheckResult(IPreconditioner<double> preconditioner, SparseMatrix matrix, Vector<double> vector, Vector<double> result)
         {
-            Assert.AreEqual(typeof(Diagonal), preconditioner.GetType(), "#01");
+            Assert.AreEqual(typeof (DiagonalPreconditioner), preconditioner.GetType(), "#01");
 
             // Compute M * result = product
             // compare vector and product. Should be equal
-            Vector product = new DenseVector(result.Count);
+            var product = new DenseVector(result.Count);
             matrix.Multiply(result, product);
             for (var i = 0; i < product.Count; i++)
             {
-                Assert.IsTrue(vector[i].AlmostEqual(product[i], -Epsilon.Magnitude()), "#02-" + i);
+                Assert.IsTrue(vector[i].AlmostEqualNumbersBetween(product[i], -Epsilon.Magnitude()), "#02-" + i);
             }
         }
     }

@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2013 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -23,12 +27,21 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
+
+using System;
+using MathNet.Numerics.LinearAlgebra;
+using MathNet.Numerics.LinearAlgebra.Complex;
+using MathNet.Numerics.LinearAlgebra.Solvers;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Solvers.Preconditioners
 {
-    using System;
-    using LinearAlgebra.Complex;
-    using LinearAlgebra.Complex.Solvers.Preconditioners;
-    using NUnit.Framework;
+
+#if NOSYSNUMERICS
+    using Complex = Numerics.Complex;
+#else
+    using Complex = System.Numerics.Complex;
+#endif
 
     /// <summary>
     /// Abstract class for preconditioners tests.
@@ -61,9 +74,9 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Solvers.Precondi
         /// </summary>
         /// <param name="size">Size of the vector.</param>
         /// <returns>New vector.</returns>
-        protected Vector CreateStandardBcVector(int size)
+        protected DenseVector CreateStandardBcVector(int size)
         {
-            Vector vector = new DenseVector(size);
+            var vector = new DenseVector(size);
             for (var i = 0; i < size; i++)
             {
                 vector[i] = i + 1;
@@ -76,7 +89,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Solvers.Precondi
         /// Create preconditioner.
         /// </summary>
         /// <returns>New preconditioner instance.</returns>
-        internal abstract IPreConditioner CreatePreconditioner();
+        internal abstract IPreconditioner<Complex> CreatePreconditioner();
 
         /// <summary>
         /// Check the result.
@@ -85,26 +98,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Solvers.Precondi
         /// <param name="matrix">Source matrix.</param>
         /// <param name="vector">Initial vector.</param>
         /// <param name="result">Result vector.</param>
-        protected abstract void CheckResult(IPreConditioner preconditioner, SparseMatrix matrix, Vector vector, Vector result);
-
-        /// <summary>
-        /// Approximate with a unit matrix returning new vector.
-        /// </summary>
-        [Test]
-        public void ApproximateWithUnitMatrixReturningNewVector()
-        {
-            const int Size = 10;
-
-            var newMatrix = CreateUnitMatrix(Size);
-            var vector = CreateStandardBcVector(Size);
-
-            var preconditioner = CreatePreconditioner();
-            preconditioner.Initialize(newMatrix);
-
-            var result = preconditioner.Approximate(vector);
-
-            CheckResult(preconditioner, newMatrix, vector, result);
-        }
+        protected abstract void CheckResult(IPreconditioner<Complex> preconditioner, SparseMatrix matrix, Vector<Complex> vector, Vector<Complex> result);
 
         /// <summary>
         /// Approximate returning old vector.
@@ -143,40 +137,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Solvers.Precondi
         }
 
         /// <summary>
-        /// Approximate with <c>null</c> vector throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void ApproximateWithNullVectorThrowsArgumentNullException()
-        {
-            const int Size = 10;
-            var newMatrix = CreateUnitMatrix(Size);
-            var vector = CreateStandardBcVector(Size);
-
-            var preconditioner = CreatePreconditioner();
-            preconditioner.Initialize(newMatrix);
-
-            Vector result = new DenseVector(vector.Count + 10);
-            Assert.Throws<ArgumentNullException>(() => preconditioner.Approximate(null, result));
-        }
-
-        /// <summary>
-        /// Approximate with <c>null</c> result vector throws <c>ArgumentNullException</c>.
-        /// </summary>
-        [Test]
-        public void ApproximateWithNullResultVectorThrowsArgumentNullException()
-        {
-            const int Size = 10;
-            var newMatrix = CreateUnitMatrix(Size);
-            var vector = CreateStandardBcVector(Size);
-
-            var preconditioner = CreatePreconditioner();
-            preconditioner.Initialize(newMatrix);
-
-            Vector result = null;
-            Assert.Throws<ArgumentNullException>(() => preconditioner.Approximate(vector, result));
-        }
-
-        /// <summary>
         /// Approximate with non initialized preconditioner throws <c>ArgumentException</c>.
         /// </summary>
         [Test]
@@ -185,7 +145,8 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Solvers.Precondi
             const int Size = 10;
             var vector = CreateStandardBcVector(Size);
             var preconditioner = CreatePreconditioner();
-            Assert.Throws<ArgumentException>(() => preconditioner.Approximate(vector));
+            var result = new DenseVector(vector.Count);
+            Assert.Throws<ArgumentException>(() => preconditioner.Approximate(vector, result));
         }
     }
 }

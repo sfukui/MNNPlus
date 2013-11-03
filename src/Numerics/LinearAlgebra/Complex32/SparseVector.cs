@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2011 Math.NET
+// Copyright (c) 2009-2013 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -28,22 +28,22 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using MathNet.Numerics.LinearAlgebra.Storage;
+using MathNet.Numerics.Threading;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+
 namespace MathNet.Numerics.LinearAlgebra.Complex32
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using Generic;
-    using NumberTheory;
     using Numerics;
-    using Storage;
-    using Threading;
 
     /// <summary>
-    /// A vector with sparse storage.
+    /// A vector with sparse storage, intended for very large vectors where most of the cells are zero.
     /// </summary>
     /// <remarks>The sparse vector is not thread safe.</remarks>
     [Serializable]
+    [DebuggerDisplay("SparseVector {Count}-Complex32 {NonZerosCount}-NonZero")]
     public class SparseVector : Vector
     {
         readonly SparseVectorStorage<Complex32> _storage;
@@ -58,7 +58,10 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SparseVector"/> class.
+        /// Create a new sparse vector straight from an initialized vector storage instance.
+        /// The storage is used directly without copying.
+        /// Intended for advanced scenarios where you're working directly with
+        /// storage for performance or interop reasons.
         /// </summary>
         public SparseVector(SparseVectorStorage<Complex32> storage)
             : base(storage)
@@ -67,129 +70,81 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SparseVector"/> class with a given size.
+        /// Create a new sparse vector with the given length.
+        /// All cells of the vector will be initialized to zero.
+        /// Zero-length vectors are not supported.
         /// </summary>
-        /// <param name="size">
-        /// the size of the vector.
-        /// </param>
-        /// <exception cref="ArgumentException">
-        /// If <paramref name="size"/> is less than one.
-        /// </exception>
-        public SparseVector(int size)
-            : this(new SparseVectorStorage<Complex32>(size))
+        /// <exception cref="ArgumentException">If length is less than one.</exception>
+        public SparseVector(int length)
+            : this(new SparseVectorStorage<Complex32>(length))
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SparseVector"/> class with a given size
-        /// and each element set to the given value;
+        /// Create a new sparse vector as a copy of the given other vector.
+        /// This new vector will be independent from the other vector.
+        /// A new memory block will be allocated for storing the vector.
         /// </summary>
-        /// <param name="size">
-        /// the size of the vector.
-        /// </param>
-        /// <param name="value">
-        /// the value to set each element to.
-        /// </param>
-        /// <exception cref="ArgumentException">
-        /// If <paramref name="size"/> is less than one.
-        /// </exception>
-        [Obsolete("Use a dense vector instead. Scheduled for removal in v3.0.")]
-        public SparseVector(int size, Complex32 value)
-            : this(new SparseVectorStorage<Complex32>(size))
+        public static SparseVector OfVector(Vector<Complex32> vector)
         {
-            if (value == Complex32.Zero)
-            {
-                return;
-            }
-
-            var valueCount = _storage.ValueCount = size;
-            var indices = _storage.Indices = new int[valueCount];
-            var values = _storage.Values = new Complex32[valueCount];
-
-            for (int i = 0; i < values.Length; i++)
-            {
-                values[i] = value;
-                indices[i] = i;
-            }
+            return new SparseVector(SparseVectorStorage<Complex32>.OfVector(vector.Storage));
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SparseVector"/> class by
-        /// copying the values from another.
+        /// Create a new sparse vector as a copy of the given enumerable.
+        /// This new vector will be independent from the enumerable.
+        /// A new memory block will be allocated for storing the vector.
         /// </summary>
-        /// <param name="other">
-        /// The vector to create the new vector from.
-        /// </param>
-        public SparseVector(Vector<Complex32> other)
-            : this(new SparseVectorStorage<Complex32>(other.Count))
+        public static SparseVector OfEnumerable(IEnumerable<Complex32> enumerable)
         {
-            other.Storage.CopyToUnchecked(Storage, skipClearing: true);
+            return new SparseVector(SparseVectorStorage<Complex32>.OfEnumerable(enumerable));
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SparseVector"/> class for an array.
+        /// Create a new sparse vector as a copy of the given indexed enumerable.
+        /// Keys must be provided at most once, zero is assumed if a key is omitted.
+        /// This new vector will be independent from the enumerable.
+        /// A new memory block will be allocated for storing the vector.
         /// </summary>
-        /// <param name="array">The array to create this vector from.</param>
-        /// <remarks>The vector copy the array. Any changes to the vector will NOT change the array.</remarks>
-        public SparseVector(IList<Complex32> array)
-            : this(new SparseVectorStorage<Complex32>(array.Count))
+        public static SparseVector OfIndexedEnumerable(int length, IEnumerable<Tuple<int, Complex32>> enumerable)
         {
-            for (var i = 0; i < array.Count; i++)
-            {
-                Storage.At(i, array[i]);
-            }
+            return new SparseVector(SparseVectorStorage<Complex32>.OfIndexedEnumerable(length, enumerable));
         }
 
         /// <summary>
-        /// Creates a matrix with the given dimensions using the same storage type
-        /// as this vector.
+        /// Create a new sparse vector and initialize each value using the provided value.
         /// </summary>
-        /// <param name="rows">
-        /// The number of rows.
-        /// </param>
-        /// <param name="columns">
-        /// The number of columns.
-        /// </param>
-        /// <returns>
-        /// A matrix with the given dimensions.
-        /// </returns>
-        public override Matrix<Complex32> CreateMatrix(int rows, int columns)
+        public static SparseVector Create(int length, Complex32 value)
         {
-            return new SparseMatrix(rows, columns);
+            if (value == Complex32.Zero) return new SparseVector(length);
+            return new SparseVector(SparseVectorStorage<Complex32>.OfInit(length, i => value));
         }
 
         /// <summary>
-        /// Creates a <strong>Vector</strong> of the given size using the same storage type
-        /// as this vector.
+        /// Create a new sparse vector and initialize each value using the provided init function.
         /// </summary>
-        /// <param name="size">
-        /// The size of the <strong>Vector</strong> to create.
-        /// </param>
-        /// <returns>
-        /// The new <c>Vector</c>.
-        /// </returns>
-        public override Vector<Complex32> CreateVector(int size)
+        public static SparseVector Create(int length, Func<int, Complex32> init)
         {
-            return new SparseVector(size);
+            return new SparseVector(SparseVectorStorage<Complex32>.OfInit(length, init));
         }
 
         /// <summary>
-        /// Conjugates vector and save result to <paramref name="target"/>
+        /// Conjugates vector and save result to <paramref name="result"/>
         /// </summary>
-        /// <param name="target">Target vector</param>
-        protected override void DoConjugate(Vector<Complex32> target)
+        /// <param name="result">Target vector</param>
+        protected override void DoConjugate(Vector<Complex32> result)
         {
-            if (ReferenceEquals(this, target))
+            if (ReferenceEquals(this, result))
             {
                 var tmp = CreateVector(Count);
                 DoConjugate(tmp);
-                tmp.CopyTo(target);
+                tmp.CopyTo(result);
             }
 
-            var targetSparse = target as SparseVector;
+            var targetSparse = result as SparseVector;
             if (targetSparse == null)
             {
-                base.DoConjugate(target);
+                base.DoConjugate(result);
                 return;
             }
 
@@ -200,8 +155,14 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
 
             if (_storage.ValueCount != 0)
             {
-                CommonParallel.For(0, _storage.ValueCount, index => targetSparse._storage.Values[index] = _storage.Values[index].Conjugate());
-                Buffer.BlockCopy(_storage.Indices, 0, targetSparse._storage.Indices, 0, _storage.ValueCount * Constants.SizeOfInt);
+                CommonParallel.For(0, _storage.ValueCount, (a, b) =>
+                    {
+                        for (int i = a; i < b; i++)
+                        {
+                            targetSparse._storage.Values[i] = _storage.Values[i].Conjugate();
+                        }
+                    });
+                Buffer.BlockCopy(_storage.Indices, 0, targetSparse._storage.Indices, 0, _storage.ValueCount*Constants.SizeOfInt);
             }
         }
 
@@ -448,23 +409,23 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         }
 
         /// <summary>
-        /// Negates vector and saves result to <paramref name="target"/>
+        /// Negates vector and saves result to <paramref name="result"/>
         /// </summary>
-        /// <param name="target">Target vector</param>
-        protected override void DoNegate(Vector<Complex32> target)
+        /// <param name="result">Target vector</param>
+        protected override void DoNegate(Vector<Complex32> result)
         {
-            var sparseResult = target as SparseVector;
+            var sparseResult = result as SparseVector;
             if (sparseResult == null)
             {
-                target.Clear();
+                result.Clear();
                 for (var index = 0; index < _storage.ValueCount; index++)
                 {
-                    target.At(_storage.Indices[index], -_storage.Values[index]);
+                    result.At(_storage.Indices[index], -_storage.Values[index]);
                 }
             }
             else
             {
-                if (!ReferenceEquals(this, target))
+                if (!ReferenceEquals(this, result))
                 {
                     sparseResult._storage.ValueCount = _storage.ValueCount;
                     sparseResult._storage.Indices = new int[_storage.ValueCount];
@@ -515,16 +476,11 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         /// <summary>
         /// Computes the dot product between this vector and another vector.
         /// </summary>
-        /// <param name="other">
-        /// The other vector to add.
-        /// </param>
-        /// <returns>s
-        /// The result of the addition.
-        /// </returns>
+        /// <param name="other">The other vector.</param>
+        /// <returns>The sum of a[i]*b[i] for all i.</returns>
         protected override Complex32 DoDotProduct(Vector<Complex32> other)
         {
             var result = Complex32.Zero;
-
             if (ReferenceEquals(this, other))
             {
                 for (var i = 0; i < _storage.ValueCount; i++)
@@ -539,25 +495,32 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
                     result += _storage.Values[i] * other.At(_storage.Indices[i]);
                 }
             }
-
             return result;
         }
 
         /// <summary>
-        /// Returns a <strong>Vector</strong> containing the same values of <paramref name="rightSide"/>. 
+        /// Computes the dot product between the conjugate of this vector and another vector.
         /// </summary>
-        /// <remarks>This method is included for completeness.</remarks>
-        /// <param name="rightSide">The vector to get the values from.</param>
-        /// <returns>A vector containing a the same values as <paramref name="rightSide"/>.</returns>
-        /// <exception cref="ArgumentNullException">If <paramref name="rightSide"/> is <see langword="null" />.</exception>
-        public static SparseVector operator +(SparseVector rightSide)
+        /// <param name="other">The other vector.</param>
+        /// <returns>The sum of conj(a[i])*b[i] for all i.</returns>
+        protected override Complex32 DoConjugateDotProduct(Vector<Complex32> other)
         {
-            if (rightSide == null)
+            var result = Complex32.Zero;
+            if (ReferenceEquals(this, other))
             {
-                throw new ArgumentNullException("rightSide");
+                for (var i = 0; i < _storage.ValueCount; i++)
+                {
+                    result += _storage.Values[i].Conjugate() * _storage.Values[i];
+                }
             }
-
-            return (SparseVector)rightSide.Plus();
+            else
+            {
+                for (var i = 0; i < _storage.ValueCount; i++)
+                {
+                    result += _storage.Values[i].Conjugate() * other.At(_storage.Indices[i]);
+                }
+            }
+            return result;
         }
 
         /// <summary>
@@ -736,23 +699,56 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
             {
                 result += _storage.Values[i];
             }
-
             return result;
         }
 
         /// <summary>
-        /// Computes the sum of the absolute value of the vector's elements.
+        /// Calculates the L1 norm of the vector, also known as Manhattan norm.
         /// </summary>
-        /// <returns>The sum of the absolute value of the vector's elements.</returns>
-        public override Complex32 SumMagnitudes()
+        /// <returns>The sum of the absolute values.</returns>
+        public override double L1Norm()
         {
-            var result = 0.0f;
+            double result = 0d;
             for (var i = 0; i < _storage.ValueCount; i++)
             {
                 result += _storage.Values[i].Magnitude;
             }
-
             return result;
+        }
+
+        /// <summary>
+        /// Calculates the infinity norm of the vector.
+        /// </summary>
+        /// <returns>The square root of the sum of the squared values.</returns>
+        public override double InfinityNorm()
+        {
+            return CommonParallel.Aggregate(0, _storage.ValueCount, i => _storage.Values[i].Magnitude, Math.Max, 0f);
+        }
+
+        /// <summary>
+        /// Computes the p-Norm.
+        /// </summary>
+        /// <param name="p">The p value.</param>
+        /// <returns>Scalar <c>ret = ( ∑|this[i]|^p )^(1/p)</c></returns>
+        public override double Norm(double p)
+        {
+            if (p < 0d) throw new ArgumentOutOfRangeException("p");
+
+            if (_storage.ValueCount == 0)
+            {
+                return 0d;
+            }
+
+            if (p == 1d) return L1Norm();
+            if (p == 2d) return L2Norm();
+            if (double.IsPositiveInfinity(p)) return InfinityNorm();
+
+            double sum = 0d;
+            for (var index = 0; index < _storage.ValueCount; index++)
+            {
+                sum += Math.Pow(_storage.Values[index].Magnitude, p);
+            }
+            return Math.Pow(sum, 1.0 / p);
         }
 
         /// <summary>
@@ -782,11 +778,11 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         /// <summary>
         /// Pointwise multiplies this vector with another vector and stores the result into the result vector.
         /// </summary>
-        /// <param name="other">The vector to pointwise multiply with this one.</param>
+        /// <param name="divisor">The vector to pointwise multiply with this one.</param>
         /// <param name="result">The vector to store the result of the pointwise multiplication.</param>
-        protected override void DoPointwiseDivide(Vector<Complex32> other, Vector<Complex32> result)
+        protected override void DoPointwiseDivide(Vector<Complex32> divisor, Vector<Complex32> result)
         {
-            if (ReferenceEquals(this, other))
+            if (ReferenceEquals(this, divisor))
             {
                 for (var i = 0; i < _storage.ValueCount; i++)
                 {
@@ -798,7 +794,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
                 for (var i = 0; i < _storage.ValueCount; i++)
                 {
                     var index = _storage.Indices[i];
-                    result.At(index, _storage.Values[i] / other.At(index));
+                    result.At(index, _storage.Values[i] / divisor.At(index));
                 }
             }
         }
@@ -850,58 +846,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
             return OuterProduct(this, v);
         }
 
-        /// <summary>
-        /// Computes the p-Norm.
-        /// </summary>
-        /// <param name="p">The p value.</param>
-        /// <returns>Scalar <c>ret = (sum(abs(this[i])^p))^(1/p)</c></returns>
-        public override Complex32 Norm(double p)
-        {
-            if (1 > p)
-            {
-                throw new ArgumentOutOfRangeException("p");
-            }
-
-            if (_storage.ValueCount == 0)
-            {
-                return Complex32.Zero;
-            }
-
-            if (2.0 == p)
-            {
-                return _storage.Values.Aggregate(Complex32.Zero, SpecialFunctions.Hypotenuse).Magnitude;
-            }
-
-            if (Double.IsPositiveInfinity(p))
-            {
-                return CommonParallel.Aggregate(0, _storage.ValueCount, i => _storage.Values[i].Magnitude, Math.Max, 0f);
-            }
-
-            var sum = 0.0;
-            for (var index = 0; index < _storage.ValueCount; index++)
-            {
-                sum += Math.Pow(_storage.Values[index].Magnitude, p);
-            }
-
-            return (float)Math.Pow(sum, 1.0 / p);
-        }
-
         #region Parse Functions
-
-        /// <summary>
-        /// Creates a double sparse vector based on a string. The string can be in the following formats (without the
-        /// quotes): 'n', 'n,n,..', '(n,n,..)', '[n,n,...]', where n is a Complex32.
-        /// </summary>
-        /// <returns>
-        /// A double sparse vector containing the values specified by the given string.
-        /// </returns>
-        /// <param name="value">
-        /// The string to parse.
-        /// </param>
-        public static SparseVector Parse(string value)
-        {
-            return Parse(value, null);
-        }
 
         /// <summary>
         /// Creates a double sparse vector based on a string. The string can be in the following formats (without the
@@ -916,7 +861,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         /// <param name="formatProvider">
         /// An <see cref="IFormatProvider"/> that supplies culture-specific formatting information.
         /// </param>
-        public static SparseVector Parse(string value, IFormatProvider formatProvider)
+        public static SparseVector Parse(string value, IFormatProvider formatProvider = null)
         {
             if (value == null)
             {
@@ -950,39 +895,38 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
                 value = value.Substring(1, value.Length - 2).Trim();
             }
 
-            // keywords
-            var textInfo = formatProvider.GetTextInfo();
-            var keywords = new[] { textInfo.ListSeparator };
-
-            // lexing
-            var tokens = new LinkedList<string>();
-            GlobalizationHelper.Tokenize(tokens.AddFirst(value), keywords, 0);
-            var token = tokens.First;
-
-            if (token == null || tokens.Count.IsEven())
-            {
-                throw new FormatException();
-            }
-
             // parsing
-            var data = new Complex32[(tokens.Count + 1) >> 1];
-            for (var i = 0; i < data.Length; i++)
+            var strongTokens = value.Split(new[] { formatProvider.GetTextInfo().ListSeparator }, StringSplitOptions.RemoveEmptyEntries);
+            var data = new List<Complex32>();
+            foreach (string strongToken in strongTokens)
             {
-                if (token == null || token.Value == textInfo.ListSeparator)
+                var weakTokens = strongToken.Split(new[] { " ", "\t" }, StringSplitOptions.RemoveEmptyEntries);
+                string current = string.Empty;
+                for (int i = 0; i < weakTokens.Length; i++)
+                {
+                    current += weakTokens[i];
+                    if (current.EndsWith("+") || current.EndsWith("-") || current.StartsWith("(") && !current.EndsWith(")"))
+                    {
+                        continue;
+                    }
+                    var ahead = i < weakTokens.Length - 1 ? weakTokens[i + 1] : string.Empty;
+                    if (ahead.StartsWith("+") || ahead.StartsWith("-"))
+                    {
+                        continue;
+                    }
+                    data.Add(current.ToComplex32(formatProvider));
+                    current = string.Empty;
+                }
+                if (current != string.Empty)
                 {
                     throw new FormatException();
                 }
-
-                data[i] = token.Value.ToComplex32(formatProvider);
-
-                token = token.Next;
-                if (token != null)
-                {
-                    token = token.Next;
-                }
             }
-
-            return new SparseVector(data);
+            if (data.Count == 0)
+            {
+                throw new FormatException();
+            }
+            return OfEnumerable(data);
         }
 
         /// <summary>
@@ -1044,14 +988,9 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         }
         #endregion
 
-        public override string ToString(string format, IFormatProvider formatProvider)
+        public override string ToTypeString()
         {
-            if (Count > 20)
-            {
-                return String.Format("SparseVectorOfComplex32({0},{1},{2})", Count, _storage.ValueCount, GetHashCode());
-            }
-
-            return base.ToString(format, formatProvider);
+            return string.Format("SparseVector {0}-Complex32 {1:P2} Filled", Count, NonZerosCount / (double)Count);
         }
     }
 }

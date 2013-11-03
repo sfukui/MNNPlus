@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2013 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -23,12 +27,14 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
+
+using MathNet.Numerics.LinearAlgebra;
+using MathNet.Numerics.LinearAlgebra.Single;
+using MathNet.Numerics.LinearAlgebra.Solvers;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Solvers.Preconditioners
 {
-    using LinearAlgebra.Single;
-    using LinearAlgebra.Single.Solvers.Preconditioners;
-    using NUnit.Framework;
-
     /// <summary>
     /// Unit precondition tests
     /// </summary>
@@ -39,9 +45,9 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Solvers.Precondit
         /// Create preconditioner.
         /// </summary>
         /// <returns>New preconditioner instance.</returns>
-        internal override IPreConditioner CreatePreconditioner()
+        internal override IPreconditioner<float> CreatePreconditioner()
         {
-            return new UnitPreconditioner();
+            return new UnitPreconditioner<float>();
         }
 
         /// <summary>
@@ -51,9 +57,9 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Solvers.Precondit
         /// <param name="matrix">Source matrix.</param>
         /// <param name="vector">Initial vector.</param>
         /// <param name="result">Result vector.</param>
-        protected override void CheckResult(IPreConditioner preconditioner, SparseMatrix matrix, Vector vector, Vector result)
+        protected override void CheckResult(IPreconditioner<float> preconditioner, SparseMatrix matrix, Vector<float> vector, Vector<float> result)
         {
-            Assert.AreEqual(typeof(UnitPreconditioner), preconditioner.GetType(), "#01");
+            Assert.AreEqual(typeof (UnitPreconditioner<float>), preconditioner.GetType(), "#01");
 
             // Unit preconditioner is doing nothing. Vector and result should be equal
             for (var i = 0; i < vector.Count; i++)

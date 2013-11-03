@@ -28,16 +28,21 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
-
 namespace MathNet.Numerics
 {
     using System;
     using System.Collections.Generic;
     using System.Globalization;
-    using System.Numerics;
-    using System.Runtime;
     using System.Runtime.InteropServices;
-    using Properties;
+
+#if !PORTABLE
+    using System.Runtime;
+#endif
+
+#if !NOSYSNUMERICS
+    using Complex = System.Numerics.Complex;
+    using BigInteger = System.Numerics.BigInteger;
+#endif
 
     /// <summary>
     /// 32-bit single precision complex numbers class.
@@ -67,7 +72,7 @@ namespace MathNet.Numerics
     /// </remarks>
     [Serializable]
     [StructLayout(LayoutKind.Sequential)]
-    public struct Complex32 : IFormattable, IEquatable<Complex32>, IPrecisionSupport<Complex32>
+    public struct Complex32 : IFormattable, IEquatable<Complex32>
     {
         /// <summary>
         /// The real component of the complex number.
@@ -103,23 +108,6 @@ namespace MathNet.Numerics
             return new Complex32(magnitude * (float)Math.Cos(phase), magnitude * (float)Math.Sin(phase));
         }
 
-        [Obsolete("Use the public constructor instead. Scheduled for removal in v3.0.")]
-        public static Complex32 WithRealImaginary(float real, float imaginary)
-        {
-            return new Complex32(real, imaginary);
-        }
-
-        [Obsolete("Use static FromPolarCoordinates instead. Scheduled for removal in v3.0.")]
-        public static Complex32 WithModulusArgument(float modulus, float argument)
-        {
-            if (modulus < 0.0f)
-            {
-                throw new ArgumentOutOfRangeException("modulus", Resources.ArgumentNotNegative);
-            }
-
-            return new Complex32(modulus * (float)Math.Cos(argument), modulus * (float)Math.Sin(argument));
-        }
-
         /// <summary>
         /// Returns a new <see cref="T:MathNet.Numerics.Complex32" /> instance
         /// with a real number equal to zero and an imaginary number equal to zero.
@@ -143,9 +131,6 @@ namespace MathNet.Numerics
         /// with real and imaginary numbers positive infinite.
         /// </summary>
         public static readonly Complex32 PositiveInfinity = new Complex32(float.PositiveInfinity, float.PositiveInfinity);
-
-        [Obsolete("Use PositiveInfinity instead. Scheduled for removal in v3.0.")]
-        public static readonly Complex32 Infinity = PositiveInfinity;
 
         /// <summary>
         /// Returns a new <see cref="T:MathNet.Numerics.Complex32" /> instance
@@ -184,8 +169,9 @@ namespace MathNet.Numerics
         /// <returns>The phase or argument of this <c>Complex32</c></returns>
         public float Phase
         {
+            // NOTE: the special case for negative real numbers fixes negative-zero value behavior. Do not remove.
             [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
-            get { return (float)Math.Atan2(_imag, _real); }
+            get { return _imag == 0f && _real < 0f ? (float)Constants.Pi : (float)Math.Atan2(_imag, _real); }
         }
 
         /// <summary>
@@ -668,18 +654,6 @@ namespace MathNet.Numerics
             return new Complex32(dividend._real / divisor, dividend._imag / divisor);
         }
 
-        [Obsolete("No Operation. Scheduled for removal in v3.0.")]
-        public Complex32 Plus()
-        {
-            return this;
-        }
-
-        [Obsolete("Use static Complex32.Negate or the unary - operator instead. Scheduled for removal in v3.0.")]
-        public Complex32 Negate()
-        {
-            return -this;
-        }
-
         /// <summary>
         /// Computes the conjugate of a complex number and returns the result.
         /// </summary>
@@ -699,30 +673,6 @@ namespace MathNet.Numerics
             }
 
             return 1.0f / this;
-        }
-
-        [Obsolete("Use static Complex32.Add or the + operator instead. Scheduled for removal in v3.0.")]
-        public Complex32 Add(Complex32 other)
-        {
-            return this + other;
-        }
-
-        [Obsolete("Use static Complex32.Subtract or the - operator instead. Scheduled for removal in v3.0.")]
-        public Complex32 Subtract(Complex32 other)
-        {
-            return this - other;
-        }
-
-        [Obsolete("Use static Complex32.Multiply or the * operator instead. Scheduled for removal in v3.0.")]
-        public Complex32 Multiply(Complex32 multiplier)
-        {
-            return this * multiplier;
-        }
-
-        [Obsolete("Use static Complex32.Divide or the / operator instead. Scheduled for removal in v3.0.")]
-        public Complex32 Divide(Complex32 divisor)
-        {
-            return this / divisor;
         }
 
         #region IFormattable Members
@@ -842,54 +792,7 @@ namespace MathNet.Numerics
 
         #endregion
 
-        #region IPrecisionSupport<Complex32>
-
-        /// <summary>
-        /// Returns a Norm of a value of this type, which is appropriate for measuring how
-        /// close this value is to zero.
-        /// </summary>
-        /// <returns>
-        /// A norm of this value.
-        /// </returns>
-        double IPrecisionSupport<Complex32>.Norm()
-        {
-            return MagnitudeSquared;
-        }
-
-        /// <summary>
-        /// Returns a Norm of the difference of two values of this type, which is
-        /// appropriate for measuring how close together these two values are.
-        /// </summary>
-        /// <param name="otherValue">
-        /// The value to compare with.
-        /// </param>
-        /// <returns>
-        /// A norm of the difference between this and the other value.
-        /// </returns>
-        double IPrecisionSupport<Complex32>.NormOfDifference(Complex32 otherValue)
-        {
-            return (this - otherValue).MagnitudeSquared;
-        }
-
-        #endregion
-
         #region Parse Functions
-
-        /// <summary>
-        /// Creates a complex number based on a string. The string can be in the
-        /// following formats (without the quotes): 'n', 'ni', 'n +/- ni',
-        /// 'ni +/- n', 'n,n', 'n,ni,' '(n,n)', or '(n,ni)', where n is a float.
-        /// </summary>
-        /// <returns>
-        /// A complex number containing the value specified by the given string.
-        /// </returns>
-        /// <param name="value">
-        /// The string to parse.
-        /// </param>
-        public static Complex32 Parse(string value)
-        {
-            return Parse(value, null);
-        }
 
         /// <summary>
         /// Creates a complex number based on a string. The string can be in the
@@ -906,7 +809,7 @@ namespace MathNet.Numerics
         /// An <see cref="IFormatProvider"/> that supplies culture-specific
         /// formatting information.
         /// </param>
-        public static Complex32 Parse(string value, IFormatProvider formatProvider)
+        public static Complex32 Parse(string value, IFormatProvider formatProvider = null)
         {
             if (value == null)
             {
@@ -1199,7 +1102,7 @@ namespace MathNet.Numerics
             return new Complex32(value, 0.0f);
         }
 
-#if !PORTABLE
+#if !NOSYSNUMERICS
         /// <summary>
         /// Implicit conversion of a BigInteger int to a <c>Complex32</c>.
         /// </summary>
@@ -1277,7 +1180,7 @@ namespace MathNet.Numerics
         /// <summary>
         /// Returns the additive inverse of a specified complex number.
         /// </summary>
-        /// <returns>The result of the <see cref="P:System.Numerics.Complex.Real" /> and <see cref="P:System.Numerics.Complex.Imaginary" /> components of the <paramref name="value" /> parameter multiplied by -1.</returns>
+        /// <returns>The result of the real and imaginary components of the value parameter multiplied by -1.</returns>
         /// <param name="value">A complex number.</param>
         [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
         public static Complex32 Negate(Complex32 value)
@@ -1453,7 +1356,7 @@ namespace MathNet.Numerics
         /// <param name="value">A complex number.</param>
         public static Complex32 Sin(Complex32 value)
         {
-            return (Complex32)Trig.Sine(value.ToComplex());
+            return (Complex32)Trig.Sin(value.ToComplex());
         }
 
         /// <summary>
@@ -1463,7 +1366,7 @@ namespace MathNet.Numerics
         /// <param name="value">A complex number.</param>
         public static Complex32 Cos(Complex32 value)
         {
-            return (Complex32)Trig.Cosine(value.ToComplex());
+            return (Complex32)Trig.Cos(value.ToComplex());
         }
 
         /// <summary>
@@ -1473,7 +1376,7 @@ namespace MathNet.Numerics
         /// <param name="value">A complex number.</param>
         public static Complex32 Tan(Complex32 value)
         {
-            return (Complex32)Trig.Tangent(value.ToComplex());
+            return (Complex32)Trig.Tan(value.ToComplex());
         }
 
         /// <summary>
@@ -1483,7 +1386,7 @@ namespace MathNet.Numerics
         /// <param name="value">A complex number.</param>
         public static Complex32 Asin(Complex32 value)
         {
-            return (Complex32)Trig.InverseSine(value.ToComplex());
+            return (Complex32)Trig.Asin(value.ToComplex());
         }
 
         /// <summary>
@@ -1493,7 +1396,7 @@ namespace MathNet.Numerics
         /// <param name="value">A complex number that represents a cosine.</param>
         public static Complex32 Acos(Complex32 value)
         {
-            return (Complex32)Trig.InverseCosine(value.ToComplex());
+            return (Complex32)Trig.Acos(value.ToComplex());
         }
 
         /// <summary>
@@ -1503,7 +1406,7 @@ namespace MathNet.Numerics
         /// <param name="value">A complex number.</param>
         public static Complex32 Atan(Complex32 value)
         {
-            return (Complex32)Trig.InverseTangent(value.ToComplex());
+            return (Complex32)Trig.Atan(value.ToComplex());
         }
 
         /// <summary>
@@ -1513,7 +1416,7 @@ namespace MathNet.Numerics
         /// <param name="value">A complex number.</param>
         public static Complex32 Sinh(Complex32 value)
         {
-            return (Complex32)Trig.HyperbolicSine(value.ToComplex());
+            return (Complex32)Trig.Sinh(value.ToComplex());
         }
 
         /// <summary>
@@ -1523,7 +1426,7 @@ namespace MathNet.Numerics
         /// <param name="value">A complex number.</param>
         public static Complex32 Cosh(Complex32 value)
         {
-            return (Complex32)Trig.HyperbolicCosine(value.ToComplex());
+            return (Complex32)Trig.Cosh(value.ToComplex());
         }
 
         /// <summary>
@@ -1533,7 +1436,7 @@ namespace MathNet.Numerics
         /// <param name="value">A complex number.</param>
         public static Complex32 Tanh(Complex32 value)
         {
-            return (Complex32)Trig.HyperbolicTangent(value.ToComplex());
+            return (Complex32)Trig.Tanh(value.ToComplex());
         }
     }
 }

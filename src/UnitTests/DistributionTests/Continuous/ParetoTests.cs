@@ -1,4 +1,4 @@
-// <copyright file="ParetoTests.cs" company="Math.NET">
+﻿// <copyright file="ParetoTests.cs" company="Math.NET">
 // Math.NET Numerics, part of the Math.NET Project
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
@@ -24,13 +24,13 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using System.Linq;
+using MathNet.Numerics.Distributions;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
 {
-    using System;
-    using System.Linq;
-    using Distributions;
-    using NUnit.Framework;
-
     /// <summary>
     /// Pareto distribution tests.
     /// </summary>
@@ -87,8 +87,8 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [Test]
         public void ValidateToString()
         {
-            var n = new Pareto(1.0, 2.0);
-            Assert.AreEqual("Pareto(Scale = 1, Shape = 2)", n.ToString());
+            var n = new Pareto(1d, 2d);
+            Assert.AreEqual("Pareto(xm = 1, α = 2)", n.ToString());
         }
 
         /// <summary>
@@ -282,40 +282,53 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
             Assert.AreEqual(Double.PositiveInfinity, n.Maximum);
         }
 
-        /// <summary>
-        /// Validate density.
-        /// </summary>
-        /// <param name="scale">Scale value.</param>
-        /// <param name="shape">Shape value.</param>
-        /// <param name="x">Input X value.</param>
-        [TestCase(0.1, 0.1, 0.1)]
-        [TestCase(1.0, 1.0, 1.0)]
-        [TestCase(5.0, 5.0, 2.0)]
-        [TestCase(7.0, 7.0, 10.0)]
-        [TestCase(10.0, 10.0, 12.0)]
-        [TestCase(Double.PositiveInfinity, Double.PositiveInfinity, Double.PositiveInfinity)]
-        public void ValidateDensity(double scale, double shape, double x)
+        [TestCase(1, 1, 1, 1)]
+        [TestCase(1, 1, 1.5, 4/9.0)]
+        [TestCase(1, 1, 5, 1/25.0)]
+        [TestCase(1, 1, 50, 1/2500.0)]
+        [TestCase(1, 4, 1, 4)]
+        [TestCase(1, 4, 1.5, 128/243.0)]
+        [TestCase(1, 4, 50, 1/78125000.0)]
+        [TestCase(3, 2, 3, 2/3.0)]
+        [TestCase(3, 2, 5, 18/125.0)]
+        [TestCase(25, 100, 50, 1.5777218104420236e-30)]
+        [TestCase(100, 25, 150, 6.6003546737276816e-6)]
+        public void ValidateDensity(double scale, double shape, double x, double expected)
         {
-            var n = new Pareto(scale, shape);
-            Assert.AreEqual(shape * Math.Pow(scale, shape) / Math.Pow(x, shape + 1.0), n.Density(x));
+            var dist = new Pareto(scale, shape);
+
+            Assert.AreEqual(expected, dist.Density(x), 1e-12);
+            Assert.AreEqual(expected, Pareto.PDF(scale, shape, x), 1e-12);
+
+            Assert.AreEqual(Math.Log(expected), dist.DensityLn(x), 1e-12);
+            Assert.AreEqual(Math.Log(expected), Pareto.PDFLn(scale, shape, x), 1e-12);
         }
 
-        /// <summary>
-        /// Validate density log.
-        /// </summary>
-        /// <param name="scale">Scale value.</param>
-        /// <param name="shape">Shape value.</param>
-        /// <param name="x">Input X value.</param>
         [TestCase(0.1, 0.1, 0.1)]
         [TestCase(1.0, 1.0, 1.0)]
         [TestCase(5.0, 5.0, 2.0)]
         [TestCase(7.0, 7.0, 10.0)]
         [TestCase(10.0, 10.0, 12.0)]
         [TestCase(Double.PositiveInfinity, Double.PositiveInfinity, Double.PositiveInfinity)]
-        public void ValidateDensityLn(double scale, double shape, double x)
+        public void ValidateCumulativeDistribution(double scale, double shape, double x)
         {
             var n = new Pareto(scale, shape);
-            Assert.AreEqual(Math.Log(n.Density(x)), n.DensityLn(x));
+            double expected = 1.0 - Math.Pow(scale/x, shape);
+            Assert.AreEqual(expected, n.CumulativeDistribution(x));
+            Assert.AreEqual(expected, Pareto.CDF(scale, shape, x));
+        }
+
+        [TestCase(0.1, 0.1, 0.1)]
+        [TestCase(1.0, 1.0, 1.0)]
+        [TestCase(5.0, 5.0, 2.0)]
+        [TestCase(7.0, 7.0, 10.0)]
+        [TestCase(10.0, 10.0, 12.0)]
+        public void ValidateInverseCumulativeDistribution(double scale, double shape, double x)
+        {
+            var n = new Pareto(scale, shape);
+            double cdf = 1.0 - Math.Pow(scale / x, shape);
+            Assert.AreEqual(x, n.InverseCumulativeDistribution(cdf), 1e-12);
+            Assert.AreEqual(x, Pareto.InvCDF(scale, shape, cdf), 1e-12);
         }
 
         /// <summary>
@@ -337,24 +350,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
             var n = new Pareto(1.0, 1.0);
             var ied = n.Samples();
             ied.Take(5).ToArray();
-        }
-
-        /// <summary>
-        /// Validate cumulative distribution.
-        /// </summary>
-        /// <param name="scale">Scale value.</param>
-        /// <param name="shape">Shape value.</param>
-        /// <param name="x">Input X value.</param>
-        [TestCase(0.1, 0.1, 0.1)]
-        [TestCase(1.0, 1.0, 1.0)]
-        [TestCase(5.0, 5.0, 2.0)]
-        [TestCase(7.0, 7.0, 10.0)]
-        [TestCase(10.0, 10.0, 12.0)]
-        [TestCase(Double.PositiveInfinity, Double.PositiveInfinity, Double.PositiveInfinity)]
-        public void ValidateCumulativeDistribution(double scale, double shape, double x)
-        {
-            var n = new Pareto(scale, shape);
-            Assert.AreEqual(1.0 - Math.Pow(scale / x, shape), n.CumulativeDistribution(x));
         }
     }
 }

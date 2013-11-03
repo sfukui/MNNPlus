@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2011 Math.NET
+// Copyright (c) 2009-2013 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -28,22 +28,22 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using MathNet.Numerics.LinearAlgebra.Storage;
+using MathNet.Numerics.Threading;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
+using System.Linq;
+
 namespace MathNet.Numerics.LinearAlgebra.Single
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Globalization;
-    using System.Linq;
-    using Generic;
-    using NumberTheory;
-    using Storage;
-    using Threading;
-
     /// <summary>
-    /// A vector with sparse storage.
+    /// A vector with sparse storage, intended for very large vectors where most of the cells are zero.
     /// </summary>
     /// <remarks>The sparse vector is not thread safe.</remarks>
     [Serializable]
+    [DebuggerDisplay("SparseVector {Count}-Single {NonZerosCount}-NonZero")]
     public class SparseVector : Vector
     {
         readonly SparseVectorStorage<float> _storage;
@@ -58,7 +58,10 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SparseVector"/> class.
+        /// Create a new sparse vector straight from an initialized vector storage instance.
+        /// The storage is used directly without copying.
+        /// Intended for advanced scenarios where you're working directly with
+        /// storage for performance or interop reasons.
         /// </summary>
         public SparseVector(SparseVectorStorage<float> storage)
             : base(storage)
@@ -67,110 +70,62 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SparseVector"/> class with a given size.
+        /// Create a new sparse vector with the given length.
+        /// All cells of the vector will be initialized to zero.
+        /// Zero-length vectors are not supported.
         /// </summary>
-        /// <param name="size">
-        /// the size of the vector.
-        /// </param>
-        /// <exception cref="ArgumentException">
-        /// If <paramref name="size"/> is less than one.
-        /// </exception>
-        public SparseVector(int size)
-            : this(new SparseVectorStorage<float>(size))
+        /// <exception cref="ArgumentException">If length is less than one.</exception>
+        public SparseVector(int length)
+            : this(new SparseVectorStorage<float>(length))
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SparseVector"/> class with a given size
-        /// and each element set to the given value;
+        /// Create a new sparse vector as a copy of the given other vector.
+        /// This new vector will be independent from the other vector.
+        /// A new memory block will be allocated for storing the vector.
         /// </summary>
-        /// <param name="size">
-        /// the size of the vector.
-        /// </param>
-        /// <param name="value">
-        /// the value to set each element to.
-        /// </param>
-        /// <exception cref="ArgumentException">
-        /// If <paramref name="size"/> is less than one.
-        /// </exception>
-        [Obsolete("Use a dense vector instead. Scheduled for removal in v3.0.")]
-        public SparseVector(int size, float value)
-            : this(new SparseVectorStorage<float>(size))
+        public static SparseVector OfVector(Vector<float> vector)
         {
-            if (value == 0.0)
-            {
-                return;
-            }
-
-            var valueCount = _storage.ValueCount = size;
-            var indices = _storage.Indices = new int[valueCount];
-            var values = _storage.Values = new float[valueCount];
-
-            for (int i = 0; i < values.Length; i++)
-            {
-                values[i] = value;
-                indices[i] = i;
-            }
+            return new SparseVector(SparseVectorStorage<float>.OfVector(vector.Storage));
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SparseVector"/> class by
-        /// copying the values from another.
+        /// Create a new sparse vector as a copy of the given enumerable.
+        /// This new vector will be independent from the enumerable.
+        /// A new memory block will be allocated for storing the vector.
         /// </summary>
-        /// <param name="other">
-        /// The vector to create the new vector from.
-        /// </param>
-        public SparseVector(Vector<float> other)
-            : this(new SparseVectorStorage<float>(other.Count))
+        public static SparseVector OfEnumerable(IEnumerable<float> enumerable)
         {
-            other.Storage.CopyToUnchecked(Storage, skipClearing: true);
+            return new SparseVector(SparseVectorStorage<float>.OfEnumerable(enumerable));
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SparseVector"/> class for an array.
+        /// Create a new sparse vector as a copy of the given indexed enumerable.
+        /// Keys must be provided at most once, zero is assumed if a key is omitted.
+        /// This new vector will be independent from the enumerable.
+        /// A new memory block will be allocated for storing the vector.
         /// </summary>
-        /// <param name="array">The array to create this vector from.</param>
-        /// <remarks>The vector copy the array. Any changes to the vector will NOT change the array.</remarks>
-        public SparseVector(IList<float> array)
-            : this(new SparseVectorStorage<float>(array.Count))
+        public static SparseVector OfIndexedEnumerable(int length, IEnumerable<Tuple<int, float>> enumerable)
         {
-            for (var i = 0; i < array.Count; i++)
-            {
-                Storage.At(i, array[i]);
-            }
+            return new SparseVector(SparseVectorStorage<float>.OfIndexedEnumerable(length, enumerable));
         }
 
         /// <summary>
-        /// Creates a matrix with the given dimensions using the same storage type
-        /// as this vector.
+        /// Create a new sparse vector and initialize each value using the provided value.
         /// </summary>
-        /// <param name="rows">
-        /// The number of rows.
-        /// </param>
-        /// <param name="columns">
-        /// The number of columns.
-        /// </param>
-        /// <returns>
-        /// A matrix with the given dimensions.
-        /// </returns>
-        public override Matrix<float> CreateMatrix(int rows, int columns)
+        public static SparseVector Create(int length, float value)
         {
-            return new SparseMatrix(rows, columns);
+            if (value == 0f) return new SparseVector(length);
+            return new SparseVector(SparseVectorStorage<float>.OfInit(length, i => value));
         }
 
         /// <summary>
-        /// Creates a <strong>Vector</strong> of the given size using the same storage type
-        /// as this vector.
+        /// Create a new sparse vector and initialize each value using the provided init function.
         /// </summary>
-        /// <param name="size">
-        /// The size of the <strong>Vector</strong> to create.
-        /// </param>
-        /// <returns>
-        /// The new <c>Vector</c>.
-        /// </returns>
-        public override Vector<float> CreateVector(int size)
+        public static SparseVector Create(int length, Func<int, float> init)
         {
-            return new SparseVector(size);
+            return new SparseVector(SparseVectorStorage<float>.OfInit(length, init));
         }
 
         /// <summary>
@@ -417,23 +372,23 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         }
 
         /// <summary>
-        /// Negates vector and saves result to <paramref name="target"/>
+        /// Negates vector and saves result to <paramref name="result"/>
         /// </summary>
-        /// <param name="target">Target vector</param>
-        protected override void DoNegate(Vector<float> target)
+        /// <param name="result">Target vector</param>
+        protected override void DoNegate(Vector<float> result)
         {
-            var sparseResult = target as SparseVector;
+            var sparseResult = result as SparseVector;
             if (sparseResult == null)
             {
-                target.Clear();
+                result.Clear();
                 for (var index = 0; index < _storage.ValueCount; index++)
                 {
-                    target.At(_storage.Indices[index], -_storage.Values[index]);
+                    result.At(_storage.Indices[index], -_storage.Values[index]);
                 }
             }
             else
             {
-                if (!ReferenceEquals(this, target))
+                if (!ReferenceEquals(this, result))
                 {
                     sparseResult._storage.ValueCount = _storage.ValueCount;
                     sparseResult._storage.Indices = new int[_storage.ValueCount];
@@ -484,16 +439,11 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         /// <summary>
         /// Computes the dot product between this vector and another vector.
         /// </summary>
-        /// <param name="other">
-        /// The other vector to add.
-        /// </param>
-        /// <returns>s
-        /// The result of the addition.
-        /// </returns>
+        /// <param name="other">The other vector.</param>
+        /// <returns>The sum of a[i]*b[i] for all i.</returns>
         protected override float DoDotProduct(Vector<float> other)
         {
-            var result = 0.0f;
-
+            var result = 0f;
             if (ReferenceEquals(this, other))
             {
                 for (var i = 0; i < _storage.ValueCount; i++)
@@ -508,7 +458,6 @@ namespace MathNet.Numerics.LinearAlgebra.Single
                     result += _storage.Values[i] * other.At(_storage.Indices[i]);
                 }
             }
-
             return result;
         }
 
@@ -534,23 +483,6 @@ namespace MathNet.Numerics.LinearAlgebra.Single
                     result.At(_storage.Indices[index], _storage.Values[index] % divisor);
                 }
             }
-        }
-
-        /// <summary>
-        /// Returns a <strong>Vector</strong> containing the same values of <paramref name="rightSide"/>. 
-        /// </summary>
-        /// <remarks>This method is included for completeness.</remarks>
-        /// <param name="rightSide">The vector to get the values from.</param>
-        /// <returns>A vector containing a the same values as <paramref name="rightSide"/>.</returns>
-        /// <exception cref="ArgumentNullException">If <paramref name="rightSide"/> is <see langword="null" />.</exception>
-        public static SparseVector operator +(SparseVector rightSide)
-        {
-            if (rightSide == null)
-            {
-                throw new ArgumentNullException("rightSide");
-            }
-
-            return (SparseVector)rightSide.Plus();
         }
 
         /// <summary>
@@ -779,23 +711,56 @@ namespace MathNet.Numerics.LinearAlgebra.Single
             {
                 result += _storage.Values[i];
             }
-
             return result;
         }
 
         /// <summary>
-        /// Computes the sum of the absolute value of the vector's elements.
+        /// Calculates the L1 norm of the vector, also known as Manhattan norm.
         /// </summary>
-        /// <returns>The sum of the absolute value of the vector's elements.</returns>
-        public override float SumMagnitudes()
+        /// <returns>The sum of the absolute values.</returns>
+        public override double L1Norm()
         {
-            var result = 0.0f;
+            double result = 0d;
             for (var i = 0; i < _storage.ValueCount; i++)
             {
                 result += Math.Abs(_storage.Values[i]);
             }
-
             return result;
+        }
+
+        /// <summary>
+        /// Calculates the infinity norm of the vector.
+        /// </summary>
+        /// <returns>The square root of the sum of the squared values.</returns>
+        public override double InfinityNorm()
+        {
+            return CommonParallel.Aggregate(0, _storage.ValueCount, i => Math.Abs(_storage.Values[i]), Math.Max, 0f);
+        }
+
+        /// <summary>
+        /// Computes the p-Norm.
+        /// </summary>
+        /// <param name="p">The p value.</param>
+        /// <returns>Scalar <c>ret = ( ∑|this[i]|^p )^(1/p)</c></returns>
+        public override double Norm(double p)
+        {
+            if (p < 0d) throw new ArgumentOutOfRangeException("p");
+
+            if (_storage.ValueCount == 0)
+            {
+                return 0d;
+            }
+
+            if (p == 1d) return L1Norm();
+            if (p == 2d) return L2Norm();
+            if (double.IsPositiveInfinity(p)) return InfinityNorm();
+
+            double sum = 0d;
+            for (var index = 0; index < _storage.ValueCount; index++)
+            {
+                sum += Math.Pow(Math.Abs(_storage.Values[index]), p);
+            }
+            return Math.Pow(sum, 1.0 / p);
         }
 
         /// <summary>
@@ -825,11 +790,11 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         /// <summary>
         /// Pointwise multiplies this vector with another vector and stores the result into the result vector.
         /// </summary>
-        /// <param name="other">The vector to pointwise multiply with this one.</param>
+        /// <param name="divisor">The vector to pointwise multiply with this one.</param>
         /// <param name="result">The vector to store the result of the pointwise multiplication.</param>
-        protected override void DoPointwiseDivide(Vector<float> other, Vector<float> result)
+        protected override void DoPointwiseDivide(Vector<float> divisor, Vector<float> result)
         {
-            if (ReferenceEquals(this, other))
+            if (ReferenceEquals(this, divisor))
             {
                 for (var i = 0; i < _storage.ValueCount; i++)
                 {
@@ -841,7 +806,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single
                 for (var i = 0; i < _storage.ValueCount; i++)
                 {
                     var index = _storage.Indices[i];
-                    result.At(index, _storage.Values[i] / other.At(index));
+                    result.At(index, _storage.Values[i] / divisor.At(index));
                 }
             }
         }
@@ -893,58 +858,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single
             return OuterProduct(this, v);
         }
 
-        /// <summary>
-        /// Computes the p-Norm.
-        /// </summary>
-        /// <param name="p">The p value.</param>
-        /// <returns>Scalar <c>ret = (sum(abs(this[i])^p))^(1/p)</c></returns>
-        public override float Norm(double p)
-        {
-            if (1 > p)
-            {
-                throw new ArgumentOutOfRangeException("p");
-            }
-
-            if (_storage.ValueCount == 0)
-            {
-                return 0.0f;
-            }
-
-            if (2.0 == p)
-            {
-                return _storage.Values.Aggregate(0f, SpecialFunctions.Hypotenuse);
-            }
-
-            if (Double.IsPositiveInfinity(p))
-            {
-                return CommonParallel.Aggregate(0, _storage.ValueCount, i => Math.Abs(_storage.Values[i]), Math.Max, 0f);
-            }
-
-            var sum = 0.0;
-            for (var index = 0; index < _storage.ValueCount; index++)
-            {
-                sum += Math.Pow(Math.Abs(_storage.Values[index]), p);
-            }
-
-            return (float)Math.Pow(sum, 1.0 / p);
-        }
-
         #region Parse Functions
-
-        /// <summary>
-        /// Creates a float sparse vector based on a string. The string can be in the following formats (without the
-        /// quotes): 'n', 'n,n,..', '(n,n,..)', '[n,n,...]', where n is a float.
-        /// </summary>
-        /// <returns>
-        /// A float sparse vector containing the values specified by the given string.
-        /// </returns>
-        /// <param name="value">
-        /// The string to parse.
-        /// </param>
-        public static SparseVector Parse(string value)
-        {
-            return Parse(value, null);
-        }
 
         /// <summary>
         /// Creates a float sparse vector based on a string. The string can be in the following formats (without the
@@ -959,7 +873,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         /// <param name="formatProvider">
         /// An <see cref="IFormatProvider"/> that supplies culture-specific formatting information.
         /// </param>
-        public static SparseVector Parse(string value, IFormatProvider formatProvider)
+        public static SparseVector Parse(string value, IFormatProvider formatProvider = null)
         {
             if (value == null)
             {
@@ -993,39 +907,11 @@ namespace MathNet.Numerics.LinearAlgebra.Single
                 value = value.Substring(1, value.Length - 2).Trim();
             }
 
-            // keywords
-            var textInfo = formatProvider.GetTextInfo();
-            var keywords = new[] { textInfo.ListSeparator };
-
-            // lexing
-            var tokens = new LinkedList<string>();
-            GlobalizationHelper.Tokenize(tokens.AddFirst(value), keywords, 0);
-            var token = tokens.First;
-
-            if (token == null || tokens.Count.IsEven())
-            {
-                throw new FormatException();
-            }
-
             // parsing
-            var data = new float[(tokens.Count + 1) >> 1];
-            for (var i = 0; i < data.Length; i++)
-            {
-                if (token == null || token.Value == textInfo.ListSeparator)
-                {
-                    throw new FormatException();
-                }
-
-                data[i] = float.Parse(token.Value, NumberStyles.Any, formatProvider);
-
-                token = token.Next;
-                if (token != null)
-                {
-                    token = token.Next;
-                }
-            }
-
-            return new SparseVector(data);
+            var tokens = value.Split(new[] { formatProvider.GetTextInfo().ListSeparator, " ", "\t" }, StringSplitOptions.RemoveEmptyEntries);
+            var data = tokens.Select(t => float.Parse(t, NumberStyles.Any, formatProvider)).ToList();
+            if (data.Count == 0) throw new FormatException();
+            return OfEnumerable(data);
         }
 
         /// <summary>
@@ -1088,14 +974,9 @@ namespace MathNet.Numerics.LinearAlgebra.Single
 
         #endregion
 
-        public override string ToString(string format, IFormatProvider formatProvider)
+        public override string ToTypeString()
         {
-            if (Count > 20)
-            {
-                return String.Format("SparseVectorOfSingle({0},{1},{2})", Count, _storage.ValueCount, GetHashCode());
-            }
-
-            return base.ToString(format, formatProvider);
+            return string.Format("SparseVector {0}-Single {1:P2} Filled", Count, NonZerosCount / (double)Count);
         }
     }
 }

@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2013 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -24,13 +28,14 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using MathNet.Numerics.LinearAlgebra.Single.Factorization;
+using MathNet.Numerics.LinearAlgebra.Factorization;
+using MathNet.Numerics.LinearAlgebra.Storage;
+using MathNet.Numerics.Properties;
+
 namespace MathNet.Numerics.LinearAlgebra.Single
 {
-    using System;
-    using Generic;
-    using Properties;
-    using Storage;
-
     /// <summary>
     /// <c>float</c> version of the <see cref="Matrix{T}"/> class.
     /// </summary>
@@ -45,23 +50,52 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         {
         }
 
-        /// <summary>Calculates the L1 norm.</summary>
-        /// <returns>The L1 norm of the matrix.</returns>
-        public override float L1Norm()
+        /// <summary>Calculates the induced L1 norm of this matrix.</summary>
+        /// <returns>The maximum absolute column sum of the matrix.</returns>
+        public override double L1Norm()
         {
-            var norm = 0.0f;
+            var norm = 0d;
             for (var j = 0; j < ColumnCount; j++)
             {
-                var s = 0.0f;
+                var s = 0d;
                 for (var i = 0; i < RowCount; i++)
                 {
                     s += Math.Abs(At(i, j));
                 }
-
                 norm = Math.Max(norm, s);
             }
-
             return norm;
+        }
+
+        /// <summary>Calculates the induced infinity norm of this matrix.</summary>
+        /// <returns>The maximum absolute row sum of the matrix.</returns>
+        public override double InfinityNorm()
+        {
+            var norm = 0d;
+            for (var i = 0; i < RowCount; i++)
+            {
+                var s = 0d;
+                for (var j = 0; j < ColumnCount; j++)
+                {
+                    s += Math.Abs(At(i, j));
+                }
+                norm = Math.Max(norm, s);
+            }
+            return norm;
+        }
+
+        /// <summary>Calculates the entry-wise Frobenius norm of this matrix.</summary>
+        /// <returns>The square root of the sum of the squared values.</returns>
+        public override double FrobeniusNorm()
+        {
+            var transpose = Transpose();
+            var aat = this * transpose;
+            var norm = 0d;
+            for (var i = 0; i < RowCount; i++)
+            {
+                norm += aat.At(i, i);
+            }
+            return Math.Sqrt(norm);
         }
 
         /// <summary>
@@ -73,41 +107,20 @@ namespace MathNet.Numerics.LinearAlgebra.Single
             return Transpose();
         }
 
-        /// <summary>Calculates the Frobenius norm of this matrix.</summary>
-        /// <returns>The Frobenius norm of this matrix.</returns>
-        public override float FrobeniusNorm()
+        /// <summary>
+        /// Add a scalar to each element of the matrix and stores the result in the result vector.
+        /// </summary>
+        /// <param name="scalar">The scalar to add.</param>
+        /// <param name="result">The matrix to store the result of the addition.</param>
+        protected override void DoAdd(float scalar, Matrix<float> result)
         {
-            var transpose = Transpose();
-            var aat = this * transpose;
-
-            var norm = 0.0f;
             for (var i = 0; i < RowCount; i++)
             {
-                norm += aat.At(i, i);
-            }
-
-            norm = Convert.ToSingle(Math.Sqrt(norm));
-
-            return norm;
-        }
-
-        /// <summary>Calculates the infinity norm of this matrix.</summary>
-        /// <returns>The infinity norm of this matrix.</returns>   
-        public override float InfinityNorm()
-        {
-            var norm = 0.0f;
-            for (var i = 0; i < RowCount; i++)
-            {
-                var s = 0.0f;
                 for (var j = 0; j < ColumnCount; j++)
                 {
-                    s += Math.Abs(At(i, j));
+                    result.At(i, j, At(i, j) + scalar);
                 }
-
-                norm = Math.Max(norm, s);
             }
-
-            return norm;
         }
 
         /// <summary>
@@ -124,6 +137,22 @@ namespace MathNet.Numerics.LinearAlgebra.Single
                 for (var j = 0; j < ColumnCount; j++)
                 {
                     result.At(i, j, At(i, j) + other.At(i, j));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Subtracts a scalar from each element of the vector and stores the result in the result vector.
+        /// </summary>
+        /// <param name="scalar">The scalar to subtract.</param>
+        /// <param name="result">The matrix to store the result of the subtraction.</param>
+        protected override void DoSubtract(float scalar, Matrix<float> result)
+        {
+            for (var i = 0; i < RowCount; i++)
+            {
+                for (var j = 0; j < ColumnCount; j++)
+                {
+                    result.At(i, j, At(i, j) - scalar);
                 }
             }
         }
@@ -206,11 +235,27 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         /// <summary>
         /// Divides each element of the matrix by a scalar and places results into the result matrix.
         /// </summary>
-        /// <param name="scalar">The scalar to divide the matrix with.</param>
+        /// <param name="divisor">The scalar to divide the matrix with.</param>
         /// <param name="result">The matrix to store the result of the division.</param>
-        protected override void DoDivide(float scalar, Matrix<float> result)
+        protected override void DoDivide(float divisor, Matrix<float> result)
         {
-            DoMultiply(1.0f / scalar, result);
+            DoMultiply(1.0f / divisor, result);
+        }
+
+        /// <summary>
+        /// Divides a scalar by each element of the matrix and stores the result in the result matrix.
+        /// </summary>
+        /// <param name="dividend">The scalar to add.</param>
+        /// <param name="result">The matrix to store the result of the division.</param>
+        protected override void DoDivideByThis(float dividend, Matrix<float> result)
+        {
+            for (var i = 0; i < RowCount; i++)
+            {
+                for (var j = 0; j < ColumnCount; j++)
+                {
+                    result.At(i, j, dividend / At(i, j));
+                }
+            }
         }
 
         /// <summary>
@@ -279,7 +324,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         /// <summary>
         /// Computes the modulus for each element of the matrix.
         /// </summary>
-        /// <param name="divisor">The divisor to use.</param>
+        /// <param name="divisor">The scalar denominator to use.</param>
         /// <param name="result">Matrix to store the results in.</param>
         protected override void DoModulus(float divisor, Matrix<float> result)
         {
@@ -288,6 +333,22 @@ namespace MathNet.Numerics.LinearAlgebra.Single
                 for (var column = 0; column < ColumnCount; column++)
                 {
                     result.At(row, column, At(row, column) % divisor);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Computes the modulus for each element of the matrix.
+        /// </summary>
+        /// <param name="dividend">The scalar numerator to use.</param>
+        /// <param name="result">Matrix to store the results in.</param>
+        protected override void DoModulusByThis(float dividend, Matrix<float> result)
+        {
+            for (var row = 0; row < RowCount; row++)
+            {
+                for (var column = 0; column < ColumnCount; column++)
+                {
+                    result.At(row, column, dividend % At(row, column));
                 }
             }
         }
@@ -308,6 +369,20 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         }
 
         /// <summary>
+        /// Complex conjugates each element of this matrix and place the results into the result matrix.
+        /// </summary>
+        /// <param name="result">The result of the conjugation.</param>
+        protected override void DoConjugate(Matrix<float> result)
+        {
+            if (ReferenceEquals(this, result))
+            {
+                return;
+            }
+
+            CopyTo(result);
+        }
+
+        /// <summary>
         /// Pointwise multiplies this matrix with another matrix and stores the result into the result matrix.
         /// </summary>
         /// <param name="other">The matrix to pointwise multiply with this one.</param>
@@ -318,7 +393,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single
             {
                 for (var i = 0; i < RowCount; i++)
                 {
-                    result.At(i, j, At(i, j) * other.At(i, j));
+                    result.At(i, j, At(i, j)*other.At(i, j));
                 }
             }
         }
@@ -326,15 +401,31 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         /// <summary>
         /// Pointwise divide this matrix by another matrix and stores the result into the result matrix.
         /// </summary>
-        /// <param name="other">The matrix to pointwise divide this one by.</param>
+        /// <param name="divisor">The matrix to pointwise divide this one by.</param>
         /// <param name="result">The matrix to store the result of the pointwise division.</param>
-        protected override void DoPointwiseDivide(Matrix<float> other, Matrix<float> result)
+        protected override void DoPointwiseDivide(Matrix<float> divisor, Matrix<float> result)
         {
             for (var j = 0; j < ColumnCount; j++)
             {
                 for (var i = 0; i < RowCount; i++)
                 {
-                    result.At(i, j, At(i, j) / other.At(i, j));
+                    result.At(i, j, At(i, j)/divisor.At(i, j));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Pointwise modulus this matrix with another matrix and stores the result into the result matrix.
+        /// </summary>
+        /// <param name="divisor">The pointwise denominator matrix to use</param>
+        /// <param name="result">The result of the modulus.</param>
+        protected override void DoPointwiseModulus(Matrix<float> divisor, Matrix<float> result)
+        {
+            for (var j = 0; j < ColumnCount; j++)
+            {
+                for (var i = 0; i < RowCount; i++)
+                {
+                    result.At(i, j, At(i, j)%divisor.At(i, j));
                 }
             }
         }
@@ -358,6 +449,36 @@ namespace MathNet.Numerics.LinearAlgebra.Single
             }
 
             return sum;
+        }
+
+        public override Cholesky<float> Cholesky()
+        {
+            return UserCholesky.Create(this);
+        }
+
+        public override LU<float> LU()
+        {
+            return UserLU.Create(this);
+        }
+
+        public override QR<float> QR(QRMethod method = QRMethod.Thin)
+        {
+            return UserQR.Create(this, method);
+        }
+
+        public override GramSchmidt<float> GramSchmidt()
+        {
+            return UserGramSchmidt.Create(this);
+        }
+
+        public override Svd<float> Svd(bool computeVectors = true)
+        {
+            return UserSvd.Create(this, computeVectors);
+        }
+
+        public override Evd<float> Evd()
+        {
+            return UserEvd.Create(this);
         }
     }
 }

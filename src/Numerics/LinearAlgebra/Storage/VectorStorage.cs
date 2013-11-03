@@ -40,7 +40,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
     {
         // [ruegg] public fields are OK here
 
-        protected static readonly T Zero = Common.ZeroOf<T>();
+        protected static readonly T Zero = BuilderInstance<T>.Vector.Zero;
         public readonly int Length;
 
         protected VectorStorage(int length)
@@ -52,6 +52,11 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
 
             Length = length;
         }
+
+        /// <summary>
+        /// True if the vector storage format is dense.
+        /// </summary>
+        public abstract bool IsDense { get; }
 
         /// <summary>
         /// Gets or sets the value at the given index, with range checking.
@@ -92,24 +97,6 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
         /// <param name="value">The value to set the element to. </param>
         /// <remarks>WARNING: This method is not thread safe. Use "lock" with it and be sure to avoid deadlocks.</remarks>
         public abstract void At(int index, T value);
-
-        /// <summary>
-        /// True if all fields of this vector can be set to any value.
-        /// False if some fields are fixed.
-        /// </summary>
-        public virtual bool IsFullyMutable
-        {
-            get { return true; }
-        }
-
-        /// <summary>
-        /// True if the specified field can be set to any value.
-        /// False if the field is fixed.
-        /// </summary>
-        public virtual bool IsMutable(int index)
-        {
-            return true;
-        }
 
         public virtual void Clear()
         {
@@ -196,28 +183,6 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
                 }
             }
             return hash;
-        }
-
-        // ENUMERATION
-
-        public virtual IEnumerable<T> Enumerate()
-        {
-            for (var i = 0; i < Length; i++)
-            {
-                yield return At(i);
-            }
-        }
-
-        public virtual IEnumerable<Tuple<int, T>> EnumerateNonZero()
-        {
-            for (var i = 0; i < Length; i++)
-            {
-                var x = At(i);
-                if (!Zero.Equals(x))
-                {
-                    yield return new Tuple<int, T>(i, x);
-                }
-            }
         }
 
         // VECTOR COPY
@@ -353,7 +318,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
                 throw new ArgumentNullException("target");
             }
 
-            ValidateSubRowRange(target, rowIndex, targetColumnIndex, sourceColumnIndex, columnCount);
+            ValidateSubRowRange(target, rowIndex, sourceColumnIndex, targetColumnIndex, columnCount);
             CopyToSubRowUnchecked(target, rowIndex, sourceColumnIndex, targetColumnIndex, columnCount, skipClearing);
         }
 
@@ -389,6 +354,66 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             for (int i = sourceRowIndex, ii = targetRowIndex; i < sourceRowIndex + rowCount; i++, ii++)
             {
                 target.At(ii, columnIndex, At(i));
+            }
+        }
+
+        // ENUMERATION
+
+        public virtual IEnumerable<T> Enumerate()
+        {
+            for (var i = 0; i < Length; i++)
+            {
+                yield return At(i);
+            }
+        }
+
+        public virtual IEnumerable<Tuple<int, T>> EnumerateIndexed()
+        {
+            for (var i = 0; i < Length; i++)
+            {
+                yield return new Tuple<int, T>(i, At(i));
+            }
+        }
+
+        public virtual IEnumerable<T> EnumerateNonZero()
+        {
+            for (var i = 0; i < Length; i++)
+            {
+                var x = At(i);
+                if (!Zero.Equals(x))
+                {
+                    yield return x;
+                }
+            }
+        }
+
+        public virtual IEnumerable<Tuple<int, T>> EnumerateNonZeroIndexed()
+        {
+            for (var i = 0; i < Length; i++)
+            {
+                var x = At(i);
+                if (!Zero.Equals(x))
+                {
+                    yield return new Tuple<int, T>(i, x);
+                }
+            }
+        }
+
+        // FUNCTIONAL COMBINATORS
+
+        public virtual void MapInplace(Func<T, T> f, bool forceMapZeros = false)
+        {
+            for (int i = 0; i < Length; i++)
+            {
+                At(i, f(At(i)));
+            }
+        }
+
+        public virtual void MapIndexedInplace(Func<int, T, T> f, bool forceMapZeros = false)
+        {
+            for (int i = 0; i < Length; i++)
+            {
+                At(i, f(i, At(i)));
             }
         }
     }

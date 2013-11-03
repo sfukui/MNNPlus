@@ -29,8 +29,10 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using MathNet.Numerics.Properties;
+using MathNet.Numerics.Threading;
 
 namespace MathNet.Numerics.LinearAlgebra.Storage
 {
@@ -65,6 +67,32 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
         }
 
         /// <summary>
+        /// True if the matrix storage format is dense.
+        /// </summary>
+        public override bool IsDense
+        {
+            get { return false; }
+        }
+
+        /// <summary>
+        /// True if all fields of this matrix can be set to any value.
+        /// False if some fields are fixed, like on a diagonal matrix.
+        /// </summary>
+        public override bool IsFullyMutable
+        {
+            get { return false; }
+        }
+
+        /// <summary>
+        /// True if the specified field can be set to any value.
+        /// False if the field is fixed, like an off-diagonal field on a diagonal matrix.
+        /// </summary>
+        public override bool IsMutableAt(int row, int column)
+        {
+            return row == column;
+        }
+
+        /// <summary>
         /// Retrieves the requested element without range checking.
         /// </summary>
         public override T At(int row, int column)
@@ -85,16 +113,6 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             {
                 throw new IndexOutOfRangeException("Cannot set an off-diagonal element in a diagonal matrix.");
             }
-        }
-
-        public override bool IsFullyMutable
-        {
-            get { return false; }
-        }
-
-        public override bool IsMutable(int row, int column)
-        {
-            return row == column;
         }
 
         public override void Clear()
@@ -169,6 +187,80 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             }
             return hash;
         }
+
+        // INITIALIZATION
+
+        public static DiagonalMatrixStorage<T> OfMatrix(MatrixStorage<T> matrix)
+        {
+            var storage = new DiagonalMatrixStorage<T>(matrix.RowCount, matrix.ColumnCount);
+            matrix.CopyToUnchecked(storage, skipClearing: true);
+            return storage;
+        }
+
+        public static DiagonalMatrixStorage<T> OfArray(T[,] array)
+        {
+            var storage = new DiagonalMatrixStorage<T>(array.GetLength(0), array.GetLength(1));
+            for (var i = 0; i < storage.RowCount; i++)
+            {
+                for (var j = 0; j < storage.ColumnCount; j++)
+                {
+                    if (i == j)
+                    {
+                        storage.Data[i] = array[i, j];
+                    }
+                    else if (!Zero.Equals(array[i, j]))
+                    {
+                        throw new IndexOutOfRangeException("Cannot set an off-diagonal element in a diagonal matrix.");
+                    }
+                }
+            }
+            return storage;
+        }
+
+        public static DiagonalMatrixStorage<T> OfInit(int rows, int columns, Func<int, T> init)
+        {
+            var storage = new DiagonalMatrixStorage<T>(rows, columns);
+            for (var i = 0; i < storage.Data.Length; i++)
+            {
+                storage.Data[i] = init(i);
+            }
+            return storage;
+        }
+
+        public static DiagonalMatrixStorage<T> OfEnumerable(int rows, int columns, IEnumerable<T> data)
+        {
+            if (data == null)
+            {
+                throw new ArgumentNullException("data");
+            }
+
+            var arrayData = data as T[];
+            if (arrayData != null)
+            {
+                var copy = new T[arrayData.Length];
+                Array.Copy(arrayData, copy, arrayData.Length);
+                return new DiagonalMatrixStorage<T>(rows, columns, copy);
+            }
+
+            return new DiagonalMatrixStorage<T>(rows, columns, data.ToArray());
+        }
+
+        public static DiagonalMatrixStorage<T> OfIndexedEnumerable(int rows, int columns, IEnumerable<Tuple<int, T>> data)
+        {
+            if (data == null)
+            {
+                throw new ArgumentNullException("data");
+            }
+
+            var storage = new DiagonalMatrixStorage<T>(rows, columns);
+            foreach(var item in data)
+            {
+                storage.Data[item.Item1] = item.Item2;
+            }
+            return storage;
+        }
+
+        // MATRIX COPY
 
         internal override void CopyToUnchecked(MatrixStorage<T> target, bool skipClearing = false)
         {
@@ -449,6 +541,78 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
                 ret[i, i] = Data[i];
             }
             return ret;
+        }
+
+        // ENUMERATION
+
+        public override IEnumerable<T> Enumerate()
+        {
+            for (int j = 0; j < ColumnCount; j++)
+            {
+                for (int i = 0; i < RowCount; i++)
+                {
+                    // PERF: consider to break up loop to avoid branching
+                    yield return i == j ? Data[i] : Zero;
+                }
+            }
+        }
+
+        public override IEnumerable<Tuple<int, int, T>> EnumerateIndexed()
+        {
+            for (int j = 0; j < ColumnCount; j++)
+            {
+                for (int i = 0; i < RowCount; i++)
+                {
+                    // PERF: consider to break up loop to avoid branching
+                    yield return i == j
+                        ? new Tuple<int, int, T>(i, i, Data[i])
+                        : new Tuple<int, int, T>(i, j, Zero);
+                }
+            }
+        }
+
+        public override IEnumerable<T> EnumerateNonZero()
+        {
+            return Data.Where(x => !Zero.Equals(x));
+        }
+
+        public override IEnumerable<Tuple<int, int, T>> EnumerateNonZeroIndexed()
+        {
+            for (int i = 0; i < Data.Length; i++)
+            {
+                if (!Zero.Equals(Data[i]))
+                {
+                    yield return new Tuple<int, int, T>(i, i, Data[i]);
+                }
+            }
+        }
+
+        // FUNCTIONAL COMBINATORS
+
+        public override void MapInplace(Func<T, T> f, bool forceMapZeros = false)
+        {
+            // we deliberately ignore forceMapZeros since we would not actually
+            // support any non-zero results outside of the diagonal anyway
+            CommonParallel.For(0, Data.Length, 4096, (a, b) =>
+                {
+                    for (int i = a; i < b; i++)
+                    {
+                        Data[i] = f(Data[i]);
+                    }
+                });
+        }
+
+        public override void MapIndexedInplace(Func<int, int, T, T> f, bool forceMapZeros = false)
+        {
+            // we deliberately ignore forceMapZeros since we would not actually
+            // support any non-zero results outside of the diagonal anyway
+            CommonParallel.For(0, Data.Length, 4096, (a, b) =>
+                {
+                    for (int i = a; i < b; i++)
+                    {
+                        Data[i] = f(i, i, Data[i]);
+                    }
+                });
         }
     }
 }

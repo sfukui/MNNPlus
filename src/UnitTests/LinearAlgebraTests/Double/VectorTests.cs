@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2013 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -24,17 +28,16 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using MathNet.Numerics.Distributions;
+using MathNet.Numerics.LinearAlgebra;
+using MathNet.Numerics.LinearAlgebra.Double;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
 {
-    using System;
-    using System.Collections;
-    using System.Collections.Generic;
-    using System.Globalization;
-    using Distributions;
-    using LinearAlgebra.Double;
-    using LinearAlgebra.Generic;
-    using NUnit.Framework;
-
     /// <summary>
     /// Abstract class with the common set of vector tests.
     /// </summary>
@@ -82,9 +85,8 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         public void CanConvertVectorToString()
         {
             var vector = CreateVector(Data);
-            var str = vector.ToString();
-            var sep = CultureInfo.CurrentCulture.TextInfo.ListSeparator;
-            Assert.AreEqual(string.Format("1{0}2{0}3{0}4{0}5", sep), str);
+            var str = vector.ToVectorString(1, int.MaxValue, 1);
+            Assert.AreEqual("1 2 3 4 5", str);
         }
 
         /// <summary>
@@ -154,7 +156,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         {
             var expected = CreateVector(5);
             var actual = expected.CreateVector(5);
-            Assert.AreEqual(expected.GetType(), actual.GetType(), "vectors are same type.");
+            Assert.AreEqual(expected.Storage.IsDense, actual.Storage.IsDense, "vectors are same kind.");
         }
 
         /// <summary>
@@ -228,7 +230,9 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         public void CanGetHashCode()
         {
             var vector = CreateVector(new double[] { 1, 2, 3, 4 });
-            Assert.AreEqual(-1140355183, vector.GetHashCode());
+            Assert.AreEqual(vector.GetHashCode(), vector.GetHashCode());
+            Assert.AreEqual(vector.GetHashCode(), CreateVector(new double[] { 1, 2, 3, 4 }).GetHashCode());
+            Assert.AreNotEqual(vector.GetHashCode(), CreateVector(new double[] { 1 }).GetHashCode());
         }
 
         /// <summary>
@@ -238,9 +242,23 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         public void CanEnumerateOverVectorUsingIndexedEnumerator()
         {
             var vector = CreateVector(Data);
-            foreach (var pair in vector.GetIndexedEnumerator())
+            foreach (var pair in vector.EnumerateIndexed())
             {
                 Assert.AreEqual(Data[pair.Item1], pair.Item2);
+            }
+        }
+
+        /// <summary>
+        /// Can enumerate over a vector using non-zero enumerator.
+        /// </summary>
+        [Test]
+        public void CanEnumerateOverVectorUsingNonZeroEnumerator()
+        {
+            var vector = CreateVector(Data);
+            foreach (var pair in vector.EnumerateNonZeroIndexed())
+            {
+                Assert.AreEqual(Data[pair.Item1], pair.Item2);
+                Assert.AreNotEqual(0d, pair.Item2);
             }
         }
 

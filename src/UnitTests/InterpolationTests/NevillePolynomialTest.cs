@@ -35,7 +35,6 @@ namespace MathNet.Numerics.UnitTests.InterpolationTests
     using System.IO;
     using System.Linq;
     using Interpolation;
-    using Interpolation.Algorithms;
     using NUnit.Framework;
 
     /// <summary>
@@ -66,10 +65,8 @@ namespace MathNet.Numerics.UnitTests.InterpolationTests
             {
                 Assert.AreEqual(_x[i], interpolation.Interpolate(_t[i]), "A Exact Point " + i);
 
-                double interpolatedValue;
-                double secondDerivative;
-                interpolation.Differentiate(_t[i], out interpolatedValue, out secondDerivative);
-                Assert.AreEqual(_x[i], interpolatedValue, "B Exact Point " + i);
+                var actual = interpolation.DifferentiateAll(_t[i]);
+                Assert.AreEqual(_x[i], actual.Item1, "B Exact Point " + i);
             }
         }
 
@@ -97,10 +94,8 @@ namespace MathNet.Numerics.UnitTests.InterpolationTests
 
             Assert.AreEqual(x, interpolation.Interpolate(t), maxAbsoluteError, "Interpolation at {0}", t);
 
-            double interpolatedValue;
-            double secondDerivative;
-            interpolation.Differentiate(t, out interpolatedValue, out secondDerivative);
-            Assert.AreEqual(x, interpolatedValue, maxAbsoluteError, "Interpolation as by-product of differentiation at {0}", t);
+            var actual = interpolation.DifferentiateAll(t);
+            Assert.AreEqual(x, actual.Item1, maxAbsoluteError, "Interpolation as by-product of differentiation at {0}", t);
         }
 
         /// <summary>

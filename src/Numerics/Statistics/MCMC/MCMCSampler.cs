@@ -28,11 +28,11 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+
 namespace MathNet.Numerics.Statistics.Mcmc
 {
-    using System;
-
-	/// <summary>
+    /// <summary>
     /// A method which samples datapoints from a proposal distribution. The implementation of this sampler
     /// is stateless: no variables are saved between two calls to Sample. This proposal is different from
     /// <seealso cref="LocalProposalSampler{T}"/> in that it doesn't take any parameters; it samples random
@@ -43,7 +43,7 @@ namespace MathNet.Numerics.Statistics.Mcmc
     public delegate T GlobalProposalSampler<out T>();
 
     /// <summary>
-    /// A method which samples datapoints from a proposal distribution given an initial sample. The implementation 
+    /// A method which samples datapoints from a proposal distribution given an initial sample. The implementation
     /// of this sampler is stateless: no variables are saved between two calls to Sample. This proposal is different from
     /// <seealso cref="GlobalProposalSampler{T}"/> in that it samples locally around an initial point. In other words, it
     /// makes a small local move rather than producing a global sample from the proposal.
@@ -85,7 +85,7 @@ namespace MathNet.Numerics.Statistics.Mcmc
         /// <summary>
         /// The random number generator for this class.
         /// </summary>
-        private Random _randomNumberGenerator;
+        private System.Random _randomNumberGenerator;
 
         /// <summary>
         /// Keeps track of the number of accepted samples.
@@ -96,7 +96,7 @@ namespace MathNet.Numerics.Statistics.Mcmc
         /// Keeps track of the number of calls to the proposal sampler.
         /// </summary>
         protected int Samples;
-        
+
         /// <summary>
         /// Initializes a new instance of the <see cref="McmcSampler{T}"/> class.
         /// </summary>
@@ -106,17 +106,16 @@ namespace MathNet.Numerics.Statistics.Mcmc
         {
             Accepts = 0;
             Samples = 0;
-            RandomSource = new Random();
+            RandomSource = new System.Random(Random.RandomSeed.Guid());
         }
 
         /// <summary>
         /// Gets or sets the random number generator.
         /// </summary>
         /// <exception cref="ArgumentNullException">When the random number generator is null.</exception>
-        public Random RandomSource
+        public System.Random RandomSource
         {
             get { return _randomNumberGenerator; }
-
             set
             {
                 if (value == null)
@@ -139,13 +138,11 @@ namespace MathNet.Numerics.Statistics.Mcmc
         /// <returns>An array of samples.</returns>
         public virtual T[] Sample(int n)
         {
-            T[] ret = new T[n];
-
+            var ret = new T[n];
             for (int i = 0; i < n; i++)
             {
                 ret[i] = Sample();
             }
-
             return ret;
         }
 

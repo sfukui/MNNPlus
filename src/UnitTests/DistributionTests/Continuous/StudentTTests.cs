@@ -1,4 +1,4 @@
-// <copyright file="StudentTTests.cs" company="Math.NET">
+﻿// <copyright file="StudentTTests.cs" company="Math.NET">
 // Math.NET Numerics, part of the Math.NET Project
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
@@ -24,12 +24,14 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using System.Linq;
+using MathNet.Numerics.Distributions;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
 {
-    using System;
-    using System.Linq;
-    using Distributions;
-    using NUnit.Framework;
+    using Random = System.Random;
 
     /// <summary>
     /// <c>StudentT</c> distribution tests.
@@ -98,7 +100,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateToString()
         {
             var n = new StudentT(1.0, 2.0, 1.0);
-            Assert.AreEqual("StudentT(Location = 1, Scale = 2, DoF = 1)", n.ToString());
+            Assert.AreEqual("StudentT(μ = 1, σ = 2, ν = 1)", n.ToString());
         }
 
         /// <summary>
@@ -339,7 +341,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateDensity(double location, double scale, double dof, double x, double p)
         {
             var n = new StudentT(location, scale, dof);
-            AssertHelpers.AlmostEqual(p, n.Density(x), 13);
+            AssertHelpers.AlmostEqualRelative(p, n.Density(x), 13);
         }
 
         /// <summary>
@@ -366,7 +368,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateDensityLn(double location, double scale, double dof, double x, double p)
         {
             var n = new StudentT(location, scale, dof);
-            AssertHelpers.AlmostEqual(p, n.DensityLn(x), 13);
+            AssertHelpers.AlmostEqualRelative(p, n.DensityLn(x), 13);
         }
 
         /// <summary>
@@ -452,7 +454,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateCumulativeDistribution(double location, double scale, double dof, double x, double c)
         {
             var n = new StudentT(location, scale, dof);
-            AssertHelpers.AlmostEqual(c, n.CumulativeDistribution(x), 13);
+            AssertHelpers.AlmostEqualRelative(c, n.CumulativeDistribution(x), 13);
         }
     }
 }

@@ -1,4 +1,4 @@
-// <copyright file="RayleighTests.cs" company="Math.NET">
+﻿// <copyright file="RayleighTests.cs" company="Math.NET">
 // Math.NET Numerics, part of the Math.NET Project
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
@@ -24,13 +24,13 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using System.Linq;
+using MathNet.Numerics.Distributions;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
 {
-    using System;
-    using System.Linq;
-    using Distributions;
-    using NUnit.Framework;
-
     /// <summary>
     /// Rayleigh distribution tests.
     /// </summary>
@@ -79,8 +79,8 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [Test]
         public void ValidateToString()
         {
-            var n = new Rayleigh(2.0);
-            Assert.AreEqual("Rayleigh(Scale = 2)", n.ToString());
+            var n = new Rayleigh(2d);
+            Assert.AreEqual("Rayleigh(σ = 2)", n.ToString());
         }
 
         /// <summary>
@@ -167,7 +167,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateEntropy(double scale)
         {
             var n = new Rayleigh(scale);
-            Assert.AreEqual(1.0 + Math.Log(scale / Math.Sqrt(2)) + (Constants.EulerMascheroni / 2.0), n.Entropy);
+            Assert.AreEqual(1.0 + Math.Log(scale / Constants.Sqrt2) + (Constants.EulerMascheroni / 2.0), n.Entropy);
         }
 
         /// <summary>
@@ -182,7 +182,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateSkewness(double scale, double skn)
         {
             var n = new Rayleigh(scale);
-            AssertHelpers.AlmostEqual(skn, n.Skewness, 17);
+            AssertHelpers.AlmostEqualRelative(skn, n.Skewness, 17);
         }
 
         /// <summary>
@@ -241,11 +241,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
             Assert.AreEqual(Double.PositiveInfinity, n.Maximum);
         }
 
-        /// <summary>
-        /// Validate density.
-        /// </summary>
-        /// <param name="scale">Scale value.</param>
-        /// <param name="x">Input X value.</param>
         [TestCase(0.1, 0.1)]
         [TestCase(1.0, 1.0)]
         [TestCase(10.0, 10.0)]
@@ -253,14 +248,11 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateDensity(double scale, double x)
         {
             var n = new Rayleigh(scale);
-            Assert.AreEqual((x / (scale * scale)) * Math.Exp(-x * x / (2.0 * scale * scale)), n.Density(x));
+            double expected = (x/(scale*scale))*Math.Exp(-x*x/(2.0*scale*scale));
+            Assert.AreEqual(expected, n.Density(x));
+            Assert.AreEqual(expected, Rayleigh.PDF(scale, x));
         }
 
-        /// <summary>
-        /// Validate density log.
-        /// </summary>
-        /// <param name="scale">Scale value.</param>
-        /// <param name="x">Input X value.</param>
         [TestCase(0.1, 0.1)]
         [TestCase(1.0, 1.0)]
         [TestCase(10.0, 10.0)]
@@ -268,7 +260,20 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateDensityLn(double scale, double x)
         {
             var n = new Rayleigh(scale);
-            Assert.AreEqual(Math.Log(x / (scale * scale)) - (x * (x / (2.0 * (scale * scale)))), n.DensityLn(x));
+            double expected = Math.Log(x/(scale*scale)) - (x*(x/(2.0*(scale*scale))));
+            Assert.AreEqual(expected, n.DensityLn(x));
+            Assert.AreEqual(expected, Rayleigh.PDFLn(scale, x));
+        }
+
+        [TestCase(0.1, 0.1)]
+        [TestCase(1.0, 1.0)]
+        [TestCase(10.0, 10.0)]
+        public void ValidateInverseCumulativeDistribution(double scale, double x)
+        {
+            var n = new Rayleigh(scale);
+            double cdf = 1.0 - Math.Exp(-x*x/(2.0*scale*scale));
+            Assert.AreEqual(x, n.InverseCumulativeDistribution(cdf));
+            Assert.AreEqual(x, Rayleigh.InvCDF(scale, cdf));
         }
 
         /// <summary>
@@ -290,21 +295,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
             var n = new Rayleigh(1.0);
             var ied = n.Samples();
             ied.Take(5).ToArray();
-        }
-
-        /// <summary>
-        /// Validate cumulative distribution.
-        /// </summary>
-        /// <param name="scale">Scale value.</param>
-        /// <param name="x">Input X value.</param>
-        [TestCase(0.1, 0.1)]
-        [TestCase(1.0, 1.0)]
-        [TestCase(10.0, 10.0)]
-        [TestCase(Double.PositiveInfinity, Double.PositiveInfinity)]
-        public void ValidateCumulativeDistribution(double scale, double x)
-        {
-            var n = new Rayleigh(scale);
-            Assert.AreEqual(1.0 - Math.Exp(-x * x / (2.0 * scale * scale)), n.CumulativeDistribution(x));
         }
     }
 }

@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="ArgumentHistogramContainsNot" xml:space="preserve">
-    <value>The histogram does not contains the value.</value>
+    <value>The histogram does not contain the value.</value>
   </data>
   <data name="ArgumentInIntervalXYInclusive" xml:space="preserve">
     <value>Value is expected to be between {0} and {1} (including {0} and {1}).</value>
@@ -369,10 +369,25 @@
   <data name="TooManyElements" xml:space="preserve">
     <value>We only support sparse matrix with less than int.MaxValue elements.</value>
   </data>
-  <data name="Interpolation_Initialize_SamplePointsNotStrictlyAscendingOrder">
-    <value xml:space="preserve">Sample points should be sorted in strictly ascending order</value>
+  <data name="Interpolation_Initialize_SamplePointsNotStrictlyAscendingOrder" xml:space="preserve">
+    <value>Sample points should be sorted in strictly ascending order</value>
   </data>
-  <data name="Interpolation_Initialize_SamplePointsNotUnique">
-    <value xml:space="preserve">All sample points should be unique.</value>
+  <data name="Interpolation_Initialize_SamplePointsNotUnique" xml:space="preserve">
+    <value>All sample points should be unique.</value>
+  </data>
+  <data name="AccuracyNotReached" xml:space="preserve">
+    <value>The accuracy couldn't be reached with the specified number of iterations.</value>
+  </data>
+  <data name="RootNotFound" xml:space="preserve">
+    <value>The algorithm ended without root in the range.</value>
+  </data>
+  <data name="RootMustBeBracketedByBounds" xml:space="preserve">
+    <value>The lower and upper bounds must bracket a single root.</value>
+  </data>
+  <data name="RootFindingFailed" xml:space="preserve">
+    <value>The algorithm has failed, exceeded the number of iterations allowed or there is no root within the provided bounds.</value>
+  </data>
+  <data name="RootFindingFailedRecommendRobustNewtonRaphson" xml:space="preserve">
+    <value>The algorithm has failed, exceeded the number of iterations allowed or there is no root within the provided bounds. Consider to use RobustNewtonRaphson instead.</value>
   </data>
 </root>

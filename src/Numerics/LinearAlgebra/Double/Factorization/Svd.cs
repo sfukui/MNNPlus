@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2010 Math.NET
+// Copyright (c) 2009-2013 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -28,14 +28,13 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using System.Linq;
+using MathNet.Numerics.LinearAlgebra.Factorization;
+using MathNet.Numerics.Properties;
+
 namespace MathNet.Numerics.LinearAlgebra.Double.Factorization
 {
-    using System;
-    using System.Linq;
-    using Generic;
-    using Generic.Factorization;
-    using Properties;
-
     /// <summary>
     /// <para>A class which encapsulates the functionality of the singular value decomposition (SVD).</para>
     /// <para>Suppose M is an m-by-n matrix whose entries are real numbers. 
@@ -50,8 +49,13 @@ namespace MathNet.Numerics.LinearAlgebra.Double.Factorization
     /// <remarks>
     /// The computation of the singular value decomposition is done at construction time.
     /// </remarks>
-    public abstract class Svd : Svd<double>
+    internal abstract class Svd : Svd<double>
     {
+        protected Svd(Vector<double> s, Matrix<double> u, Matrix<double> vt, bool vectorsComputed)
+            : base(s, u, vt, vectorsComputed)
+        {
+        }
+
         /// <summary>
         /// Gets the effective numerical matrix rank.
         /// </summary>
@@ -60,7 +64,7 @@ namespace MathNet.Numerics.LinearAlgebra.Double.Factorization
         {
             get
             {
-                return VectorS.Count(t => !Math.Abs(t).AlmostEqual(0.0));
+                return S.Count(t => !Math.Abs(t).AlmostEqual(0.0));
             }
         }
 
@@ -68,11 +72,11 @@ namespace MathNet.Numerics.LinearAlgebra.Double.Factorization
         /// Gets the two norm of the <see cref="Matrix{T}"/>.
         /// </summary>
         /// <returns>The 2-norm of the <see cref="Matrix{T}"/>.</returns>
-        public override double Norm2
+        public override double L2Norm
         {
             get
             {
-                return Math.Abs(VectorS[0]);
+                return Math.Abs(S[0]);
             }
         }
 
@@ -84,8 +88,8 @@ namespace MathNet.Numerics.LinearAlgebra.Double.Factorization
         {
             get
             {
-                var tmp = Math.Min(MatrixU.RowCount, MatrixVT.ColumnCount) - 1;
-                return Math.Abs(VectorS[0]) / Math.Abs(VectorS[tmp]);
+                var tmp = Math.Min(U.RowCount, VT.ColumnCount) - 1;
+                return Math.Abs(S[0]) / Math.Abs(S[tmp]);
             }
         }
 
@@ -96,13 +100,13 @@ namespace MathNet.Numerics.LinearAlgebra.Double.Factorization
         {
             get
             {
-                if (MatrixU.RowCount != MatrixVT.ColumnCount)
+                if (U.RowCount != VT.ColumnCount)
                 {
                     throw new ArgumentException(Resources.ArgumentMatrixSquare);
                 }
 
                 var det = 1.0;
-                foreach (var value in VectorS)
+                foreach (var value in S)
                 {
                     det *= value;
                     if (Math.Abs(value).AlmostEqual(0.0))

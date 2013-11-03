@@ -24,14 +24,16 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
-using System;
+using MathNet.Numerics.LinearAlgebra.Complex;
 using MathNet.Numerics.LinearAlgebra.Storage;
 
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
 {
-    using System.Numerics;
-    using LinearAlgebra.Complex;
-    using LinearAlgebra.Generic;
+#if NOSYSNUMERICS
+    using Complex = Numerics.Complex;
+#else
+    using Complex = System.Numerics.Complex;
+#endif
 
     /// <summary>
     /// User-defined matrix implementation (internal class for testing purposes)
@@ -52,6 +54,21 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
                 : base(rowCount, columnCount)
             {
                 Data = data;
+            }
+
+            public override bool IsDense
+            {
+                get { return true; }
+            }
+
+            public override bool IsFullyMutable
+            {
+                get { return true; }
+            }
+
+            public override bool IsMutableAt(int row, int column)
+            {
+                return true;
             }
 
             public override Complex At(int row, int column)
@@ -91,27 +108,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
         public UserDefinedMatrix(Complex[,] data)
             : base(new UserDefinedMatrixStorage(data.GetLength(0), data.GetLength(1), (Complex[,])data.Clone()))
         {
-        }
-
-        /// <summary>
-        /// Creates a matrix for the given number of rows and columns.
-        /// </summary>
-        /// <param name="numberOfRows">The number of rows.</param>
-        /// <param name="numberOfColumns">The number of columns.</param>
-        /// <returns>A matrix with the given dimensions.</returns>
-        public override Matrix<Complex> CreateMatrix(int numberOfRows, int numberOfColumns, bool fullyMutable = false)
-        {
-            return new UserDefinedMatrix(numberOfRows, numberOfColumns);
-        }
-
-        /// <summary>
-        /// Creates a vector with a the given dimension.
-        /// </summary>
-        /// <param name="size">The size of the vector.</param>
-        /// <returns>A vector with the given dimension.</returns>
-        public override Vector<Complex> CreateVector(int size, bool fullyMutable = false)
-        {
-            return new UserDefinedVector(size);
         }
 
         /// <summary>

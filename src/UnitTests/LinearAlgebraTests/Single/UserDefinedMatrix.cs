@@ -24,14 +24,11 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
-using System;
+using MathNet.Numerics.LinearAlgebra.Single;
 using MathNet.Numerics.LinearAlgebra.Storage;
 
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single
 {
-    using LinearAlgebra.Generic;
-    using LinearAlgebra.Single;
-
     /// <summary>
     /// User-defined matrix implementation (internal class for testing purposes)
     /// </summary>
@@ -51,6 +48,21 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single
                 : base(rowCount, columnCount)
             {
                 Data = data;
+            }
+
+            public override bool IsDense
+            {
+                get { return true; }
+            }
+
+            public override bool IsFullyMutable
+            {
+                get { return true; }
+            }
+
+            public override bool IsMutableAt(int row, int column)
+            {
+                return true;
             }
 
             public override float At(int row, int column)
@@ -90,27 +102,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single
         public UserDefinedMatrix(float[,] data)
             : base(new UserDefinedMatrixStorage(data.GetLength(0), data.GetLength(1), (float[,])data.Clone()))
         {
-        }
-
-        /// <summary>
-        /// Creates a matrix for the given number of rows and columns.
-        /// </summary>
-        /// <param name="numberOfRows">The number of rows.</param>
-        /// <param name="numberOfColumns">The number of columns.</param>
-        /// <returns>A matrix with the given dimensions.</returns>
-        public override Matrix<float> CreateMatrix(int numberOfRows, int numberOfColumns, bool fullyMutable = false)
-        {
-            return new UserDefinedMatrix(numberOfRows, numberOfColumns);
-        }
-
-        /// <summary>
-        /// Creates a vector with a the given dimension.
-        /// </summary>
-        /// <param name="size">The size of the vector.</param>
-        /// <returns>A vector with the given dimension.</returns>
-        public override Vector<float> CreateVector(int size, bool fullyMutable = false)
-        {
-            return new UserDefinedVector(size);
         }
 
         /// <summary>

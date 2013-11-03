@@ -23,12 +23,18 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
+
 using System;
-using System.Numerics;
-using MathNet.Numerics.LinearAlgebra.Generic;
+using MathNet.Numerics.LinearAlgebra;
 
 namespace MathNet.Numerics.UnitTests
 {
+#if NOSYSNUMERICS
+    using Complex = Numerics.Complex;
+#else
+    using Complex = System.Numerics.Complex;
+#endif
+
     /// <summary>
     /// Matrix utility functions to simplify tests.
     /// </summary>

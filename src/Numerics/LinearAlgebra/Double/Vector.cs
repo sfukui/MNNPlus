@@ -28,13 +28,12 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using MathNet.Numerics.LinearAlgebra.Storage;
+using MathNet.Numerics.Threading;
+
 namespace MathNet.Numerics.LinearAlgebra.Double
 {
-    using System;
-    using Generic;
-    using Storage;
-    using Threading;
-
     /// <summary>
     /// <c>double</c> version of the <see cref="Vector{T}"/> class.
     /// </summary>
@@ -134,15 +133,28 @@ namespace MathNet.Numerics.LinearAlgebra.Double
         /// <summary>
         /// Divides each element of the vector by a scalar and stores the result in the result vector.
         /// </summary>
-        /// <param name="scalar">
+        /// <param name="divisor">
         /// The scalar to divide with.
         /// </param>
         /// <param name="result">
         /// The vector to store the result of the division.
         /// </param>
-        protected override void DoDivide(double scalar, Vector<double> result)
+        protected override void DoDivide(double divisor, Vector<double> result)
         {
-            DoMultiply(1 / scalar, result);
+            DoMultiply(1 / divisor, result);
+        }
+
+        /// <summary>
+        /// Divides a scalar by each element of the vector and stores the result in the result vector.
+        /// </summary>
+        /// <param name="dividend">The scalar to divide.</param>
+        /// <param name="result">The vector to store the result of the division.</param>
+        protected override void DoDivideByThis(double dividend, Vector<double> result)
+        {
+            for (var index = 0; index < Count; index++)
+            {
+                result.At(index, dividend / At(index));
+            }
         }
 
         /// <summary>
@@ -161,47 +173,77 @@ namespace MathNet.Numerics.LinearAlgebra.Double
         /// <summary>
         /// Pointwise divide this vector with another vector and stores the result into the result vector.
         /// </summary>
-        /// <param name="other">The vector to pointwise divide this one by.</param>
+        /// <param name="divisor">The vector to pointwise divide this one by.</param>
         /// <param name="result">The vector to store the result of the pointwise division.</param>
-        protected override void DoPointwiseDivide(Vector<double> other, Vector<double> result)
+        protected override void DoPointwiseDivide(Vector<double> divisor, Vector<double> result)
         {
             for (var index = 0; index < Count; index++)
             {
-                result.At(index, At(index) / other.At(index));
+                result.At(index, At(index) / divisor.At(index));
+            }
+        }
+
+        /// <summary>
+        /// Pointwise modulus this vector with another vector and stores the result into the result vector.
+        /// </summary>
+        /// <param name="divisor">The vector to pointwise modulus this one by.</param>
+        /// <param name="result">The result of the modulus.</param>
+        protected override void DoPointwiseModulus(Vector<double> divisor, Vector<double> result)
+        {
+            for (var index = 0; index < Count; index++)
+            {
+                result.At(index, At(index) % divisor.At(index));
             }
         }
 
         /// <summary>
         /// Computes the dot product between this vector and another vector.
         /// </summary>
-        /// <param name="other">
-        /// The other vector to add.
-        /// </param>
-        /// <returns>s
-        /// The result of the addition.
-        /// </returns>
+        /// <param name="other">The other vector.</param>
+        /// <returns>The sum of a[i]*b[i] for all i.</returns>
         protected override double DoDotProduct(Vector<double> other)
         {
             var dot = 0.0;
-
             for (var i = 0; i < Count; i++)
             {
                 dot += At(i) * other.At(i);
             }
-
             return dot;
+        }
+
+        /// <summary>
+        /// Computes the dot product between the conjugate of this vector and another vector.
+        /// </summary>
+        /// <param name="other">The other vector.</param>
+        /// <returns>The sum of conj(a[i])*b[i] for all i.</returns>
+        protected override sealed double DoConjugateDotProduct(Vector<double> other)
+        {
+            return DoDotProduct(other);
         }
 
         /// <summary>
         /// Computes the modulus for each element of the vector for the given divisor.
         /// </summary>
-        /// <param name="divisor">The divisor to use.</param>
+        /// <param name="divisor">The scalar denominator to use.</param>
         /// <param name="result">A vector to store the results in.</param>
         protected override void DoModulus(double divisor, Vector<double> result)
         {
+            for (int i = 0; i < Count; i++)
+            {
+                result.At(i, At(i)%divisor);
+            }
+        }
+
+        /// <summary>
+        /// Computes the modulus for the given dividend for each element of the vector.
+        /// </summary>
+        /// <param name="dividend">The scalar numerator to use.</param>
+        /// <param name="result">A vector to store the results in.</param>
+        protected override void DoModulusByThis(double dividend, Vector<double> result)
+        {
             for (var index = 0; index < Count; index++)
             {
-                result[index] = At(index) % divisor;
+                result.At(index, dividend%At(index));
             }
         }
 
@@ -272,29 +314,43 @@ namespace MathNet.Numerics.LinearAlgebra.Double
         public override double Sum()
         {
             var sum = 0.0;
-
             for (var i = 0; i < Count; i++)
             {
                 sum += At(i);
             }
-
             return sum;
         }
 
         /// <summary>
-        /// Computes the sum of the absolute value of the vector's elements.
+        /// Calculates the L1 norm of the vector, also known as Manhattan norm.
         /// </summary>
-        /// <returns>The sum of the absolute value of the vector's elements.</returns>
-        public override double SumMagnitudes()
+        /// <returns>The sum of the absolute values.</returns>
+        public override double L1Norm()
         {
             var sum = 0.0;
-
             for (var i = 0; i < Count; i++)
             {
                 sum += Math.Abs(At(i));
             }
-
             return sum;
+        }
+
+        /// <summary>
+        /// Calculates the L2 norm of the vector, also known as Euclidean norm.
+        /// </summary>
+        /// <returns>The square root of the sum of the squared values.</returns>
+        public override double L2Norm()
+        {
+            return Math.Sqrt(DoDotProduct(this));
+        }
+
+        /// <summary>
+        /// Calculates the infinity norm of the vector.
+        /// </summary>
+        /// <returns>The square root of the sum of the squared values.</returns>
+        public override double InfinityNorm()
+        {
+            return CommonParallel.Aggregate(0, Count, i => Math.Abs(At(i)), Math.Max, 0d);
         }
 
         /// <summary>
@@ -304,53 +360,47 @@ namespace MathNet.Numerics.LinearAlgebra.Double
         /// The p value.
         /// </param>
         /// <returns>
-        /// <c>Scalar ret = (sum(abs(this[i])^p))^(1/p)</c>
+        /// <c>Scalar ret = ( ∑|At(i)|^p )^(1/p)</c>
         /// </returns>
         public override double Norm(double p)
         {
-            if (p < 0.0)
-            {
-                throw new ArgumentOutOfRangeException("p");
-            }
+            if (p < 0d) throw new ArgumentOutOfRangeException("p");
 
-            if (Double.IsPositiveInfinity(p))
-            {
-                return CommonParallel.Aggregate(0, Count, i => Math.Abs(At(i)), Math.Max, 0d);
-            }
+            if (p == 1d) return L1Norm();
+            if (p == 2d) return L2Norm();
+            if (double.IsPositiveInfinity(p)) return InfinityNorm();
 
-            var sum = 0.0;
-
+            var sum = 0d;
             for (var index = 0; index < Count; index++)
             {
                 sum += Math.Pow(Math.Abs(At(index)), p);
             }
-
-            return Math.Pow(sum, 1.0 / p);
+            return Math.Pow(sum, 1.0/p);
         }
 
         /// <summary>
-        /// Conjugates vector and save result to <paramref name="target"/>
+        /// Conjugates vector and save result to <paramref name="result"/>
         /// </summary>
-        /// <param name="target">Target vector</param>
-        protected override void DoConjugate(Vector<double> target)
+        /// <param name="result">Target vector</param>
+        protected override void DoConjugate(Vector<double> result)
         {
-            if (ReferenceEquals(this, target))
+            if (ReferenceEquals(this, result))
             {
                 return;
             }
 
-            CopyTo(target);
+            CopyTo(result);
         }
 
         /// <summary>
-        /// Negates vector and saves result to <paramref name="target"/>
+        /// Negates vector and saves result to <paramref name="result"/>
         /// </summary>
-        /// <param name="target">Target vector</param>
-        protected override void DoNegate(Vector<double> target)
+        /// <param name="result">Target vector</param>
+        protected override void DoNegate(Vector<double> result)
         {
             for (var index = 0; index < Count; index++)
             {
-                target.At(index, -At(index));
+                result.At(index, -At(index));
             }
         }
 
@@ -407,19 +457,19 @@ namespace MathNet.Numerics.LinearAlgebra.Double
         /// </returns>
         public override Vector<double> Normalize(double p)
         {
-            if (p < 0.0)
+            if (p < 0d)
             {
                 throw new ArgumentOutOfRangeException("p");
             }
 
-            var norm = Norm(p);
+            double norm = Norm(p);
             var clone = Clone();
-            if (norm == 0.0)
+            if (norm == 0d)
             {
                 return clone;
             }
 
-            clone.Multiply(1.0 / norm, clone);
+            clone.Multiply(1d / norm, clone);
 
             return clone;
         }

@@ -2,20 +2,16 @@
 
 open NUnit.Framework
 open FsUnit
-open MathNet.Numerics.LinearAlgebra.Generic
-open MathNet.Numerics.LinearAlgebra.Double
+open MathNet.Numerics.LinearAlgebra
 
 /// Unit tests for the sparse vector type.
 module SparseVectorTests =
 
     /// A small uniform vector.
-    let smallv = new DenseVector( [|0.0;0.3;0.0;0.0;0.0|] ) :> Vector<float>
+    let smallv = DenseVector.raw [|0.0;0.3;0.0;0.0;0.0|]
 
     [<Test>]
-    let ``SparseVector.ofList`` () =
-        (SparseVector.ofList 5 [ (1,0.3) ] :> Vector<float>) |> should equal smallv
+    let ``SparseVector.ofListi`` () = SparseVector.ofListi 5 [ (1,0.3) ] |> should equal smallv
 
     [<Test>]
-    let ``SparseVector.ofSeq`` () =
-        (SparseVector.ofSeq 5 (List.toSeq [ (1,0.3) ]) :> Vector<float>) |> should equal smallv
-
+    let ``SparseVector.ofSeqi`` () = SparseVector.ofSeqi 5 (List.toSeq [ (1,0.3) ]) |> should equal smallv

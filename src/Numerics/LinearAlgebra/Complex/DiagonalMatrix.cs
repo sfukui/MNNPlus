@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2013 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -24,17 +28,25 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using MathNet.Numerics.Distributions;
+using MathNet.Numerics.LinearAlgebra.Storage;
+using MathNet.Numerics.Properties;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+
 namespace MathNet.Numerics.LinearAlgebra.Complex
 {
-    using System;
-    using System.Linq;
+
+#if NOSYSNUMERICS
+    using Numerics;
+#else
     using System.Numerics;
-    using Generic;
-    using Properties;
-    using Storage;
+#endif
 
     /// <summary>
-    /// A matrix type for diagonal matrices. 
+    /// A matrix type for diagonal matrices.
     /// </summary>
     /// <remarks>
     /// Diagonal matrices can be non-square matrices but the diagonal always starts
@@ -43,6 +55,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
     /// 0.0 or NaN; these settings will cause no change to the diagonal matrix.
     /// </remarks>
     [Serializable]
+    [DebuggerDisplay("DiagonalMatrix {RowCount}x{ColumnCount}-Complex")]
     public class DiagonalMatrix : Matrix
     {
         readonly DiagonalMatrixStorage<Complex> _storage;
@@ -54,7 +67,10 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         readonly Complex[] _data;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DiagonalMatrix"/> class.
+        /// Create a new diagonal matrix straight from an initialized matrix storage instance.
+        /// The storage is used directly without copying.
+        /// Intended for advanced scenarios where you're working directly with
+        /// storage for performance or interop reasons.
         /// </summary>
         public DiagonalMatrix(DiagonalMatrixStorage<Complex> storage)
             : base(storage)
@@ -63,130 +79,120 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
             _data = _storage.Data;
         }
 
-         /// <summary>
-        /// Initializes a new instance of the <see cref="DiagonalMatrix"/> class. This matrix is square with a given size.
+        /// <summary>
+        /// Create a new square diagonal matrix with the given number of rows and columns.
+        /// All cells of the matrix will be initialized to zero.
+        /// Zero-length matrices are not supported.
         /// </summary>
-        /// <param name="order">the size of the square matrix.</param>
-        /// <exception cref="ArgumentException">
-        /// If <paramref name="order"/> is less than one.
-        /// </exception>
+        /// <exception cref="ArgumentException">If the order is less than one.</exception>
         public DiagonalMatrix(int order)
             : this(new DiagonalMatrixStorage<Complex>(order, order))
          {
          }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DiagonalMatrix"/> class.
+        /// Create a new diagonal matrix with the given number of rows and columns.
+        /// All cells of the matrix will be initialized to zero.
+        /// Zero-length matrices are not supported.
         /// </summary>
-        /// <param name="rows">
-        /// The number of rows.
-        /// </param>
-        /// <param name="columns">
-        /// The number of columns.
-        /// </param>
+        /// <exception cref="ArgumentException">If the row or column count is less than one.</exception>
         public DiagonalMatrix(int rows, int columns)
             : this(new DiagonalMatrixStorage<Complex>(rows, columns))
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DiagonalMatrix"/> class with all diagonal entries set to a particular value.
+        /// Create a new diagonal matrix with the given number of rows and columns.
+        /// All diagonal cells of the matrix will be initialized to the provided value, all non-diagonal ones to zero.
+        /// Zero-length matrices are not supported.
         /// </summary>
-        /// <param name="rows">
-        /// The number of rows.
-        /// </param>
-        /// <param name="columns">
-        /// The number of columns.
-        /// </param>
-        /// <param name="value">The value which we assign to each diagonal element of the matrix.</param>
-        public DiagonalMatrix(int rows, int columns, Complex value)
+        /// <exception cref="ArgumentException">If the row or column count is less than one.</exception>
+        public DiagonalMatrix(int rows, int columns, Complex diagonalValue)
             : this(rows, columns)
         {
             for (var i = 0; i < _data.Length; i++)
             {
-                _data[i] = value;
+                _data[i] = diagonalValue;
             }
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DiagonalMatrix"/> class from a one dimensional array with diagonal elements. This constructor
-        /// will reference the one dimensional array and not copy it.
+        /// Create a new diagonal matrix with the given number of rows and columns directly binding to a raw array.
+        /// The array is assumed to contain the diagonal elements only and is used directly without copying.
+        /// Very efficient, but changes to the array and the matrix will affect each other.
         /// </summary>
-        /// <param name="rows">The number of rows.</param>
-        /// <param name="columns">The number of columns.</param>
-        /// <param name="diagonalArray">The one dimensional array which contain diagonal elements.</param>
-        public DiagonalMatrix(int rows, int columns, Complex[] diagonalArray)
-            : this(new DiagonalMatrixStorage<Complex>(rows, columns, diagonalArray))
+        public DiagonalMatrix(int rows, int columns, Complex[] diagonalStorage)
+            : this(new DiagonalMatrixStorage<Complex>(rows, columns, diagonalStorage))
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DiagonalMatrix"/> class from a 2D array. 
+        /// Create a new diagonal matrix as a copy of the given other matrix.
+        /// This new matrix will be independent from the other matrix.
+        /// The matrix to copy from must be diagonal as well.
+        /// A new memory block will be allocated for storing the matrix.
         /// </summary>
-        /// <param name="array">The 2D array to create this matrix from.</param>
-        /// <exception cref="IndexOutOfRangeException">When <paramref name="array"/> contains an off-diagonal element.</exception>
-        /// <exception cref="IndexOutOfRangeException">Depending on the implementation, an <see cref="IndexOutOfRangeException"/>
-        /// may be thrown if one of the indices is outside the dimensions of the matrix.</exception>
-        public DiagonalMatrix(Complex[,] array)
-            : this(array.GetLength(0), array.GetLength(1))
+        public static DiagonalMatrix OfMatrix(Matrix<Complex> matrix)
         {
-            for (var i = 0; i < RowCount; i++)
-            {
-                for (var j = 0; j < ColumnCount; j++)
-                {
-                    if (i == j)
-                    {
-                        _data[i] = array[i, j];
-                    }
-                    else if (((array[i, j].Real != 0.0) && !double.IsNaN(array[i, j].Real)) || ((array[i, j].Imaginary != 0.0) && !double.IsNaN(array[i, j].Imaginary)))
-                    {
-                        throw new IndexOutOfRangeException("Cannot set an off-diagonal element in a diagonal matrix.");
-                    }
-                }
-            }
+            return new DiagonalMatrix(DiagonalMatrixStorage<Complex>.OfMatrix(matrix.Storage));
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DiagonalMatrix"/> class, copying
-        /// the values from the given matrix.
+        /// Create a new diagonal matrix as a copy of the given two-dimensional array.
+        /// This new matrix will be independent from the provided array.
+        /// The array to copy from must be diagonal as well.
+        /// A new memory block will be allocated for storing the matrix.
         /// </summary>
-        /// <param name="matrix">The matrix to copy.</param>
-        public DiagonalMatrix(Matrix<Complex> matrix)
-            : this(matrix.RowCount, matrix.ColumnCount)
+        public static DiagonalMatrix OfArray(Complex[,] array)
         {
-            matrix.Storage.CopyToUnchecked(Storage, skipClearing: true);
+            return new DiagonalMatrix(DiagonalMatrixStorage<Complex>.OfArray(array));
         }
 
         /// <summary>
-        /// Creates a <c>DiagonalMatrix</c> for the given number of rows and columns.
+        /// Create a new diagonal matrix and initialize each diagonal value from the provided indexed enumerable.
+        /// Keys must be provided at most once, zero is assumed if a key is omitted.
+        /// This new matrix will be independent from the enumerable.
+        /// A new memory block will be allocated for storing the matrix.
         /// </summary>
-        /// <param name="numberOfRows">The number of rows.</param>
-        /// <param name="numberOfColumns">The number of columns.</param>
-        /// <param name="fullyMutable">True if all fields must be mutable (e.g. not a diagonal matrix).</param>
-        /// <returns>
-        /// A <c>DiagonalMatrix</c> with the given dimensions.
-        /// </returns>
-        public override Matrix<Complex> CreateMatrix(int numberOfRows, int numberOfColumns, bool fullyMutable = false)
+        public static DiagonalMatrix OfIndexedDiagonal(int rows, int columns, IEnumerable<Tuple<int, Complex>> diagonal)
         {
-            return fullyMutable
-                ? (Matrix<Complex>) new SparseMatrix(numberOfRows, numberOfColumns)
-                : new DiagonalMatrix(numberOfRows, numberOfColumns);
+            return new DiagonalMatrix(DiagonalMatrixStorage<Complex>.OfIndexedEnumerable(rows, columns, diagonal));
         }
 
         /// <summary>
-        /// Creates a <see cref="Vector{T}"/> with a the given dimension.
+        /// Create a new diagonal matrix and initialize each diagonal value from the provided enumerable.
+        /// This new matrix will be independent from the enumerable.
+        /// A new memory block will be allocated for storing the matrix.
         /// </summary>
-        /// <param name="size">The size of the vector.</param>
-        /// <param name="fullyMutable">True if all fields must be mutable.</param>
-        /// <returns>
-        /// A <see cref="Vector{T}"/> with the given dimension.
-        /// </returns>
-        public override Vector<Complex> CreateVector(int size, bool fullyMutable = false)
+        public static DiagonalMatrix OfDiagonal(int rows, int columns, IEnumerable<Complex> diagonal)
         {
-            return new SparseVector(size);
+            return new DiagonalMatrix(DiagonalMatrixStorage<Complex>.OfEnumerable(rows, columns, diagonal));
         }
 
-        #region Elementary operations
+        /// <summary>
+        /// Create a new diagonal matrix and initialize each diagonal value using the provided init function.
+        /// </summary>
+        public static DiagonalMatrix Create(int rows, int columns, Func<int, Complex> init)
+        {
+            return new DiagonalMatrix(DiagonalMatrixStorage<Complex>.OfInit(rows, columns, init));
+        }
+
+        /// <summary>
+        /// Create a new square sparse identity matrix where each diagonal value is set to One.
+        /// </summary>
+        public static DiagonalMatrix CreateIdentity(int order)
+        {
+            return new DiagonalMatrix(DiagonalMatrixStorage<Complex>.OfInit(order, order, i => One));
+        }
+
+        /// <summary>
+        /// Create a new diagonal matrix with diagonal values sampled from the provided random distribution.
+        /// </summary>
+        public static DiagonalMatrix CreateRandom(int rows, int columns, IContinuousDistribution distribution)
+        {
+            return new DiagonalMatrix(DiagonalMatrixStorage<Complex>.OfInit(rows, columns,
+                i => new Complex(distribution.Sample(), distribution.Sample())));
+        }
 
         /// <summary>
         /// Adds another matrix to this matrix.
@@ -228,38 +234,18 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         /// <param name="result">The matrix to store the result of the addition.</param>
         /// <exception cref="ArgumentNullException">If the other matrix is <see langword="null"/>.</exception>
         /// <exception cref="ArgumentOutOfRangeException">If the two matrices don't have the same dimensions.</exception>
-        public override void Add(Matrix<Complex> other, Matrix<Complex> result)
+        protected override void DoAdd(Matrix<Complex> other, Matrix<Complex> result)
         {
-            if (other == null)
-            {
-                throw new ArgumentNullException("other");
-            }
-
-            if (result == null)
-            {
-                throw new ArgumentNullException("result");
-            }
-
-            if (other.RowCount != RowCount || other.ColumnCount != ColumnCount)
-            {
-                throw DimensionsDontMatch<ArgumentOutOfRangeException>(this, other, "other");
-            }
-
-            if (result.RowCount != RowCount || result.ColumnCount != ColumnCount)
-            {
-                throw DimensionsDontMatch<ArgumentOutOfRangeException>(this, result, "result");
-            }
-
             var diagOther = other as DiagonalMatrix;
             var diagResult = result as DiagonalMatrix;
 
             if (diagOther == null || diagResult == null)
             {
-                base.Add(other, result);
+                base.DoAdd(other, result);
             }
             else
             {
-                Control.LinearAlgebraProvider.AddArrays(_data, diagOther._data, diagResult._data);    
+                Control.LinearAlgebraProvider.AddArrays(_data, diagOther._data, diagResult._data);
             }
         }
 
@@ -297,40 +283,20 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         }
 
         /// <summary>
-        /// Subtracts another matrix from this matrix. 
+        /// Subtracts another matrix from this matrix.
         /// </summary>
         /// <param name="other">The matrix to subtract.</param>
         /// <param name="result">The matrix to store the result of the subtraction.</param>
         /// <exception cref="ArgumentNullException">If the other matrix is <see langword="null"/>.</exception>
         /// <exception cref="ArgumentOutOfRangeException">If the two matrices don't have the same dimensions.</exception>
-        public override void Subtract(Matrix<Complex> other, Matrix<Complex> result)
+        protected override void DoSubtract(Matrix<Complex> other, Matrix<Complex> result)
         {
-            if (other == null)
-            {
-                throw new ArgumentNullException("other");
-            }
-
-            if (result == null)
-            {
-                throw new ArgumentNullException("result");
-            }
-
-            if (other.RowCount != RowCount || other.ColumnCount != ColumnCount)
-            {
-                throw DimensionsDontMatch<ArgumentOutOfRangeException>(this, other, "other");
-            }
-
-            if (result.RowCount != RowCount || result.ColumnCount != ColumnCount)
-            {
-                throw DimensionsDontMatch<ArgumentOutOfRangeException>(this, other, "other");
-            }
-
             var diagOther = other as DiagonalMatrix;
             var diagResult = result as DiagonalMatrix;
 
             if (diagOther == null || diagResult == null)
             {
-                base.Subtract(other, result);
+                base.DoSubtract(other, result);
             }
             else
             {
@@ -343,7 +309,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         /// </summary>
         /// <param name="source">The array to copy the values from. The length of the vector should be
         /// Min(Rows, Columns).</param>
-        /// <exception cref="ArgumentNullException">If <paramref name="source"/> is <see langword="null" />.</exception>   
+        /// <exception cref="ArgumentNullException">If <paramref name="source"/> is <see langword="null" />.</exception>
         /// <exception cref="ArgumentException">If the length of <paramref name="source"/> does not
         /// equal Min(Rows, Columns).</exception>
         /// <remarks>For non-square matrices, the elements of <paramref name="source"/> are copied to
@@ -359,7 +325,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
             {
                 throw new ArgumentException(Resources.ArgumentArraysSameLength, "source");
             }
-        
+
             Array.Copy(source, _data, source.Length);
         }
 
@@ -368,7 +334,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         /// </summary>
         /// <param name="source">The vector to copy the values from. The length of the vector should be
         /// Min(Rows, Columns).</param>
-        /// <exception cref="ArgumentNullException">If <paramref name="source"/> is <see langword="null" />.</exception>   
+        /// <exception cref="ArgumentNullException">If <paramref name="source"/> is <see langword="null" />.</exception>
         /// <exception cref="ArgumentException">If the length of <paramref name="source"/> does not
         /// equal Min(Rows, Columns).</exception>
         /// <remarks>For non-square matrices, the elements of <paramref name="source"/> are copied to
@@ -395,7 +361,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         /// </summary>
         /// <param name="scalar">The scalar to multiply the matrix with.</param>
         /// <param name="result">The matrix to store the result of the multiplication.</param>
-        /// <exception cref="ArgumentNullException">If the result matrix is <see langword="null" />.</exception> 
+        /// <exception cref="ArgumentNullException">If the result matrix is <see langword="null" />.</exception>
         /// <exception cref="ArgumentException">If the result matrix's dimensions are not the same as this matrix.</exception>
         protected override void DoMultiply(Complex scalar, Matrix<Complex> result)
         {
@@ -414,7 +380,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
             var diagResult = result as DiagonalMatrix;
             if (diagResult == null)
             {
-                base.Multiply(scalar, result);
+                base.DoMultiply(scalar, result);
             }
             else
             {
@@ -480,7 +446,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         /// Multiplies this matrix with another matrix and returns the result.
         /// </summary>
         /// <param name="other">The matrix to multiply with.</param>
-        /// <exception cref="ArgumentException">If <strong>this.Columns != other.Rows</strong>.</exception>        
+        /// <exception cref="ArgumentException">If <strong>this.Columns != other.Rows</strong>.</exception>
         /// <exception cref="ArgumentNullException">If the other matrix is <see langword="null" />.</exception>
         /// <returns>The result of multiplication.</returns>
         public override Matrix<Complex> Multiply(Matrix<Complex> other)
@@ -654,7 +620,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         /// Multiplies this matrix with transpose of another matrix and returns the result.
         /// </summary>
         /// <param name="other">The matrix to multiply with.</param>
-        /// <exception cref="ArgumentException">If <strong>this.Columns != other.Rows</strong>.</exception>        
+        /// <exception cref="ArgumentException">If <strong>this.Columns != other.Rows</strong>.</exception>
         /// <exception cref="ArgumentNullException">If the other matrix is <see langword="null" />.</exception>
         /// <returns>The result of multiplication.</returns>
         public override Matrix<Complex> TransposeAndMultiply(Matrix<Complex> other)
@@ -675,11 +641,9 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
             return result;
         }
 
-        #endregion
-
         /// <summary>
         /// Returns the transpose of this matrix.
-        /// </summary>        
+        /// </summary>
         /// <returns>The transpose of this matrix.</returns>
         public override Matrix<Complex> Transpose()
         {
@@ -688,33 +652,32 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
             return ret;
         }
 
-        /// <summary>Calculates the L1 norm.</summary>
-        /// <returns>The L1 norm of the matrix.</returns>
-        public override Complex L1Norm()
+        /// <summary>Calculates the induced L1 norm of this matrix.</summary>
+        /// <returns>The maximum absolute column sum of the matrix.</returns>
+        public override double L1Norm()
         {
-            return _data.Aggregate(double.NegativeInfinity, (current, t) => Math.Max(current, t.Magnitude));
+            return _data.Aggregate(0d, (current, t) => Math.Max(current, t.Magnitude));
         }
 
-        /// <summary>Calculates the L2 norm.</summary>
-        /// <returns>The L2 norm of the matrix.</returns>   
-        public override Complex L2Norm()
+        /// <summary>Calculates the induced L2 norm of the matrix.</summary>
+        /// <returns>The largest singular value of the matrix.</returns>
+        public override double L2Norm()
         {
-            return _data.Aggregate(double.NegativeInfinity, (current, t) => Math.Max(current, t.Magnitude));
+            return _data.Aggregate(0d, (current, t) => Math.Max(current, t.Magnitude));
+        }
+
+        /// <summary>Calculates the induced infinity norm of this matrix.</summary>
+        /// <returns>The maximum absolute row sum of the matrix.</returns>
+        public override double InfinityNorm()
+        {
+            return L1Norm();
         }
 
         /// <summary>Calculates the Frobenius norm of this matrix.</summary>
         /// <returns>The Frobenius norm of this matrix.</returns>
-        public override Complex FrobeniusNorm()
+        public override double FrobeniusNorm()
         {
-            var norm = _data.Sum(t => t.Magnitude * t.Magnitude);
-            return Math.Sqrt(norm);
-        }
-
-        /// <summary>Calculates the infinity norm of this matrix.</summary>
-        /// <returns>The infinity norm of this matrix.</returns>   
-        public override Complex InfinityNorm()
-        {
-            return L1Norm();
+            return Math.Sqrt(_data.Sum(t => t.Magnitude * t.Magnitude));
         }
 
         /// <summary>Calculates the condition number of this matrix.</summary>
@@ -762,7 +725,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         /// <summary>
         /// Returns a new matrix containing the lower triangle of this matrix.
         /// </summary>
-        /// <returns>The lower triangle of this matrix.</returns>  
+        /// <returns>The lower triangle of this matrix.</returns>
         public override Matrix<Complex> LowerTriangle()
         {
             return Clone();
@@ -832,7 +795,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         /// <summary>
         /// Returns a new matrix containing the upper triangle of this matrix.
         /// </summary>
-        /// <returns>The upper triangle of this matrix.</returns>   
+        /// <returns>The upper triangle of this matrix.</returns>
         public override Matrix<Complex> UpperTriangle()
         {
             return Clone();
@@ -904,10 +867,10 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         /// <returns>The requested sub-matrix.</returns>
         /// <exception cref="ArgumentOutOfRangeException">If: <list><item><paramref name="rowIndex"/> is
         /// negative, or greater than or equal to the number of rows.</item>
-        /// <item><paramref name="columnIndex"/> is negative, or greater than or equal to the number 
+        /// <item><paramref name="columnIndex"/> is negative, or greater than or equal to the number
         /// of columns.</item>
         /// <item><c>(columnIndex + columnLength) &gt;= Columns</c></item>
-        /// <item><c>(rowIndex + rowLength) &gt;= Rows</c></item></list></exception>        
+        /// <item><c>(rowIndex + rowLength) &gt;= Rows</c></item></list></exception>
         /// <exception cref="ArgumentOutOfRangeException">If <paramref name="rowCount"/> or <paramref name="columnCount"/>
         /// is not positive.</exception>
         public override Matrix<Complex> SubMatrix(int rowIndex, int rowCount, int columnIndex, int columnCount)
@@ -1038,28 +1001,5 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
                 return true;
             }
         }
-
-        #region Static constructors for special matrices.
-
-        /// <summary>
-        /// Initializes a square <see cref="DiagonalMatrix"/> with all zero's except for ones on the diagonal.
-        /// </summary>
-        /// <param name="order">the size of the square matrix.</param>
-        /// <returns>A diagonal identity matrix.</returns>
-        /// <exception cref="ArgumentException">
-        /// If <paramref name="order"/> is less than one.
-        /// </exception>
-        public static DiagonalMatrix Identity(int order)
-        {
-            var m = new DiagonalMatrix(order);
-            for (var i = 0; i < order; i++)
-            {
-                m._data[i] = 1.0;
-            }
-
-            return m;
-        }
-
-        #endregion
     }
 }

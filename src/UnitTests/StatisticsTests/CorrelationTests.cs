@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2013 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -44,7 +48,7 @@ namespace MathNet.Numerics.UnitTests.StatisticsTests
         /// <summary>
         /// Statistics data.
         /// </summary>
-        private readonly IDictionary<string, StatTestData> _data = new Dictionary<string, StatTestData>();
+        readonly IDictionary<string, StatTestData> _data = new Dictionary<string, StatTestData>();
 
         /// <summary>
         /// Initializes a new instance of the CorrelationTests class.
@@ -67,7 +71,22 @@ namespace MathNet.Numerics.UnitTests.StatisticsTests
             var dataB = _data["lew"].Data.Take(200);
 
             var corr = Correlation.Pearson(dataA, dataB);
-            AssertHelpers.AlmostEqual(corr, -0.029470861580726, 13);
+            AssertHelpers.AlmostEqual(-0.029470861580726, corr, 14);
+        }
+
+        /// <summary>
+        /// Pearson correlation test.
+        /// </summary>
+        [Test]
+        public void PearsonCorrelationConsistentWithCovariance()
+        {
+            var dataA = _data["lottery"].Data.Take(200);
+            var dataB = _data["lew"].Data.Take(200);
+
+            var direct = Correlation.Pearson(dataA, dataB);
+            var covariance = dataA.Covariance(dataB)/(dataA.StandardDeviation()*dataB.StandardDeviation());
+
+            AssertHelpers.AlmostEqual(covariance, direct, 14);
         }
 
         /// <summary>
@@ -79,6 +98,30 @@ namespace MathNet.Numerics.UnitTests.StatisticsTests
             var dataA = _data["lottery"].Data;
             var dataB = _data["lew"].Data;
             Assert.Throws<ArgumentOutOfRangeException>(() => Correlation.Pearson(dataA, dataB));
+        }
+
+        /// <summary>
+        /// Spearman correlation test.
+        /// </summary>
+        [Test]
+        public void SpearmanCorrelationTest()
+        {
+            var dataA = _data["lottery"].Data.Take(200);
+            var dataB = _data["lew"].Data.Take(200);
+
+            var corr = Correlation.Spearman(dataA, dataB);
+            AssertHelpers.AlmostEqual(-0.0382856977898528, corr, 14);
+        }
+
+        /// <summary>
+        /// Spearman correlation test fail.
+        /// </summary>
+        [Test]
+        public void SpearmanCorrelationTestFail()
+        {
+            var dataA = _data["lottery"].Data;
+            var dataB = _data["lew"].Data;
+            Assert.Throws<ArgumentOutOfRangeException>(() => Correlation.Spearman(dataA, dataB));
         }
     }
 #endif

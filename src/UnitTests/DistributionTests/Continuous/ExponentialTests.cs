@@ -1,4 +1,4 @@
-// <copyright file="ExponentialTests.cs" company="Math.NET">
+﻿// <copyright file="ExponentialTests.cs" company="Math.NET">
 // Math.NET Numerics, part of the Math.NET Project
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
@@ -24,13 +24,13 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using System.Linq;
+using MathNet.Numerics.Distributions;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
 {
-    using System;
-    using System.Linq;
-    using Distributions;
-    using NUnit.Framework;
-
     /// <summary>
     /// Exponential distribution tests.
     /// </summary>
@@ -58,7 +58,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void CanCreateExponential(double lambda)
         {
             var n = new Exponential(lambda);
-            Assert.AreEqual(lambda, n.Lambda);
+            Assert.AreEqual(lambda, n.Rate);
         }
 
         /// <summary>
@@ -79,8 +79,8 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [Test]
         public void ValidateToString()
         {
-            var n = new Exponential(2.0);
-            Assert.AreEqual("Exponential(Lambda = 2)", n.ToString());
+            var n = new Exponential(2d);
+            Assert.AreEqual("Exponential(λ = 2)", n.ToString());
         }
 
         /// <summary>
@@ -97,7 +97,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         {
             new Exponential(1.0)
             {
-                Lambda = lambda
+                Rate = lambda
             };
         }
 
@@ -108,7 +108,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void SetLambdaFailsWithNegativeLambda()
         {
             var n = new Exponential(1.0);
-            Assert.Throws<ArgumentOutOfRangeException>(() => n.Lambda = -1.0);
+            Assert.Throws<ArgumentOutOfRangeException>(() => n.Rate = -1.0);
         }
 
         /// <summary>
@@ -266,11 +266,13 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
             var n = new Exponential(lambda);
             if (x >= 0)
             {
-                Assert.AreEqual(lambda * Math.Exp(-lambda * x), n.Density(x));
+                Assert.AreEqual(lambda*Math.Exp(-lambda*x), n.Density(x));
+                Assert.AreEqual(lambda*Math.Exp(-lambda*x), Exponential.PDF(lambda, x));
             }
             else
             {
                 Assert.AreEqual(0.0, n.Density(lambda));
+                Assert.AreEqual(0.0, Exponential.PDF(lambda, lambda));
             }
         }
 
@@ -302,7 +304,8 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateDensityLn(double lambda, double x)
         {
             var n = new Exponential(lambda);
-            Assert.AreEqual(Math.Log(lambda) - (lambda * x), n.DensityLn(x));
+            Assert.AreEqual(Math.Log(lambda) - (lambda*x), n.DensityLn(x));
+            Assert.AreEqual(Math.Log(lambda) - (lambda*x), Exponential.PDFLn(lambda, x));
         }
 
         /// <summary>
@@ -356,12 +359,34 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
             var n = new Exponential(lambda);
             if (x >= 0.0)
             {
-                Assert.AreEqual(1.0 - Math.Exp(-lambda * x), n.CumulativeDistribution(x));
+                Assert.AreEqual(1.0 - Math.Exp(-lambda*x), n.CumulativeDistribution(x));
+                Assert.AreEqual(1.0 - Math.Exp(-lambda*x), Exponential.CDF(lambda, x));
             }
             else
             {
                 Assert.AreEqual(0.0, n.CumulativeDistribution(x));
+                Assert.AreEqual(0.0, Exponential.CDF(lambda, x));
             }
+        }
+
+        /// <summary>
+        /// Validate inverse cumulative distribution.
+        /// </summary>
+        /// <param name="lambda">Lambda value.</param>
+        /// <param name="x">Input X value.</param>
+        [TestCase(0.1, 0.0)]
+        [TestCase(1.0, 0.0)]
+        [TestCase(10.0, 0.0)]
+        [TestCase(10.0, 0.1)]
+        [TestCase(1.0, 1.0)]
+        [TestCase(0.1, Double.PositiveInfinity)]
+        [TestCase(1.0, Double.PositiveInfinity)]
+        [TestCase(10.0, Double.PositiveInfinity)]
+        public void ValidateInverseCumulativeDistribution(double lambda, double x)
+        {
+            var n = new Exponential(lambda);
+            Assert.AreEqual(x, n.InverseCumulativeDistribution(1.0 - Math.Exp(-lambda*x)));
+            Assert.AreEqual(x, Exponential.InvCDF(lambda, 1.0 - Math.Exp(-lambda*x)));
         }
     }
 }

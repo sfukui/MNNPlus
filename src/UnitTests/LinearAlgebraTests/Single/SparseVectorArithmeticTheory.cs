@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2011 Math.NET
+// Copyright (c) 2009-2013 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -28,25 +28,25 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using MathNet.Numerics.LinearAlgebra;
+using MathNet.Numerics.LinearAlgebra.Single;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single
 {
-    using LinearAlgebra.Generic;
-    using LinearAlgebra.Single;
-    using NUnit.Framework;
-
     [TestFixture]
     public class SparseVectorArithmeticTheory : VectorArithmeticTheory
     {
         [Datapoints]
         Vector<float>[] denseVectors = new Vector<float>[]
             {
-                new SparseVector(new float[] { 1, 2, 3, 4, 5 }),
-                new SparseVector(new float[] { 2, 0, 0, -5, 0 }),
+                SparseVector.OfEnumerable(new float[] {1, 2, 3, 4, 5}),
+                SparseVector.OfEnumerable(new float[] {2, 0, 0, -5, 0}),
                 new SparseVector(5),
                 new SparseVector(int.MaxValue)
             };
 
         [Datapoints]
-        private float[] scalars = new[] { 2f };
+        float[] scalars = new[] {2f};
     }
 }

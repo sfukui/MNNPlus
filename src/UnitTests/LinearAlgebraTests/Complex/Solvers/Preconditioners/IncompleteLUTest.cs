@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2013 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -23,13 +27,23 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
+
+using System;
+using System.Reflection;
+using MathNet.Numerics.LinearAlgebra;
+using MathNet.Numerics.LinearAlgebra.Complex;
+using MathNet.Numerics.LinearAlgebra.Complex.Solvers;
+using MathNet.Numerics.LinearAlgebra.Solvers;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Solvers.Preconditioners
 {
-    using System;
-    using System.Reflection;
-    using LinearAlgebra.Complex;
-    using LinearAlgebra.Complex.Solvers.Preconditioners;
-    using NUnit.Framework;
+
+#if NOSYSNUMERICS
+    using Complex = Numerics.Complex;
+#else
+    using Complex = System.Numerics.Complex;
+#endif
 
     /// <summary>
     /// Incomplete LU preconditioner test.
@@ -44,7 +58,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Solvers.Precondi
         /// <param name="ilu"><c>IncompleteLU</c> instance.</param>
         /// <param name="methodName">Method name.</param>
         /// <returns>Result of the method invocation.</returns>
-        private static T GetMethod<T>(IncompleteLU ilu, string methodName)
+        static T GetMethod<T>(ILU0Preconditioner ilu, string methodName)
         {
             var type = ilu.GetType();
             var methodInfo = type.GetMethod(
@@ -55,7 +69,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Solvers.Precondi
                 new Type[0],
                 null);
             var obj = methodInfo.Invoke(ilu, null);
-            return (T)obj;
+            return (T) obj;
         }
 
         /// <summary>
@@ -63,9 +77,9 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Solvers.Precondi
         /// </summary>
         /// <param name="ilu"><c>IncompleteLU</c> instance.</param>
         /// <returns>Upper triangle.</returns>
-        private static Matrix GetUpperTriangle(IncompleteLU ilu)
+        static Matrix<Complex> GetUpperTriangle(ILU0Preconditioner ilu)
         {
-            return GetMethod<Matrix>(ilu, "UpperTriangle");
+            return GetMethod<Matrix<Complex>>(ilu, "UpperTriangle");
         }
 
         /// <summary>
@@ -73,18 +87,18 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Solvers.Precondi
         /// </summary>
         /// <param name="ilu"><c>IncompleteLU</c> instance.</param>
         /// <returns>Lower triangle.</returns>
-        private static Matrix GetLowerTriangle(IncompleteLU ilu)
+        static Matrix<Complex> GetLowerTriangle(ILU0Preconditioner ilu)
         {
-            return GetMethod<Matrix>(ilu, "LowerTriangle");
+            return GetMethod<Matrix<Complex>>(ilu, "LowerTriangle");
         }
 
         /// <summary>
         /// Create preconditioner.
         /// </summary>
         /// <returns>New preconditioner instance.</returns>
-        internal override IPreConditioner CreatePreconditioner()
+        internal override IPreconditioner<Complex> CreatePreconditioner()
         {
-            return new IncompleteLU();
+            return new ILU0Preconditioner();
         }
 
         /// <summary>
@@ -94,19 +108,19 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Solvers.Precondi
         /// <param name="matrix">Source matrix.</param>
         /// <param name="vector">Initial vector.</param>
         /// <param name="result">Result vector.</param>
-        protected override void CheckResult(IPreConditioner preconditioner, SparseMatrix matrix, Vector vector, Vector result)
+        protected override void CheckResult(IPreconditioner<Complex> preconditioner, SparseMatrix matrix, Vector<Complex> vector, Vector<Complex> result)
         {
-            Assert.AreEqual(typeof(IncompleteLU), preconditioner.GetType(), "#01");
+            Assert.AreEqual(typeof (ILU0Preconditioner), preconditioner.GetType(), "#01");
 
             // Compute M * result = product
             // compare vector and product. Should be equal
-            Vector product = new DenseVector(result.Count);
+            var product = new DenseVector(result.Count);
             matrix.Multiply(result, product);
 
             for (var i = 0; i < product.Count; i++)
             {
-                Assert.IsTrue(vector[i].Real.AlmostEqual(product[i].Real, -Epsilon.Magnitude()), "#02-" + i);
-                Assert.IsTrue(vector[i].Imaginary.AlmostEqual(product[i].Imaginary, -Epsilon.Magnitude()), "#03-" + i);
+                Assert.IsTrue(vector[i].Real.AlmostEqualNumbersBetween(product[i].Real, -Epsilon.Magnitude()), "#02-" + i);
+                Assert.IsTrue(vector[i].Imaginary.AlmostEqualNumbersBetween(product[i].Imaginary, -Epsilon.Magnitude()), "#03-" + i);
             }
         }
 
@@ -126,7 +140,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Solvers.Precondi
             sparseMatrix[2, 0] = 6;
             sparseMatrix[2, 1] = 8;
             sparseMatrix[2, 2] = 9;
-            var ilu = new IncompleteLU();
+            var ilu = new ILU0Preconditioner();
             ilu.Initialize(sparseMatrix);
             var original = GetLowerTriangle(ilu).Multiply(GetUpperTriangle(ilu));
 
@@ -134,8 +148,8 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Solvers.Precondi
             {
                 for (var j = 0; j < sparseMatrix.ColumnCount; j++)
                 {
-                    Assert.IsTrue(sparseMatrix[i, j].Real.AlmostEqual(original[i, j].Real, -Epsilon.Magnitude()), "#01-" + i + "-" + j);
-                    Assert.IsTrue(sparseMatrix[i, j].Imaginary.AlmostEqual(original[i, j].Imaginary, -Epsilon.Magnitude()), "#02-" + i + "-" + j);
+                    Assert.IsTrue(sparseMatrix[i, j].Real.AlmostEqualNumbersBetween(original[i, j].Real, -Epsilon.Magnitude()), "#01-" + i + "-" + j);
+                    Assert.IsTrue(sparseMatrix[i, j].Imaginary.AlmostEqualNumbersBetween(original[i, j].Imaginary, -Epsilon.Magnitude()), "#02-" + i + "-" + j);
                 }
             }
         }

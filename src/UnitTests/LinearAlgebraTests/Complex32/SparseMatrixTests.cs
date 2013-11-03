@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2013 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -24,13 +28,15 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using System.Collections.Generic;
+using MathNet.Numerics.LinearAlgebra;
+using MathNet.Numerics.LinearAlgebra.Complex32;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
 {
-    using System;
-    using System.Collections.Generic;
-    using LinearAlgebra.Complex32;
-    using NUnit.Framework;
-    using Complex32 = Numerics.Complex32;
+    using Numerics;
 
     /// <summary>
     /// Sparse matrix tests.
@@ -43,7 +49,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         /// <param name="rows">The number of rows.</param>
         /// <param name="columns">The number of columns.</param>
         /// <returns>A matrix with the given dimensions.</returns>
-        protected override Matrix CreateMatrix(int rows, int columns)
+        protected override Matrix<Complex32> CreateMatrix(int rows, int columns)
         {
             return new SparseMatrix(rows, columns);
         }
@@ -53,9 +59,9 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         /// </summary>
         /// <param name="data">The 2D array to create this matrix from.</param>
         /// <returns>A matrix with the given values.</returns>
-        protected override Matrix CreateMatrix(Complex32[,] data)
+        protected override Matrix<Complex32> CreateMatrix(Complex32[,] data)
         {
-            return new SparseMatrix(data);
+            return SparseMatrix.OfArray(data);
         }
 
         /// <summary>
@@ -64,7 +70,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         /// <param name="size">The size of the vector to create.
         /// </param>
         /// <returns>The new vector. </returns>
-        protected override Vector CreateVector(int size)
+        protected override Vector<Complex32> CreateVector(int size)
         {
             return new SparseVector(size);
         }
@@ -74,9 +80,9 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         /// </summary>
         /// <param name="data">The array to create this vector from.</param>
         /// <returns>The new vector. </returns>
-        protected override Vector CreateVector(Complex32[] data)
+        protected override Vector<Complex32> CreateVector(Complex32[] data)
         {
-            return new SparseVector(data);
+            return SparseVector.OfEnumerable(data);
         }
 
         /// <summary>
@@ -85,14 +91,14 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         [Test]
         public void CanCreateMatrixFrom1DArray()
         {
-            var testData = new Dictionary<string, Matrix>
-                           {
-                               { "Singular3x3", new SparseMatrix(3, 3, new[] { new Complex32(1.0f, 1), new Complex32(1.0f, 1), new Complex32(1.0f, 1), new Complex32(1.0f, 1), new Complex32(1.0f, 1), new Complex32(1.0f, 1), new Complex32(2.0f, 1), new Complex32(2.0f, 1), new Complex32(2.0f, 1) }) },
-                               { "Square3x3", new SparseMatrix(3, 3, new[] { new Complex32(-1.1f, 1), Complex32.Zero, new Complex32(-4.4f, 1), new Complex32(-2.2f, 1), new Complex32(1.1f, 1), new Complex32(5.5f, 1), new Complex32(-3.3f, 1), new Complex32(2.2f, 1), new Complex32(6.6f, 1) }) },
-                               { "Square4x4", new SparseMatrix(4, 4, new[] { new Complex32(-1.1f, 1), Complex32.Zero, new Complex32(1.0f, 1), new Complex32(-4.4f, 1), new Complex32(-2.2f, 1), new Complex32(1.1f, 1), new Complex32(2.1f, 1), new Complex32(5.5f, 1), new Complex32(-3.3f, 1), new Complex32(2.2f, 1), new Complex32(6.2f, 1), new Complex32(6.6f, 1), new Complex32(-4.4f, 1), new Complex32(3.3f, 1), new Complex32(4.3f, 1), new Complex32(-7.7f, 1) }) },
-                               { "Tall3x2", new SparseMatrix(3, 2, new[] { new Complex32(-1.1f, 1), Complex32.Zero, new Complex32(-4.4f, 1), new Complex32(-2.2f, 1), new Complex32(1.1f, 1), new Complex32(5.5f, 1) }) },
-                               { "Wide2x3", new SparseMatrix(2, 3, new[] { new Complex32(-1.1f, 1), Complex32.Zero, new Complex32(-2.2f, 1), new Complex32(1.1f, 1), new Complex32(-3.3f, 1), new Complex32(2.2f, 1) }) }
-                           };
+            var testData = new Dictionary<string, Matrix<Complex32>>
+                {
+                    {"Singular3x3", SparseMatrix.OfColumnMajor(3, 3, new[] {new Complex32(1.0f, 1), new Complex32(1.0f, 1), new Complex32(1.0f, 1), new Complex32(1.0f, 1), new Complex32(1.0f, 1), new Complex32(1.0f, 1), new Complex32(2.0f, 1), new Complex32(2.0f, 1), new Complex32(2.0f, 1)})},
+                    {"Square3x3", SparseMatrix.OfColumnMajor(3, 3, new[] {new Complex32(-1.1f, 1), Complex32.Zero, new Complex32(-4.4f, 1), new Complex32(-2.2f, 1), new Complex32(1.1f, 1), new Complex32(5.5f, 1), new Complex32(-3.3f, 1), new Complex32(2.2f, 1), new Complex32(6.6f, 1)})},
+                    {"Square4x4", SparseMatrix.OfColumnMajor(4, 4, new[] {new Complex32(-1.1f, 1), Complex32.Zero, new Complex32(1.0f, 1), new Complex32(-4.4f, 1), new Complex32(-2.2f, 1), new Complex32(1.1f, 1), new Complex32(2.1f, 1), new Complex32(5.5f, 1), new Complex32(-3.3f, 1), new Complex32(2.2f, 1), new Complex32(6.2f, 1), new Complex32(6.6f, 1), new Complex32(-4.4f, 1), new Complex32(3.3f, 1), new Complex32(4.3f, 1), new Complex32(-7.7f, 1)})},
+                    {"Tall3x2", SparseMatrix.OfColumnMajor(3, 2, new[] {new Complex32(-1.1f, 1), Complex32.Zero, new Complex32(-4.4f, 1), new Complex32(-2.2f, 1), new Complex32(1.1f, 1), new Complex32(5.5f, 1)})},
+                    {"Wide2x3", SparseMatrix.OfColumnMajor(2, 3, new[] {new Complex32(-1.1f, 1), Complex32.Zero, new Complex32(-2.2f, 1), new Complex32(1.1f, 1), new Complex32(-3.3f, 1), new Complex32(2.2f, 1)})}
+                };
 
             foreach (var name in testData.Keys)
             {
@@ -107,8 +113,8 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         public void MatrixFrom1DArrayIsCopy()
         {
             // Sparse Matrix copies values from Complex32[], but no remember reference. 
-            var data = new[] { new Complex32(1.0f, 1), new Complex32(1.0f, 1), new Complex32(1.0f, 1), new Complex32(1.0f, 1), new Complex32(1.0f, 1), new Complex32(1.0f, 1), new Complex32(2.0f, 1), new Complex32(2.0f, 1), new Complex32(2.0f, 1) };
-            var matrix = new SparseMatrix(3, 3, data);
+            var data = new[] {new Complex32(1.0f, 1), new Complex32(1.0f, 1), new Complex32(1.0f, 1), new Complex32(1.0f, 1), new Complex32(1.0f, 1), new Complex32(1.0f, 1), new Complex32(2.0f, 1), new Complex32(2.0f, 1), new Complex32(2.0f, 1)};
+            var matrix = SparseMatrix.OfColumnMajor(3, 3, data);
             matrix[0, 0] = new Complex32(10.0f, 1);
             Assert.AreNotEqual(new Complex32(10.0f, 1), data[0]);
         }
@@ -119,7 +125,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         [Test]
         public void MatrixFrom2DArrayIsCopy()
         {
-            var matrix = new SparseMatrix(TestData2D["Singular3x3"]);
+            var matrix = SparseMatrix.OfArray(TestData2D["Singular3x3"]);
             matrix[0, 0] = new Complex32(10.0f, 1);
             Assert.AreEqual(new Complex32(1.0f, 1), TestData2D["Singular3x3"][0, 0]);
         }
@@ -136,7 +142,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         [TestCase("Wide2x3")]
         public void CanCreateMatrixFrom2DArray(string name)
         {
-            var matrix = new SparseMatrix(TestData2D[name]);
+            var matrix = SparseMatrix.OfArray(TestData2D[name]);
             for (var i = 0; i < TestData2D[name].GetLength(0); i++)
             {
                 for (var j = 0; j < TestData2D[name].GetLength(1); j++)
@@ -152,7 +158,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         [Test]
         public void CanCreateIdentity()
         {
-            var matrix = SparseMatrix.Identity(5);
+            var matrix = SparseMatrix.CreateIdentity(5);
             for (var i = 0; i < matrix.RowCount; i++)
             {
                 for (var j = 0; j < matrix.ColumnCount; j++)
@@ -170,7 +176,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         [TestCase(-1)]
         public void IdentityWithWrongOrderThrowsArgumentOutOfRangeException(int order)
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => SparseMatrix.Identity(order));
+            Assert.Throws<ArgumentOutOfRangeException>(() => SparseMatrix.CreateIdentity(order));
         }
 
         /// <summary>
@@ -181,13 +187,13 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         {
             var matrix = new SparseMatrix(500, 1000);
             var nonzero = 0;
-            var rnd = new Random();
+            var rnd = new System.Random();
 
             for (var i = 0; i < matrix.RowCount; i++)
             {
                 for (var j = 0; j < matrix.ColumnCount; j++)
                 {
-                    var value = rnd.Next(10) * rnd.Next(10) * rnd.Next(10) * rnd.Next(10) * rnd.Next(10);
+                    var value = rnd.Next(10)*rnd.Next(10)*rnd.Next(10)*rnd.Next(10)*rnd.Next(10);
                     if (value != 0)
                     {
                         nonzero++;
@@ -207,7 +213,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         public void CanAddSparseMatricesBothWays()
         {
             var m1 = new SparseMatrix(1, 3);
-            var m2 = new SparseMatrix(new Complex32[,] { { 0, 1, 1 } });
+            var m2 = SparseMatrix.OfArray(new Complex32[,] { { 0, 1, 1 } });
             var sum1 = m1 + m2;
             var sum2 = m2 + m1;
             Assert.IsTrue(sum1.Equals(m2));
@@ -217,27 +223,27 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
             sparseResult.Add(m2, sparseResult);
             Assert.IsTrue(sparseResult.Equals(sum1));
 
-            sparseResult = new SparseMatrix(new Complex32[,] { { 0, 1, 1 } });
+            sparseResult = SparseMatrix.OfArray(new Complex32[,] { { 0, 1, 1 } });
             sparseResult.Add(m1, sparseResult);
             Assert.IsTrue(sparseResult.Equals(sum1));
 
-            sparseResult = new SparseMatrix(new Complex32[,] { { 0, 1, 1 } });
+            sparseResult = SparseMatrix.OfArray(new Complex32[,] { { 0, 1, 1 } });
             m1.Add(sparseResult, sparseResult);
             Assert.IsTrue(sparseResult.Equals(sum1));
 
-            sparseResult = new SparseMatrix(new Complex32[,] { { 0, 1, 1 } });
+            sparseResult = SparseMatrix.OfArray(new Complex32[,] { { 0, 1, 1 } });
             sparseResult.Add(sparseResult, sparseResult);
-            Assert.IsTrue(sparseResult.Equals(2 * sum1));
+            Assert.IsTrue(sparseResult.Equals(2*sum1));
 
             var denseResult = new DenseMatrix(1, 3);
             denseResult.Add(m2, denseResult);
             Assert.IsTrue(denseResult.Equals(sum1));
 
-            denseResult = new DenseMatrix(new Complex32[,] { { 0, 1, 1 } });
+            denseResult = DenseMatrix.OfArray(new Complex32[,] {{0, 1, 1}});
             denseResult.Add(m1, denseResult);
             Assert.IsTrue(denseResult.Equals(sum1));
 
-            var m3 = new DenseMatrix(new Complex32[,] { { 0, 1, 1 } });
+            var m3 = DenseMatrix.OfArray(new Complex32[,] {{0, 1, 1}});
             var sum3 = m1 + m3;
             var sum4 = m3 + m1;
             Assert.IsTrue(sum3.Equals(m3));
@@ -251,7 +257,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         public void CanSubtractSparseMatricesBothWays()
         {
             var m1 = new SparseMatrix(1, 3);
-            var m2 = new SparseMatrix(new Complex32[,] { { 0, 1, 1 } });
+            var m2 = SparseMatrix.OfArray(new Complex32[,] { { 0, 1, 1 } });
             var diff1 = m1 - m2;
             var diff2 = m2 - m1;
             Assert.IsTrue(diff1.Equals(m2.Negate()));
@@ -261,27 +267,27 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
             sparseResult.Subtract(m2, sparseResult);
             Assert.IsTrue(sparseResult.Equals(diff1));
 
-            sparseResult = new SparseMatrix(new Complex32[,] { { 0, 1, 1 } });
+            sparseResult = SparseMatrix.OfArray(new Complex32[,] { { 0, 1, 1 } });
             sparseResult.Subtract(m1, sparseResult);
             Assert.IsTrue(sparseResult.Equals(diff2));
 
-            sparseResult = new SparseMatrix(new Complex32[,] { { 0, 1, 1 } });
+            sparseResult = SparseMatrix.OfArray(new Complex32[,] { { 0, 1, 1 } });
             m1.Subtract(sparseResult, sparseResult);
             Assert.IsTrue(sparseResult.Equals(diff1));
 
-            sparseResult = new SparseMatrix(new Complex32[,] { { 0, 1, 1 } });
+            sparseResult = SparseMatrix.OfArray(new Complex32[,] { { 0, 1, 1 } });
             sparseResult.Subtract(sparseResult, sparseResult);
-            Assert.IsTrue(sparseResult.Equals(0 * diff1));
+            Assert.IsTrue(sparseResult.Equals(0*diff1));
 
             var denseResult = new DenseMatrix(1, 3);
             denseResult.Subtract(m2, denseResult);
             Assert.IsTrue(denseResult.Equals(diff1));
 
-            denseResult = new DenseMatrix(new Complex32[,] { { 0, 1, 1 } });
+            denseResult = DenseMatrix.OfArray(new Complex32[,] {{0, 1, 1}});
             denseResult.Subtract(m1, denseResult);
             Assert.IsTrue(denseResult.Equals(diff2));
 
-            var m3 = new DenseMatrix(new Complex32[,] { { 0, 1, 1 } });
+            var m3 = DenseMatrix.OfArray(new Complex32[,] {{0, 1, 1}});
             var diff3 = m1 - m3;
             var diff4 = m3 - m1;
             Assert.IsTrue(diff3.Equals(m3.Negate()));

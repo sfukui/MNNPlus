@@ -24,12 +24,11 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using MathNet.Numerics.LinearAlgebra.Single;
+using MathNet.Numerics.LinearAlgebra.Storage;
+
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single
 {
-    using LinearAlgebra.Generic;
-    using LinearAlgebra.Single;
-    using LinearAlgebra.Storage;
-
     /// <summary>
     /// User-defined vector implementation (internal class for testing purposes)
     /// </summary>
@@ -49,6 +48,11 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single
                 : base(size)
             {
                 Data = data;
+            }
+
+            public override bool IsDense
+            {
+                get { return true; }
             }
 
             public override float At(int index)
@@ -78,27 +82,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single
         public UserDefinedVector(float[] data)
             : base(new UserDefinedVectorStorage(data.Length, (float[])data.Clone()))
         {
-        }
-
-        /// <summary>
-        /// Creates a matrix with the given dimensions using the same storage type as this vector.
-        /// </summary>
-        /// <param name="rows">The number of rows.</param>
-        /// <param name="columns">The number of columns.</param>
-        /// <returns>A matrix with the given dimensions.</returns>
-        public override Matrix<float> CreateMatrix(int rows, int columns)
-        {
-            return new UserDefinedMatrix(rows, columns);
-        }
-
-        /// <summary>
-        /// Creates a <strong>Vector</strong> of the given size using the same storage type as this vector.
-        /// </summary>
-        /// <param name="size">The size of the <strong>Vector</strong> to create.</param>
-        /// <returns>The new <c>Vector</c>.</returns>
-        public override Vector<float> CreateVector(int size)
-        {
-            return new UserDefinedVector(size);
         }
     }
 }

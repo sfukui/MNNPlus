@@ -28,13 +28,18 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using MathNet.Numerics.LinearAlgebra.Storage;
+using MathNet.Numerics.Threading;
+using System;
+
 namespace MathNet.Numerics.LinearAlgebra.Complex
 {
-    using System;
-    using System.Numerics;
-    using Generic;
-    using Storage;
-    using Threading;
+
+#if NOSYSNUMERICS
+    using Complex = Numerics.Complex;
+#else
+    using Complex = System.Numerics.Complex;
+#endif
 
     /// <summary>
     /// <c>Complex</c> version of the <see cref="Vector{T}"/> class.
@@ -135,15 +140,28 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         /// <summary>
         /// Divides each element of the vector by a scalar and stores the result in the result vector.
         /// </summary>
-        /// <param name="scalar">
+        /// <param name="divisor">
         /// The scalar to divide with.
         /// </param>
         /// <param name="result">
         /// The vector to store the result of the division.
         /// </param>
-        protected override void DoDivide(Complex scalar, Vector<Complex> result)
+        protected override void DoDivide(Complex divisor, Vector<Complex> result)
         {
-            DoMultiply(1 / scalar, result);
+            DoMultiply(1 / divisor, result);
+        }
+
+        /// <summary>
+        /// Divides a scalar by each element of the vector and stores the result in the result vector.
+        /// </summary>
+        /// <param name="dividend">The scalar to divide.</param>
+        /// <param name="result">The vector to store the result of the division.</param>
+        protected override void DoDivideByThis(Complex dividend, Vector<Complex> result)
+        {
+            for (var index = 0; index < Count; index++)
+            {
+                result.At(index, dividend / At(index));
+            }
         }
 
         /// <summary>
@@ -162,45 +180,74 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         /// <summary>
         /// Pointwise divide this vector with another vector and stores the result into the result vector.
         /// </summary>
-        /// <param name="other">The vector to pointwise divide this one by.</param>
+        /// <param name="divisor">The vector to pointwise divide this one by.</param>
         /// <param name="result">The vector to store the result of the pointwise division.</param>
-        protected override void DoPointwiseDivide(Vector<Complex> other, Vector<Complex> result)
+        protected override void DoPointwiseDivide(Vector<Complex> divisor, Vector<Complex> result)
         {
             for (var index = 0; index < Count; index++)
             {
-                result.At(index, At(index) / other.At(index));
+                result.At(index, At(index) / divisor.At(index));
             }
+        }
+
+        /// <summary>
+        /// Pointwise modulus this vector with another vector and stores the result into the result vector.
+        /// </summary>
+        /// <param name="divisor">The vector to pointwise modulus this one by.</param>
+        /// <param name="result">The result of the modulus.</param>
+        protected override void DoPointwiseModulus(Vector<Complex> divisor, Vector<Complex> result)
+        {
+            throw new NotSupportedException();
         }
 
         /// <summary>
         /// Computes the dot product between this vector and another vector.
         /// </summary>
-        /// <param name="other">
-        /// The other vector to add.
-        /// </param>
-        /// <returns>
-        /// The result of the addition.
-        /// </returns>
+        /// <param name="other">The other vector.</param>
+        /// <returns>The sum of a[i]*b[i] for all i.</returns>
         protected override Complex DoDotProduct(Vector<Complex> other)
         {
             var dot = Complex.Zero;
-
             for (var i = 0; i < Count; i++)
             {
                 dot += At(i) * other.At(i);
             }
+            return dot;
+        }
 
+        /// <summary>
+        /// Computes the dot product between the conjugate of this vector and another vector.
+        /// </summary>
+        /// <param name="other">The other vector.</param>
+        /// <returns>The sum of conj(a[i])*b[i] for all i.</returns>
+        protected override Complex DoConjugateDotProduct(Vector<Complex> other)
+        {
+            var dot = Complex.Zero;
+            for (var i = 0; i < Count; i++)
+            {
+                dot += At(i).Conjugate() * other.At(i);
+            }
             return dot;
         }
 
         /// <summary>
         /// Computes the modulus for each element of the vector for the given divisor.
         /// </summary>
-        /// <param name="divisor">The divisor to use.</param>
+        /// <param name="divisor">The scalar denominator to use.</param>
         /// <param name="result">A vector to store the results in.</param>
         protected override void DoModulus(Complex divisor, Vector<Complex> result)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// Computes the modulus for the given dividend for each element of the vector.
+        /// </summary>
+        /// <param name="dividend">The scalar numerator to use.</param>
+        /// <param name="result">A vector to store the results in.</param>
+        protected override void DoModulusByThis(Complex dividend, Vector<Complex> result)
+        {
+            throw new NotSupportedException();
         }
 
         /// <summary>
@@ -270,29 +317,43 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         public override Complex Sum()
         {
             var sum = Complex.Zero;
-
             for (var i = 0; i < Count; i++)
             {
                 sum += At(i);
             }
-
             return sum;
         }
 
         /// <summary>
-        /// Computes the sum of the absolute value of the vector's elements.
+        /// Calculates the L1 norm of the vector, also known as Manhattan norm.
         /// </summary>
-        /// <returns>The sum of the absolute value of the vector's elements.</returns>
-        public override Complex SumMagnitudes()
+        /// <returns>The sum of the absolute values.</returns>
+        public override double L1Norm()
         {
-            var sum = Complex.Zero;
-
+            double sum = 0d;
             for (var i = 0; i < Count; i++)
             {
                 sum += At(i).Magnitude;
             }
-
             return sum;
+        }
+
+        /// <summary>
+        /// Calculates the L2 norm of the vector, also known as Euclidean norm.
+        /// </summary>
+        /// <returns>The square root of the sum of the squared values.</returns>
+        public override double L2Norm()
+        {
+            return DoConjugateDotProduct(this).SquareRoot().Real;
+        }
+
+        /// <summary>
+        /// Calculates the infinity norm of the vector.
+        /// </summary>
+        /// <returns>The square root of the sum of the squared values.</returns>
+        public override double InfinityNorm()
+        {
+            return CommonParallel.Aggregate(0, Count, i => At(i).Magnitude, Math.Max, 0d);
         }
 
         /// <summary>
@@ -302,51 +363,45 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         /// The p value.
         /// </param>
         /// <returns>
-        /// <c>Scalar ret = (sum(abs(At(i))^p))^(1/p)</c>
+        /// <c>Scalar ret = ( ∑|At(i)|^p )^(1/p)</c>
         /// </returns>
-        public override Complex Norm(double p)
+        public override double Norm(double p)
         {
-            if (p < 0.0)
-            {
-                throw new ArgumentOutOfRangeException("p");
-            }
+            if (p < 0d) throw new ArgumentOutOfRangeException("p");
 
-            if (double.IsPositiveInfinity(p))
-            {
-                return CommonParallel.Aggregate(0, Count, i => At(i).Magnitude, Math.Max, 0d);
-            }
+            if (p == 1d) return L1Norm();
+            if (p == 2d) return L2Norm();
+            if (double.IsPositiveInfinity(p)) return InfinityNorm();
 
-            var sum = 0.0;
-
+            double sum = 0d;
             for (var index = 0; index < Count; index++)
             {
                 sum += Math.Pow(At(index).Magnitude, p);
             }
-
-            return Math.Pow(sum, 1.0 / p);
+            return Math.Pow(sum, 1.0/p);
         }
 
         /// <summary>
-        /// Conjugates vector and save result to <paramref name="target"/>
+        /// Conjugates vector and save result to <paramref name="result"/>
         /// </summary>
-        /// <param name="target">Target vector</param>
-        protected override void DoConjugate(Vector<Complex> target)
+        /// <param name="result">Target vector</param>
+        protected override void DoConjugate(Vector<Complex> result)
         {
             for (var index = 0; index < Count; index++)
             {
-                target.At(index, At(index).Conjugate());
+                result.At(index, At(index).Conjugate());
             }
         }
 
         /// <summary>
-        /// Negates vector and saves result to <paramref name="target"/>
+        /// Negates vector and saves result to <paramref name="result"/>
         /// </summary>
-        /// <param name="target">Target vector</param>
-        protected override void DoNegate(Vector<Complex> target)
+        /// <param name="result">Target vector</param>
+        protected override void DoNegate(Vector<Complex> result)
         {
             for (var index = 0; index < Count; index++)
             {
-                target.At(index, -At(index));
+                result.At(index, -At(index));
             }
         }
 
@@ -379,19 +434,19 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         /// </returns>
         public override Vector<Complex> Normalize(double p)
         {
-            if (p < 0.0)
+            if (p < 0d)
             {
                 throw new ArgumentOutOfRangeException("p");
             }
 
-            var norm = Norm(p);
+            double norm = Norm(p);
             var clone = Clone();
-            if (norm.Real == 0.0)
+            if (norm == 0d)
             {
                 return clone;
             }
 
-            clone.Multiply(1.0 / norm, clone);
+            clone.Multiply(1d / norm, clone);
 
             return clone;
         }

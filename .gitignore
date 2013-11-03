@@ -1,9 +1,11 @@
 output
 bin
+obj
 out
 Thumbs.db
 TestResults
 Backup
+.vagrant
 _UpgradeReport*
 _ReSharper*
 coverage.*

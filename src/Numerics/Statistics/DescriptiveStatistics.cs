@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2010 Math.NET
+// Copyright (c) 2009-2013 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -42,21 +42,32 @@ namespace MathNet.Numerics.Statistics
     public class DescriptiveStatistics
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="DescriptiveStatistics"/> class.
+        /// Initializes a new instance of the <see cref="DescriptiveStatistics"/> class. 
         /// </summary>
         /// <param name="data">The sample data.</param>
-        public DescriptiveStatistics(IEnumerable<double> data)
-            : this(data, false)
+        /// <param name="increasedAccuracy">
+        /// If set to <c>true</c>, increased accuracy mode used.
+        /// Increased accuracy mode uses <see cref="decimal"/> types for internal calculations.
+        /// </param>
+        /// <remarks>
+        /// Don't use increased accuracy for data sets containing large values (in absolute value).
+        /// This may cause the calculations to overflow.
+        /// </remarks>
+        public DescriptiveStatistics(IEnumerable<double> data, bool increasedAccuracy = false)
         {
-        }
+            if (data == null)
+            {
+                throw new ArgumentNullException("data");
+            }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DescriptiveStatistics"/> class.
-        /// </summary>
-        /// <param name="data">The sample data.</param>
-        public DescriptiveStatistics(IEnumerable<double?> data)
-            : this(data, false)
-        {
+            if (increasedAccuracy)
+            {
+                ComputeDecimal(data);
+            }
+            else
+            {
+                Compute(data);
+            }
         }
 
         /// <summary>
@@ -71,7 +82,7 @@ namespace MathNet.Numerics.Statistics
         /// Don't use increased accuracy for data sets containing large values (in absolute value).
         /// This may cause the calculations to overflow.
         /// </remarks>
-        public DescriptiveStatistics(IEnumerable<double> data, bool increasedAccuracy)
+        public DescriptiveStatistics(IEnumerable<double?> data, bool increasedAccuracy = false)
         {
             if (data == null)
             {
@@ -80,46 +91,12 @@ namespace MathNet.Numerics.Statistics
 
             if (increasedAccuracy)
             {
-                ComputeHA(data);
+                ComputeDecimal(data);
             }
             else
             {
                 Compute(data);
             }
-
-            _medianLazy = new Lazy<double>(() => data.Median());
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DescriptiveStatistics"/> class. 
-        /// </summary>
-        /// <param name="data">The sample data.</param>
-        /// <param name="increasedAccuracy">
-        /// If set to <c>true</c>, increased accuracy mode used.
-        /// Increased accuracy mode uses <see cref="decimal"/> types for internal calculations.
-        /// </param>
-        /// <remarks>
-        /// Don't use increased accuracy for data sets containing large values (in absolute value).
-        /// This may cause the calculations to overflow.
-        /// </remarks>
-        public DescriptiveStatistics(IEnumerable<double?> data, bool increasedAccuracy)
-        {
-            if (data == null)
-            {
-                throw new ArgumentNullException("data");
-            }
-
-
-            if (increasedAccuracy)
-            {
-                ComputeHA(data);
-            }
-            else
-            {
-                Compute(data);
-            }
-
-            _medianLazy = new Lazy<double>(() => data.Median());
         }
 
         /// <summary>
@@ -152,18 +129,6 @@ namespace MathNet.Numerics.Statistics
         /// <value>The sample skewness.</value>
         /// <remarks>Returns zero if <see cref="Count"/> is less than three. </remarks>
         public double Skewness { get; private set; }
-
-        /// <summary>
-        /// Gets the sample median.
-        /// </summary>
-        /// <value>The sample median.</value>
-        [Obsolete("Please use Statistics.Median instead (performance). Scheduled for removal in v3.0.")]
-        public double Median
-        {
-            get { return _medianLazy.Value; }
-        }
-
-        readonly Lazy<double> _medianLazy;
 
         /// <summary>
         /// Gets the sample kurtosis.
@@ -201,15 +166,15 @@ namespace MathNet.Numerics.Statistics
             {
                 double delta = xi - mean;
                 double scaleDelta = delta / ++n;
-                double scaleDeltaSQR = scaleDelta * scaleDelta;
+                double scaleDeltaSqr = scaleDelta * scaleDelta;
                 double tmpDelta = delta * (n - 1);
 
                 mean += scaleDelta;
 
-                kurtosis += tmpDelta * scaleDelta * scaleDeltaSQR * (n * n - 3 * n + 3)
-                    + 6 * scaleDeltaSQR * variance - 4 * scaleDelta * skewness;
+                kurtosis += tmpDelta * scaleDelta * scaleDeltaSqr * (n * n - 3 * n + 3)
+                    + 6 * scaleDeltaSqr * variance - 4 * scaleDelta * skewness;
 
-                skewness += tmpDelta * scaleDeltaSQR * (n - 2) - 3 * scaleDelta * variance;
+                skewness += tmpDelta * scaleDeltaSqr * (n - 2) - 3 * scaleDelta * variance;
                 variance += tmpDelta * scaleDelta;
 
                 if (minimum > xi) { minimum = xi; }
@@ -239,15 +204,15 @@ namespace MathNet.Numerics.Statistics
                 {
                     double delta = xi.Value - mean;
                     double scaleDelta = delta / ++n;
-                    double scaleDeltaSQR = scaleDelta * scaleDelta;
+                    double scaleDeltaSqr = scaleDelta * scaleDelta;
                     double tmpDelta = delta * (n - 1);
 
                     mean += scaleDelta;
 
-                    kurtosis += tmpDelta * scaleDelta * scaleDeltaSQR * (n * n - 3 * n + 3)
-                        + 6 * scaleDeltaSQR * variance - 4 * scaleDelta * skewness;
+                    kurtosis += tmpDelta * scaleDelta * scaleDeltaSqr * (n * n - 3 * n + 3)
+                        + 6 * scaleDeltaSqr * variance - 4 * scaleDelta * skewness;
 
-                    skewness += tmpDelta * scaleDeltaSQR * (n - 2) - 3 * scaleDelta * variance;
+                    skewness += tmpDelta * scaleDeltaSqr * (n - 2) - 3 * scaleDelta * variance;
                     variance += tmpDelta * scaleDelta;
                     if (minimum > xi) { minimum = xi.Value; }
                     if (maximum < xi) { maximum = xi.Value; }
@@ -262,7 +227,7 @@ namespace MathNet.Numerics.Statistics
         /// Computes descriptive statistics from a stream of data values using high accuracy.
         /// </summary>
         /// <param name="data">A sequence of datapoints.</param>
-        private void ComputeHA(IEnumerable<double> data)
+        private void ComputeDecimal(IEnumerable<double> data)
         {
             decimal mean = 0;
             decimal variance = 0;
@@ -297,7 +262,7 @@ namespace MathNet.Numerics.Statistics
         /// Computes descriptive statistics from a stream of nullable data values using high accuracy.
         /// </summary>
         /// <param name="data">A sequence of datapoints.</param>
-        private void ComputeHA(IEnumerable<double?> data)
+        private void ComputeDecimal(IEnumerable<double?> data)
         {
             decimal mean = 0;
             decimal variance = 0;

@@ -25,7 +25,7 @@
 // </copyright>
 
 using System;
-using MathNet.Numerics.Interpolation;
+using MathNet.Numerics;
 using MathNet.Numerics.Random;
 using MathNet.Numerics.Signals;
 

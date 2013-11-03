@@ -28,12 +28,12 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using MathNet.Numerics.LinearAlgebra.Storage;
+using MathNet.Numerics.Threading;
+using System;
+
 namespace MathNet.Numerics.LinearAlgebra.Complex32
 {
-    using System;
-    using Generic;
-    using Storage;
-    using Threading;
     using Complex32 = Numerics.Complex32;
 
     /// <summary>
@@ -43,7 +43,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
     public abstract class Vector : Vector<Complex32>
     {
         /// <summary>
-        /// Initializes a new instance of the Vector class. 
+        /// Initializes a new instance of the Vector class.
         /// </summary>
         protected Vector(VectorStorage<Complex32> storage)
             : base(storage)
@@ -135,15 +135,28 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         /// <summary>
         /// Divides each element of the vector by a scalar and stores the result in the result vector.
         /// </summary>
-        /// <param name="scalar">
+        /// <param name="divisor">
         /// The scalar to divide with.
         /// </param>
         /// <param name="result">
         /// The vector to store the result of the division.
         /// </param>
-        protected override void DoDivide(Complex32 scalar, Vector<Complex32> result)
+        protected override void DoDivide(Complex32 divisor, Vector<Complex32> result)
         {
-            DoMultiply(1 / scalar, result);
+            DoMultiply(1 / divisor, result);
+        }
+
+        /// <summary>
+        /// Divides a scalar by each element of the vector and stores the result in the result vector.
+        /// </summary>
+        /// <param name="dividend">The scalar to divide.</param>
+        /// <param name="result">The vector to store the result of the division.</param>
+        protected override void DoDivideByThis(Complex32 dividend, Vector<Complex32> result)
+        {
+            for (var index = 0; index < Count; index++)
+            {
+                result.At(index, dividend / At(index));
+            }
         }
 
         /// <summary>
@@ -162,45 +175,74 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         /// <summary>
         /// Pointwise divide this vector with another vector and stores the result into the result vector.
         /// </summary>
-        /// <param name="other">The vector to pointwise divide this one by.</param>
+        /// <param name="divisor">The vector to pointwise divide this one by.</param>
         /// <param name="result">The vector to store the result of the pointwise division.</param>
-        protected override void DoPointwiseDivide(Vector<Complex32> other, Vector<Complex32> result)
+        protected override void DoPointwiseDivide(Vector<Complex32> divisor, Vector<Complex32> result)
         {
             for (var index = 0; index < Count; index++)
             {
-                result.At(index, At(index) / other.At(index));
+                result.At(index, At(index) / divisor.At(index));
             }
+        }
+
+        /// <summary>
+        /// Pointwise modulus this vector with another vector and stores the result into the result vector.
+        /// </summary>
+        /// <param name="divisor">The vector to pointwise modulus this one by.</param>
+        /// <param name="result">The result of the modulus.</param>
+        protected override void DoPointwiseModulus(Vector<Complex32> divisor, Vector<Complex32> result)
+        {
+            throw new NotSupportedException();
         }
 
         /// <summary>
         /// Computes the dot product between this vector and another vector.
         /// </summary>
-        /// <param name="other">
-        /// The other vector to add.
-        /// </param>
-        /// <returns>s
-        /// The result of the addition.
-        /// </returns>
+        /// <param name="other">The other vector.</param>
+        /// <returns>The sum of a[i]*b[i] for all i.</returns>
         protected override Complex32 DoDotProduct(Vector<Complex32> other)
         {
             var dot = Complex32.Zero;
-
             for (var i = 0; i < Count; i++)
             {
                 dot += At(i) * other.At(i);
             }
+            return dot;
+        }
 
+        /// <summary>
+        /// Computes the dot product between the conjugate of this vector and another vector.
+        /// </summary>
+        /// <param name="other">The other vector.</param>
+        /// <returns>The sum of conj(a[i])*b[i] for all i.</returns>
+        protected override Complex32 DoConjugateDotProduct(Vector<Complex32> other)
+        {
+            var dot = Complex32.Zero;
+            for (var i = 0; i < Count; i++)
+            {
+                dot += At(i).Conjugate() * other.At(i);
+            }
             return dot;
         }
 
         /// <summary>
         /// Computes the modulus for each element of the vector for the given divisor.
         /// </summary>
-        /// <param name="divisor">The divisor to use.</param>
+        /// <param name="divisor">The scalar denominator to use.</param>
         /// <param name="result">A vector to store the results in.</param>
         protected override void DoModulus(Complex32 divisor, Vector<Complex32> result)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// Computes the modulus for the given dividend for each element of the vector.
+        /// </summary>
+        /// <param name="dividend">The scalar numerator to use.</param>
+        /// <param name="result">A vector to store the results in.</param>
+        protected override void DoModulusByThis(Complex32 dividend, Vector<Complex32> result)
+        {
+            throw new NotSupportedException();
         }
 
         /// <summary>
@@ -215,7 +257,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         /// <summary>
         /// Returns the index of the absolute minimum element.
         /// </summary>
-        /// <returns>The index of absolute minimum element.</returns>   
+        /// <returns>The index of absolute minimum element.</returns>
         public override int AbsoluteMinimumIndex()
         {
             var index = 0;
@@ -245,7 +287,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         /// <summary>
         /// Returns the index of the absolute maximum element.
         /// </summary>
-        /// <returns>The index of absolute maximum element.</returns>   
+        /// <returns>The index of absolute maximum element.</returns>
         public override int AbsoluteMaximumIndex()
         {
             var index = 0;
@@ -270,29 +312,43 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         public override Complex32 Sum()
         {
             var sum = Complex32.Zero;
-
             for (var i = 0; i < Count; i++)
             {
                 sum += At(i);
             }
-
             return sum;
         }
 
         /// <summary>
-        /// Computes the sum of the absolute value of the vector's elements.
+        /// Calculates the L1 norm of the vector, also known as Manhattan norm.
         /// </summary>
-        /// <returns>The sum of the absolute value of the vector's elements.</returns>
-        public override Complex32 SumMagnitudes()
+        /// <returns>The sum of the absolute values.</returns>
+        public override double L1Norm()
         {
-            var sum = Complex32.Zero;
-
+            double sum = 0d;
             for (var i = 0; i < Count; i++)
             {
                 sum += At(i).Magnitude;
             }
-
             return sum;
+        }
+
+        /// <summary>
+        /// Calculates the L2 norm of the vector, also known as Euclidean norm.
+        /// </summary>
+        /// <returns>The square root of the sum of the squared values.</returns>
+        public override double L2Norm()
+        {
+            return DoConjugateDotProduct(this).SquareRoot().Real;
+        }
+
+        /// <summary>
+        /// Calculates the infinity norm of the vector.
+        /// </summary>
+        /// <returns>The square root of the sum of the squared values.</returns>
+        public override double InfinityNorm()
+        {
+            return CommonParallel.Aggregate(0, Count, i => At(i).Magnitude, Math.Max, 0f);
         }
 
         /// <summary>
@@ -302,58 +358,52 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         /// The p value.
         /// </param>
         /// <returns>
-        /// <c>Scalar ret = (sum(abs(At(i))^p))^(1/p)</c>
+        /// <c>Scalar ret = ( ∑|At(i)|^p )^(1/p)</c>
         /// </returns>
-        public override Complex32 Norm(double p)
+        public override double Norm(double p)
         {
-            if (p < 0.0)
-            {
-                throw new ArgumentOutOfRangeException("p");
-            }
+            if (p < 0d) throw new ArgumentOutOfRangeException("p");
 
-            if (double.IsPositiveInfinity(p))
-            {
-                return CommonParallel.Aggregate(0, Count, i => At(i).Magnitude, Math.Max, 0f);
-            }
+            if (p == 1d) return L1Norm();
+            if (p == 2d) return L2Norm();
+            if (double.IsPositiveInfinity(p)) return InfinityNorm();
 
-            var sum = 0.0;
-
+            double sum = 0d;
             for (var index = 0; index < Count; index++)
             {
                 sum += Math.Pow(At(index).Magnitude, p);
             }
-
-            return (float)Math.Pow(sum, 1.0 / p);
+            return Math.Pow(sum, 1.0/p);
         }
 
         /// <summary>
-        /// Conjugates vector and save result to <paramref name="target"/>
+        /// Conjugates vector and save result to <paramref name="result"/>
         /// </summary>
-        /// <param name="target">Target vector</param>
-        protected override void DoConjugate(Vector<Complex32> target)
+        /// <param name="result">Target vector</param>
+        protected override void DoConjugate(Vector<Complex32> result)
         {
             for (var index = 0; index < Count; index++)
             {
-                target.At(index, At(index).Conjugate());
+                result.At(index, At(index).Conjugate());
             }
         }
 
         /// <summary>
-        /// Negates vector and saves result to <paramref name="target"/>
+        /// Negates vector and saves result to <paramref name="result"/>
         /// </summary>
-        /// <param name="target">Target vector</param>
-        protected override void DoNegate(Vector<Complex32> target)
+        /// <param name="result">Target vector</param>
+        protected override void DoNegate(Vector<Complex32> result)
         {
             for (var index = 0; index < Count; index++)
             {
-                target.At(index, -At(index));
+                result.At(index, -At(index));
             }
         }
 
         /// <summary>
         /// Returns the index of the absolute maximum element.
         /// </summary>
-        /// <returns>The index of absolute maximum element.</returns>          
+        /// <returns>The index of absolute maximum element.</returns>
         public override int MaximumIndex()
         {
             throw new NotSupportedException();
@@ -362,7 +412,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         /// <summary>
         /// Returns the index of the minimum element.
         /// </summary>
-        /// <returns>The index of minimum element.</returns>  
+        /// <returns>The index of minimum element.</returns>
         public override int MinimumIndex()
         {
             throw new NotSupportedException();
@@ -379,19 +429,19 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         /// </returns>
         public override Vector<Complex32> Normalize(double p)
         {
-            if (p < 0.0)
+            if (p < 0d)
             {
                 throw new ArgumentOutOfRangeException("p");
             }
 
-            var norm = Norm(p);
+            double norm = Norm(p);
             var clone = Clone();
-            if (norm.Real == 0.0f)
+            if (norm == 0d)
             {
                 return clone;
             }
 
-            clone.Multiply(1.0f / norm, clone);
+            clone.Multiply((float)(1d / norm), clone);
 
             return clone;
         }

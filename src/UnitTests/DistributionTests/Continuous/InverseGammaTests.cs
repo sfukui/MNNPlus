@@ -1,4 +1,4 @@
-// <copyright file="InverseGammaTests.cs" company="Math.NET">
+﻿// <copyright file="InverseGammaTests.cs" company="Math.NET">
 // Math.NET Numerics, part of the Math.NET Project
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
@@ -24,13 +24,13 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using System.Linq;
+using MathNet.Numerics.Distributions;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
 {
-    using System;
-    using System.Linq;
-    using Distributions;
-    using NUnit.Framework;
-
     /// <summary>
     /// Inverse gamma distribution tests.
     /// </summary>
@@ -87,8 +87,8 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [Test]
         public void ValidateToString()
         {
-            var n = new InverseGamma(1.1, 2.1);
-            Assert.AreEqual(String.Format("InverseGamma(Shape = {0}, Inverse Scale = {1})", n.Shape, n.Scale), n.ToString());
+            var n = new InverseGamma(1.1d, 2.1d);
+            Assert.AreEqual("InverseGamma(α = 1.1, β = 2.1)", n.ToString());
         }
 
         /// <summary>
@@ -262,14 +262,9 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateDensity(double a, double b, double x)
         {
             var n = new InverseGamma(a, b);
-            if (x >= 0)
-            {
-                Assert.AreEqual(Math.Pow(b, a) * Math.Pow(x, -a - 1.0) * Math.Exp(-b / x) / SpecialFunctions.Gamma(a), n.Density(x));
-            }
-            else
-            {
-                Assert.AreEqual(0.0, n.Density(x));
-            }
+            double expected = Math.Pow(b, a)*Math.Pow(x, -a - 1.0)*Math.Exp(-b/x)/SpecialFunctions.Gamma(a);
+            Assert.AreEqual(expected, n.Density(x));
+            Assert.AreEqual(expected, InverseGamma.PDF(a, b, x));
         }
 
         /// <summary>
@@ -290,7 +285,9 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateDensityLn(double a, double b, double x)
         {
             var n = new InverseGamma(a, b);
-            Assert.AreEqual(Math.Log(n.Density(x)), n.DensityLn(x));
+            double expected = Math.Log(Math.Pow(b, a)*Math.Pow(x, -a - 1.0)*Math.Exp(-b/x)/SpecialFunctions.Gamma(a));
+            Assert.AreEqual(expected, n.DensityLn(x));
+            Assert.AreEqual(expected, InverseGamma.PDFLn(a, b, x));
         }
 
         /// <summary>
@@ -332,7 +329,9 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateCumulativeDistribution(double a, double b, double x)
         {
             var n = new InverseGamma(a, b);
-            Assert.AreEqual(SpecialFunctions.GammaUpperRegularized(a, b / x), n.CumulativeDistribution(x));
+            double expected = SpecialFunctions.GammaUpperRegularized(a, b/x);
+            Assert.AreEqual(expected, n.CumulativeDistribution(x));
+            Assert.AreEqual(expected, InverseGamma.CDF(a, b, x));
         }
     }
 }

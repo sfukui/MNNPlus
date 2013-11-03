@@ -24,15 +24,17 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using MathNet.Numerics.Distributions;
+using MathNet.Numerics.Random;
+using MathNet.Numerics.Statistics;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.DistributionTests
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using Distributions;
-    using Numerics.Random;
-    using NUnit.Framework;
-    using Statistics;
+    using Random = System.Random;
 
     /// <summary>
     /// This class will perform various tests on discrete and continuous univariate distributions. The multivariate distributions
@@ -158,22 +160,19 @@ namespace MathNet.Numerics.UnitTests.DistributionTests
             }
         }
 
-        /// <summary>
-        /// Fail set random source with <c>null</c> reference.
-        /// </summary>
         [Test]
-        public void FailSetRandomSourceWithNullReference()
+        public void HasRandomSourceEvenAfterSetToNull()
         {
             foreach (var dd in _discreteDistributions)
             {
-                var dd1 = dd;
-                Assert.Throws<ArgumentNullException>(() => dd1.RandomSource = null);
+                Assert.DoesNotThrow(() => dd.RandomSource = null);
+                Assert.IsNotNull(dd.RandomSource);
             }
 
             foreach (var cd in _continuousDistributions)
             {
-                var cd1 = cd;
-                Assert.Throws<ArgumentNullException>(() => cd1.RandomSource = null);
+                Assert.DoesNotThrow(() => cd.RandomSource = null);
+                Assert.IsNotNull(cd.RandomSource);
             }
         }
 
@@ -238,7 +237,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests
         /// <param name="delta">The error probability we are willing to tolerate.</param>
         /// <param name="s">The samples to use for testing.</param>
         /// <param name="dist">The distribution we are testing.</param>
-        public static void VapnikChervonenkisTest(double epsilon, double delta, IEnumerable<double> s, IDistribution dist)
+        public static void VapnikChervonenkisTest(double epsilon, double delta, IEnumerable<double> s, IUnivariateDistribution dist)
         {
             // Using VC-dimension, we can bound the probability of making an error when estimating empirical probability
             // distributions. We are using Theorem 2.41 in "All Of Nonparametric Statistics". 

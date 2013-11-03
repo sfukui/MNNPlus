@@ -1,4 +1,4 @@
-// <copyright file="ErlangTests.cs" company="Math.NET">
+﻿// <copyright file="ErlangTests.cs" company="Math.NET">
 // Math.NET Numerics, part of the Math.NET Project
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
@@ -24,13 +24,13 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using System.Linq;
+using MathNet.Numerics.Distributions;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
 {
-    using System;
-    using System.Linq;
-    using Distributions;
-    using NUnit.Framework;
-
     /// <summary>
     /// Erlang distribution tests.
     /// </summary>
@@ -61,7 +61,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         {
             var n = new Erlang(shape, invScale);
             Assert.AreEqual(shape, n.Shape);
-            Assert.AreEqual(invScale, n.InvScale);
+            Assert.AreEqual(invScale, n.Rate);
         }
 
         /// <summary>
@@ -92,9 +92,9 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [TestCase(10, Double.PositiveInfinity)]
         public void CanCreateErlangWithShapeInvScale(int shape, double invScale)
         {
-            var n = Erlang.WithShapeInvScale(shape, invScale);
+            var n = Erlang.WithShapeRate(shape, invScale);
             Assert.AreEqual(shape, n.Shape);
-            Assert.AreEqual(invScale, n.InvScale);
+            Assert.AreEqual(invScale, n.Rate);
         }
 
         /// <summary>
@@ -121,8 +121,8 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [Test]
         public void ValidateToString()
         {
-            var n = new Erlang(1, 2.0);
-            Assert.AreEqual("Erlang(Shape = 1, Inverse Scale = 2)", n.ToString());
+            var n = new Erlang(1, 2d);
+            Assert.AreEqual("Erlang(k = 1, λ = 2)", n.ToString());
         }
 
         /// <summary>
@@ -193,7 +193,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         {
             new Erlang(1, 1.0)
             {
-                InvScale = invScale
+                Rate = invScale
             };
         }
 
@@ -204,7 +204,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void SetInvScaleFailsWithNegativeInvScale()
         {
             var n = new Erlang(1, 1.0);
-            Assert.Throws<ArgumentOutOfRangeException>(() => n.InvScale = -1.0);
+            Assert.Throws<ArgumentOutOfRangeException>(() => n.Rate = -1.0);
         }
 
         /// <summary>
@@ -240,7 +240,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateVariance(int shape, double invScale, double var)
         {
             var n = new Erlang(shape, invScale);
-            AssertHelpers.AlmostEqual(var, n.Variance, 15);
+            AssertHelpers.AlmostEqualRelative(var, n.Variance, 15);
         }
 
         /// <summary>
@@ -258,7 +258,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateStdDev(int shape, double invScale, double sdev)
         {
             var n = new Erlang(shape, invScale);
-            AssertHelpers.AlmostEqual(sdev, n.StdDev, 15);
+            AssertHelpers.AlmostEqualRelative(sdev, n.StdDev, 15);
         }
 
         /// <summary>
@@ -276,7 +276,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateEntropy(int shape, double invScale, double entropy)
         {
             var n = new Erlang(shape, invScale);
-            AssertHelpers.AlmostEqual(entropy, n.Entropy, 13);
+            AssertHelpers.AlmostEqualRelative(entropy, n.Entropy, 12);
         }
 
         /// <summary>
@@ -294,7 +294,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateSkewness(int shape, double invScale, double skewness)
         {
             var n = new Erlang(shape, invScale);
-            AssertHelpers.AlmostEqual(skewness, n.Skewness, 15);
+            AssertHelpers.AlmostEqualRelative(skewness, n.Skewness, 15);
         }
 
         /// <summary>
@@ -372,7 +372,8 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateDensity(int shape, double invScale, double x, double pdf)
         {
             var n = new Erlang(shape, invScale);
-            AssertHelpers.AlmostEqual(pdf, n.Density(x), 14);
+            AssertHelpers.AlmostEqualRelative(pdf, n.Density(x), 13);
+            AssertHelpers.AlmostEqualRelative(pdf, Erlang.PDF(shape, invScale, x), 13);
         }
 
         /// <summary>
@@ -403,7 +404,8 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateDensityLn(int shape, double invScale, double x, double pdfln)
         {
             var n = new Erlang(shape, invScale);
-            AssertHelpers.AlmostEqual(pdfln, n.DensityLn(x), 14);
+            AssertHelpers.AlmostEqualRelative(pdfln, n.DensityLn(x), 13);
+            AssertHelpers.AlmostEqualRelative(pdfln, Erlang.PDFLn(shape, invScale, x), 13);
         }
 
         /// <summary>
@@ -455,7 +457,8 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void ValidateCumulativeDistribution(int shape, double invScale, double x, double cdf)
         {
             var n = new Erlang(shape, invScale);
-            AssertHelpers.AlmostEqual(cdf, n.CumulativeDistribution(x), 14);
+            AssertHelpers.AlmostEqualRelative(cdf, n.CumulativeDistribution(x), 13);
+            AssertHelpers.AlmostEqualRelative(cdf, Erlang.CDF(shape, invScale, x), 13);
         }
     }
 }
