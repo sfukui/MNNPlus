@@ -28,27 +28,16 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using MathNet.Numerics.Interpolation;
+using NUnit.Framework;
+
 namespace MathNet.Numerics.UnitTests.InterpolationTests
 {
-    using System;
-    using Interpolation;
-    using NUnit.Framework;
-
-    /// <summary>
-    /// CubicSpline Test case.
-    /// </summary>
-    [TestFixture]
+    [TestFixture, Category("Interpolation")]
     public class CubicSplineTest
     {
-        /// <summary>
-        /// Sample points.
-        /// </summary>
-        private readonly double[] _t = new[] { -2.0, -1.0, 0.0, 1.0, 2.0 };
-
-        /// <summary>
-        /// Sample values.
-        /// </summary>
-        private readonly double[] _x = new[] { 1.0, 2.0, -1.0, 0.0, 1.0 };
+        readonly double[] _t = { -2.0, -1.0, 0.0, 1.0, 2.0 };
+        readonly double[] _y = { 1.0, 2.0, -1.0, 0.0, 1.0 };
 
         /// <summary>
         /// Verifies that the interpolation matches the given value at all the provided sample points.
@@ -56,14 +45,10 @@ namespace MathNet.Numerics.UnitTests.InterpolationTests
         [Test]
         public void NaturalFitsAtSamplePoints()
         {
-            IInterpolation interpolation = new CubicSplineInterpolation(_t, _x);
-
-            for (int i = 0; i < _x.Length; i++)
+            IInterpolation it = CubicSpline.Interpolate(_t, _y);
+            for (int i = 0; i < _y.Length; i++)
             {
-                Assert.AreEqual(_x[i], interpolation.Interpolate(_t[i]), "A Exact Point " + i);
-
-                var actual = interpolation.DifferentiateAll(_t[i]);
-                Assert.AreEqual(_x[i], actual.Item1, "B Exact Point " + i);
+                Assert.AreEqual(_y[i], it.Interpolate(_t[i]), "A Exact Point " + i);
             }
         }
 
@@ -89,12 +74,8 @@ namespace MathNet.Numerics.UnitTests.InterpolationTests
         [TestCase(-10.0, 677, 1e-12)]
         public void NaturalFitsAtArbitraryPointsWithMaple(double t, double x, double maxAbsoluteError)
         {
-            IInterpolation interpolation = new CubicSplineInterpolation(_t, _x);
-
-            Assert.AreEqual(x, interpolation.Interpolate(t), maxAbsoluteError, "Interpolation at {0}", t);
-
-            var actual = interpolation.DifferentiateAll(t);
-            Assert.AreEqual(x, actual.Item1, maxAbsoluteError, "Interpolation as by-product of differentiation at {0}", t);
+            IInterpolation it = CubicSpline.Interpolate(_t, _y);
+            Assert.AreEqual(x, it.Interpolate(t), maxAbsoluteError, "Interpolation at {0}", t);
         }
 
         /// <summary>
@@ -103,14 +84,10 @@ namespace MathNet.Numerics.UnitTests.InterpolationTests
         [Test]
         public void FixedFirstDerivativeFitsAtSamplePoints()
         {
-            IInterpolation interpolation = new CubicSplineInterpolation(_t, _x, SplineBoundaryCondition.FirstDerivative, 1.0, SplineBoundaryCondition.FirstDerivative, -1.0);
-
-            for (int i = 0; i < _x.Length; i++)
+            IInterpolation it = CubicSpline.InterpolateBoundaries(_t, _y, SplineBoundaryCondition.FirstDerivative, 1.0, SplineBoundaryCondition.FirstDerivative, -1.0);
+            for (int i = 0; i < _y.Length; i++)
             {
-                Assert.AreEqual(_x[i], interpolation.Interpolate(_t[i]), "A Exact Point " + i);
-
-                var actual = interpolation.DifferentiateAll(_t[i]);
-                Assert.AreEqual(_x[i], actual.Item1, "B Exact Point " + i);
+                Assert.AreEqual(_y[i], it.Interpolate(_t[i]), "A Exact Point " + i);
             }
         }
 
@@ -136,12 +113,8 @@ namespace MathNet.Numerics.UnitTests.InterpolationTests
         [TestCase(-10.0, 1330.1428571428571429, 1e-12)]
         public void FixedFirstDerivativeFitsAtArbitraryPointsWithMaple(double t, double x, double maxAbsoluteError)
         {
-            IInterpolation interpolation = new CubicSplineInterpolation(_t, _x, SplineBoundaryCondition.FirstDerivative, 1.0, SplineBoundaryCondition.FirstDerivative, -1.0);
-
-            Assert.AreEqual(x, interpolation.Interpolate(t), maxAbsoluteError, "Interpolation at {0}", t);
-
-            var actual = interpolation.DifferentiateAll(t);
-            Assert.AreEqual(x, actual.Item1, maxAbsoluteError, "Interpolation as by-product of differentiation at {0}", t);
+            IInterpolation it = CubicSpline.InterpolateBoundaries(_t, _y, SplineBoundaryCondition.FirstDerivative, 1.0, SplineBoundaryCondition.FirstDerivative, -1.0);
+            Assert.AreEqual(x, it.Interpolate(t), maxAbsoluteError, "Interpolation at {0}", t);
         }
 
         /// <summary>
@@ -150,14 +123,10 @@ namespace MathNet.Numerics.UnitTests.InterpolationTests
         [Test]
         public void FixedSecondDerivativeFitsAtSamplePoints()
         {
-            IInterpolation interpolation = new CubicSplineInterpolation(_t, _x, SplineBoundaryCondition.SecondDerivative, -5.0, SplineBoundaryCondition.SecondDerivative, -1.0);
-
-            for (int i = 0; i < _x.Length; i++)
+            IInterpolation it = CubicSpline.InterpolateBoundaries(_t, _y, SplineBoundaryCondition.SecondDerivative, -5.0, SplineBoundaryCondition.SecondDerivative, -1.0);
+            for (int i = 0; i < _y.Length; i++)
             {
-                Assert.AreEqual(_x[i], interpolation.Interpolate(_t[i]), "A Exact Point " + i);
-
-                var actual = interpolation.DifferentiateAll(_t[i]);
-                Assert.AreEqual(_x[i], actual.Item1, "B Exact Point " + i);
+                Assert.AreEqual(_y[i], it.Interpolate(_t[i]), "A Exact Point " + i);
             }
         }
 
@@ -183,12 +152,8 @@ namespace MathNet.Numerics.UnitTests.InterpolationTests
         [TestCase(-10.0, -37, 1e-12)]
         public void FixedSecondDerivativeFitsAtArbitraryPointsWithMaple(double t, double x, double maxAbsoluteError)
         {
-            IInterpolation interpolation = new CubicSplineInterpolation(_t, _x, SplineBoundaryCondition.SecondDerivative, -5.0, SplineBoundaryCondition.SecondDerivative, -1.0);
-
-            Assert.AreEqual(x, interpolation.Interpolate(t), maxAbsoluteError, "Interpolation at {0}", t);
-
-            var actual = interpolation.DifferentiateAll(t);
-            Assert.AreEqual(x, actual.Item1, maxAbsoluteError, "Interpolation as by-product of differentiation at {0}", t);
+            IInterpolation it = CubicSpline.InterpolateBoundaries(_t, _y, SplineBoundaryCondition.SecondDerivative, -5.0, SplineBoundaryCondition.SecondDerivative, -1.0);
+            Assert.AreEqual(x, it.Interpolate(t), maxAbsoluteError, "Interpolation at {0}", t);
         }
 
         /// <summary>
@@ -202,23 +167,11 @@ namespace MathNet.Numerics.UnitTests.InterpolationTests
         {
             double[] x, y, xtest, ytest;
             LinearInterpolationCase.Build(out x, out y, out xtest, out ytest, samples);
-            IInterpolation interpolation = new CubicSplineInterpolation(x, y);
+            IInterpolation it = CubicSpline.Interpolate(x, y);
             for (int i = 0; i < xtest.Length; i++)
             {
-                Assert.AreEqual(ytest[i], interpolation.Interpolate(xtest[i]), 1e-15, "Linear with {0} samples, sample {1}", samples, i);
+                Assert.AreEqual(ytest[i], it.Interpolate(xtest[i]), 1e-15, "Linear with {0} samples, sample {1}", samples, i);
             }
-        }
-
-        /// <summary>
-        /// Verifies that sample points are required to be sorted in strictly monotonically ascending order.
-        /// </summary>
-        [Test]
-        [ExpectedException(typeof(ArgumentException))]
-        public void Constructor_SamplePointsNotStrictlyAscending_Throws()
-        {
-            var x = new[] { -1.0, 0.0, 1.5, 1.5, 2.5, 4.0 };
-            var y = new[] { 1.0, 0.3, -0.7, -0.6, -0.1, 0.4 };
-            var interpolation = new CubicSplineInterpolation(x, y);
         }
     }
 }

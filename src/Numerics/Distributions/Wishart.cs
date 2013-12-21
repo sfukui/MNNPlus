@@ -33,6 +33,7 @@ using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 using MathNet.Numerics.LinearAlgebra.Factorization;
 using MathNet.Numerics.Properties;
+using MathNet.Numerics.Random;
 
 namespace MathNet.Numerics.Distributions
 {
@@ -74,7 +75,7 @@ namespace MathNet.Numerics.Distributions
         /// <param name="scale">The scale matrix (V) for the Wishart distribution.</param>
         public Wishart(double degreesOfFreedom, Matrix<double> scale)
         {
-            _random = new System.Random(Random.RandomSeed.Guid());
+            _random = MersenneTwister.Default;
             SetParameters(degreesOfFreedom, scale);
         }
 
@@ -86,7 +87,7 @@ namespace MathNet.Numerics.Distributions
         /// <param name="randomSource">The random number generator which is used to draw random samples.</param>
         public Wishart(double degreesOfFreedom, Matrix<double> scale, System.Random randomSource)
         {
-            _random = randomSource ?? new System.Random(Random.RandomSeed.Guid());
+            _random = randomSource ?? MersenneTwister.Default;
             SetParameters(degreesOfFreedom, scale);
         }
 
@@ -207,16 +208,8 @@ namespace MathNet.Numerics.Distributions
         {
             get
             {
-                var res = _scale.CreateMatrix(_scale.RowCount, _scale.ColumnCount);
-                for (var i = 0; i < res.RowCount; i++)
-                {
-                    for (var j = 0; j < res.ColumnCount; j++)
-                    {
-                        res.At(i, j, _degreesOfFreedom*((_scale.At(i, j)*_scale.At(i, j)) + (_scale.At(i, i)*_scale.At(j, j))));
-                    }
-                }
-
-                return res;
+                return Matrix<double>.Build.Dense(_scale.RowCount, _scale.ColumnCount,
+                    (i, j) => _degreesOfFreedom*((_scale.At(i, j)*_scale.At(i, j)) + (_scale.At(i, i)*_scale.At(j, j))));
             }
         }
 

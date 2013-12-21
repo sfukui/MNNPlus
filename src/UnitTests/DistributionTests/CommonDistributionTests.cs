@@ -40,7 +40,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests
     /// This class will perform various tests on discrete and continuous univariate distributions. The multivariate distributions
     /// will implement these respective tests in their local unit test classes as they do not adhere to the same interfaces.
     /// </summary>
-    [TestFixture]
+    [TestFixture, Category("Distributions")]
     public class CommonDistributionTests
     {
         /// <summary>
@@ -151,12 +151,12 @@ namespace MathNet.Numerics.UnitTests.DistributionTests
         {
             foreach (var dd in _discreteDistributions)
             {
-                dd.RandomSource = new Random();
+                dd.RandomSource = MersenneTwister.Default;
             }
 
             foreach (var cd in _continuousDistributions)
             {
-                cd.RandomSource = new Random();
+                cd.RandomSource = MersenneTwister.Default;
             }
         }
 

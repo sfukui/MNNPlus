@@ -32,6 +32,7 @@ using System;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Factorization;
 using MathNet.Numerics.Properties;
+using MathNet.Numerics.Random;
 
 namespace MathNet.Numerics.Distributions
 {
@@ -65,7 +66,7 @@ namespace MathNet.Numerics.Distributions
         /// <param name="scale">The scale matrix (Ψ) for the inverse Wishart distribution.</param>
         public InverseWishart(double degreesOfFreedom, Matrix<double> scale)
         {
-            _random = new System.Random(Random.RandomSeed.Guid());
+            _random = MersenneTwister.Default;
             SetParameters(degreesOfFreedom, scale);
         }
 
@@ -77,7 +78,7 @@ namespace MathNet.Numerics.Distributions
         /// <param name="randomSource">The random number generator which is used to draw random samples.</param>
         public InverseWishart(double degreesOfFreedom, Matrix<double> scale, System.Random randomSource)
         {
-            _random = randomSource ?? new System.Random(Random.RandomSeed.Guid());
+            _random = randomSource ?? MersenneTwister.Default;
             SetParameters(degreesOfFreedom, scale);
         }
 
@@ -156,7 +157,7 @@ namespace MathNet.Numerics.Distributions
         public System.Random RandomSource
         {
             get { return _random; }
-            set { _random = value ?? new System.Random(Random.RandomSeed.Guid()); }
+            set { _random = value ?? MersenneTwister.Default; }
         }
 
         /// <summary>
@@ -187,18 +188,12 @@ namespace MathNet.Numerics.Distributions
         {
             get
             {
-                var res = _scale.CreateMatrix(_scale.RowCount, _scale.ColumnCount);
-                for (var i = 0; i < res.RowCount; i++)
+                return Matrix<double>.Build.Dense(_scale.RowCount, _scale.ColumnCount, (i, j) =>
                 {
-                    for (var j = 0; j < res.ColumnCount; j++)
-                    {
-                        var num1 = ((_freedom - _scale.RowCount + 1)*_scale.At(i, j)*_scale.At(i, j)) + ((_freedom - _scale.RowCount - 1)*_scale.At(i, i)*_scale.At(j, j));
-                        var num2 = (_freedom - _scale.RowCount)*(_freedom - _scale.RowCount - 1)*(_freedom - _scale.RowCount - 1)*(_freedom - _scale.RowCount - 3);
-                        res.At(i, j, num1/num2);
-                    }
-                }
-
-                return res;
+                    var num1 = ((_freedom - _scale.RowCount + 1)*_scale.At(i, j)*_scale.At(i, j)) + ((_freedom - _scale.RowCount - 1)*_scale.At(i, i)*_scale.At(j, j));
+                    var num2 = (_freedom - _scale.RowCount)*(_freedom - _scale.RowCount - 1)*(_freedom - _scale.RowCount - 1)*(_freedom - _scale.RowCount - 3);
+                    return num1/num2;
+                });
             }
         }
 

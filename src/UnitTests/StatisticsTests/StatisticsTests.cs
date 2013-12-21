@@ -43,7 +43,7 @@ namespace MathNet.Numerics.UnitTests.StatisticsTests
     /// <summary>
     /// Statistics Tests
     /// </summary>
-    [TestFixture]
+    [TestFixture, Category("Statistics")]
     public class StatisticsTests
     {
         readonly IDictionary<string, StatTestData> _data = new Dictionary<string, StatTestData>
@@ -713,7 +713,7 @@ namespace MathNet.Numerics.UnitTests.StatisticsTests
         [Test]
         public void Median_CodeplexIssue5667()
         {
-            var seq = File.ReadLines("./data/Codeplex-5667.csv").Select(double.Parse);
+            var seq = File.ReadAllLines("./data/Codeplex-5667.csv").Select(double.Parse);
             Assert.AreEqual(1.0, Statistics.Median(seq));
 
             var array = seq.ToArray();
