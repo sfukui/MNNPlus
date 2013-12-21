@@ -13,42 +13,35 @@ namespace MathNet.Numerics.Statistics.Mcmc
     {
         private AdaptiveRejectionMetropolisSamplerFSharp m_ARMSFS;
 
-        public AdaptiveRejectionMetropolisSampler(Func<double, double> lnPdf, double xMin, double xMax,
-            double x1, double xn, int burnIn, MathNet.Numerics.Random.AbstractRandomNumberGenerator sampler)
+        public AdaptiveRejectionMetropolisSampler(System.Func<double, double> lnPdf, double xMin, double xMax,
+            double x1, double xn, MathNet.Numerics.Random.AbstractRandomNumberGenerator sampler)
         {
-            m_ARMSFS = new AdaptiveRejectionMetropolisSamplerFSharp(CSFuncToFSFunc(lnPdf), xMin, xMax, x1, xn,
-                burnIn, sampler);
+            m_ARMSFS = new AdaptiveRejectionMetropolisSamplerFSharp(CSFuncToFSFunc(lnPdf), xMin, xMax, x1, xn, sampler);
         }
 
-        public AdaptiveRejectionMetropolisSampler(Func<double, double> lnPdf, double xMin, double xMax,
-            double x1, double xn, int burnIn)
-        {
-            m_ARMSFS = new AdaptiveRejectionMetropolisSamplerFSharp(CSFuncToFSFunc(lnPdf), xMin, xMax, x1, xn, burnIn);
-        }
-
-        public AdaptiveRejectionMetropolisSampler(Func<double, double> lnPdf, double xMin, double xMax,
-            double x1, double xn, int burnIn, int seed)
-        {
-            m_ARMSFS = new AdaptiveRejectionMetropolisSamplerFSharp(CSFuncToFSFunc(lnPdf), xMin, xMax, x1, xn, burnIn, seed);
-        }
-        
-        public AdaptiveRejectionMetropolisSampler(Func<double, double> lnPdf, double xMin, double xMax, int burnIn, int seed)
-        {
-            m_ARMSFS = new AdaptiveRejectionMetropolisSamplerFSharp(CSFuncToFSFunc(lnPdf), xMin, xMax, burnIn, seed);
-        }
-
-        public AdaptiveRejectionMetropolisSampler(Func<double, double> lnPdf, double xMin, double xMax,
+        public AdaptiveRejectionMetropolisSampler(System.Func<double, double> lnPdf, double xMin, double xMax,
             double x1, double xn)
         {
             m_ARMSFS = new AdaptiveRejectionMetropolisSamplerFSharp(CSFuncToFSFunc(lnPdf), xMin, xMax, x1, xn);
         }
 
-        public AdaptiveRejectionMetropolisSampler(Func<double, double> lnPdf, double xMin, double xMax)
+        public AdaptiveRejectionMetropolisSampler(System.Func<double, double> lnPdf, double xMin, double xMax,
+            double x1, double xn, int seed)
+        {
+            m_ARMSFS = new AdaptiveRejectionMetropolisSamplerFSharp(CSFuncToFSFunc(lnPdf), xMin, xMax, x1, xn, seed);
+        }
+
+        public AdaptiveRejectionMetropolisSampler(System.Func<double, double> lnPdf, double xMin, double xMax, int seed)
+        {
+            m_ARMSFS = new AdaptiveRejectionMetropolisSamplerFSharp(CSFuncToFSFunc(lnPdf), xMin, xMax, seed);
+        }
+
+        public AdaptiveRejectionMetropolisSampler(System.Func<double, double> lnPdf, double xMin, double xMax)
         {
             m_ARMSFS = new AdaptiveRejectionMetropolisSamplerFSharp(CSFuncToFSFunc(lnPdf), xMin, xMax);
         }
 
-        private Microsoft.FSharp.Core.FSharpFunc<double, double> CSFuncToFSFunc(Func<double, double> func)
+        private Microsoft.FSharp.Core.FSharpFunc<double, double> CSFuncToFSFunc(System.Func<double, double> func)
         {
             var fConv = new Converter<double, double>(func);
             return Microsoft.FSharp.Core.FSharpFunc<double, double>.FromConverter(fConv);

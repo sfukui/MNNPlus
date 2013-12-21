@@ -117,18 +117,17 @@ namespace MathNet.Numerics.UnitTests.MCMCTests
         /// <summary>
         /// Unit tests for comparing two samples whose samplers have same seed.
         /// </summary>
-        /// <param name="burnIn">Burn-in times.</param>
         /// <param name="seed">Seed of samplers.</param>
-        [TestCase(0,1)]
-        [TestCase(1000,100)]
-        public void CompareSample_GB2_SameSeed(int burnIn, int seed)
+        [TestCase(1)]
+        [TestCase(100)]
+        public void CompareSample_GB2_SameSeed(int seed)
         {
             DenseVector parameters = new DenseVector(new double[4] { 1.65, 700.0, 2.34, 3.24 });
             Func<double, double> lnpdf = (double x) => { return lnPDF_GB2(x, parameters); };
 
             double xmin = 0.0, xmax = 20000.0, x1 = 150.0, xn = 2000.0;
-            var arms1 = new AdaptiveRejectionMetropolisSampler(lnpdf, xmin, xmax, x1, xn, burnIn, seed);
-            var arms2 = new AdaptiveRejectionMetropolisSampler(lnpdf, xmin, xmax, x1, xn, burnIn, seed);
+            var arms1 = new AdaptiveRejectionMetropolisSampler(lnpdf, xmin, xmax, x1, xn, seed);
+            var arms2 = new AdaptiveRejectionMetropolisSampler(lnpdf, xmin, xmax, x1, xn, seed);
             double[] sample1 = arms1.Sample(Iteration_GB2Test);
             double[] sample2 = arms2.Sample(Iteration_GB2Test);
 
