@@ -14,7 +14,7 @@ namespace MathNet.Numerics.Statistics.Mcmc
         private AdaptiveRejectionMetropolisSamplerFSharp m_ARMSFS;
 
         public AdaptiveRejectionMetropolisSampler(System.Func<double, double> lnPdf, double xMin, double xMax,
-            double x1, double xn, MathNet.Numerics.Random.AbstractRandomNumberGenerator sampler)
+            double x1, double xn, MathNet.Numerics.Random.RandomSource sampler)
         {
             m_ARMSFS = new AdaptiveRejectionMetropolisSamplerFSharp(CSFuncToFSFunc(lnPdf), xMin, xMax, x1, xn, sampler);
         }

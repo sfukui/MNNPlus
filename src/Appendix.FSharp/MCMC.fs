@@ -51,7 +51,7 @@ type AdaptiveRejectionMetropolisSampler =
     val m_Xn : float
     val mutable Abscissas : List<float>
     val mutable ProposalInfos : List<ZoneInfo>
-    val m_Sampler : AbstractRandomNumberGenerator
+    val m_Sampler : RandomSource
 
     static member private calcMoment (pdfLn: (float -> float)) (xMin: float) (xMax: float) (mFunc: (float -> float)) =
         let denom = Integrate.OnClosedInterval((fun x -> pdfLn x |> exp), xMin, xMax)
@@ -191,7 +191,7 @@ type AdaptiveRejectionMetropolisSampler =
         then
             this.Abscissas <- [x1; (x1 + xn) * 0.5; xn]
 
-    new(lnPdf:(float -> float), xMin:float, xMax:float, x1:float, xn:float, sampler:AbstractRandomNumberGenerator) as this =
+    new(lnPdf:(float -> float), xMin:float, xMax:float, x1:float, xn:float, sampler:RandomSource) as this =
         { m_LnPdf = lnPdf; m_XMin = xMin; m_XMax = xMax; m_X1 = x1; m_Xn = xn; Abscissas = List.empty; ProposalInfos = List.empty; m_Sampler = sampler}
         then
             this.Abscissas <- [x1; (x1 + xn) * 0.5; xn]
