@@ -9,9 +9,10 @@
     <OutputType>Library</OutputType>
     <RootNamespace>Appendix</RootNamespace>
     <AssemblyName>MathNet.Numerics.Appendix.FSharp</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <Name>Appendix.FSharp</Name>
     <TargetFrameworkProfile />
+    <TargetFSharpCoreVersion>4.3.0.0</TargetFSharpCoreVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -21,6 +22,7 @@
     <OutputPath>..\..\out\debug\Net40\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>0</WarningLevel>
+    <TargetFSharpCoreVersion>4.3.0.0</TargetFSharpCoreVersion>
     <DocumentationFile>
     </DocumentationFile>
   </PropertyGroup>
