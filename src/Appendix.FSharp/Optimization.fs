@@ -260,14 +260,16 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
     let mutable m_LatestGradientVector = None
     let mutable m_LatestWeightMatrix = None
 
+    let mutable m_WriteTrace : option<string -> unit> = None
+
     let isInvalidFloat (x: float) =
         if System.Double.IsInfinity x || System.Double.IsNaN x then true
         else false
          
     let qnsearch = new QuasiNewtonSearchBuilder()
 
-    member this.Iteration with get() = iteration and set v = m_Iteration <- if v <= 0 then defaultIteration else v
-    member this.Tolerance with get() = tolerance and set v = m_Tolerance <- if v <= 0.0 then defaultTolerance else v
+    member this.Iteration with get() = m_Iteration and set v = m_Iteration <- if v <= 0 then defaultIteration else v
+    member this.Tolerance with get() = m_Tolerance and set v = m_Tolerance <- if v <= 0.0 then defaultTolerance else v
     member this.DerivationMethod with get() = m_DerivationMethod and set v = m_DerivationMethod <- v
     member this.InitialStepSize with get() = m_InitialStepSize and set v = m_InitialStepSize <- v
     member this.MaxStepSize with get() = m_MaxStepSize and set v = m_MaxStepSize <- v
@@ -277,6 +279,15 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
     member this.LatestXVector with get() = m_LatestXVector
     member this.LatestGradientVector with get() = m_LatestGradientVector
     member this.LatestWeightMatrix with get() = m_LatestWeightMatrix
+
+    member this.TraceToStdOut = 
+        do m_WriteTrace <- Some(System.Console.WriteLine)
+
+    member this.TraceToGeneralOut (writer: string -> unit) =
+        do m_WriteTrace <- Some(writer)
+
+    member this.TraceNone =
+        do m_WriteTrace <- None
 
     member private this.differentiation x =
         let tRes = this.DerivationMethod x
@@ -307,14 +318,34 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
             | WeightMatrixInvalid -> { Status = 4; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
             | LineSearchFailure -> { Status = 5; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
 
+    member this.Trace (write: string -> unit) (w: Matrix<float>) (r: Vector<float>) (g: Vector<float>) (sw: System.Diagnostics.Stopwatch) =
+        do write("---- Tracing Log of BFGS Oprimization ----")
+        do write("Elapsed Time:")
+        do write(sw.Elapsed.ToString())
+        do write("Estimated Parameters:")
+        do write(r.ToVectorString(1, r.Count, null))
+        do write("Gradients:")
+        do write(g.ToVectorString(1, g.Count, null))
+        do write("Weight Matrix:")
+        do write(w.ToMatrixString(w.RowCount, w.ColumnCount, null))
+
     member this.Minimize(initVal: Vector<float>) =
+        let sw = new System.Diagnostics.Stopwatch();
+        do sw.Start()
+
         let rec search (w: Matrix<float>) (r: Vector<float>) (g: Vector<float>) count =
+            if m_WriteTrace.IsSome
+            then let writer = m_WriteTrace.Value
+                 do this.Trace writer w r g sw  
+
             qnsearch {
                 let wi = w.Inverse()
                 let cur_fval = f r
 
                 if System.Double.IsNaN(cur_fval) || System.Double.IsInfinity(cur_fval) then return FunctionValueInvalid
-                else if g.Norm(2.0) < this.Tolerance then return Converged(r, cur_fval, wi)
+                else if g.Norm(2.0) < this.Tolerance
+                then do sw.Stop()
+                     return Converged(r, cur_fval, wi)
                 else if (count >= this.Iteration) then return NotConverged(r, cur_fval, wi)
                 else let! step = this.lineSearch r ((-1.0) * (wi * g))
                      let newR = r - step * (wi * g)
