@@ -89,7 +89,7 @@ type Differentiation() =
         let xDiffVec (operator : float -> float -> float) (xVec : Vector<float>) =
             Vector.mapi (fun j x -> if j = index then (operator x h) else x) xVec
         let dxUpperLower = [| (xDiffVec (+) xs) ; (xDiffVec (-) xs) |]
-        let fUpperLower = Array.Parallel.map f dxUpperLower
+        let fUpperLower = Array.map f dxUpperLower
 
         let res = 0.5 * (fUpperLower.[0] - fUpperLower.[1]) / h
 
@@ -116,7 +116,7 @@ type Differentiation() =
             if i > Differentiation.SearchTimeOfMaxInitalDenominator then
                 if Array.isEmpty(allValidCands) then Failure
                 else Success( (Array.unzip allValidCands) |> snd |> Array.rev )
-            else if zeroNum > Differentiation.CriterionTimeToZeroValue then Array.Parallel.init Differentiation.NumberOfCandidates (fun i -> Result(0.0)) |> Success
+            else if zeroNum > Differentiation.CriterionTimeToZeroValue then Array.init Differentiation.NumberOfCandidates (fun i -> Result(0.0)) |> Success
             else if (Array.forall isZero gradientsCandidates) then let nextInitDenominator = (fst gradientsCandidates.[0]) * Differentiation.DenominatorMultiplier
                                                                    let nextCandidates = getGradientCandidates Array.empty<(float * GradientResult)> nextInitDenominator Differentiation.NumberOfCandidates
                                                                    search nextCandidates (i + 1) (zeroNum + 1) allValidCands
@@ -140,9 +140,9 @@ type Differentiation() =
         
         let getSmallestRangeSet gs =
             let range (gsSub : float array) = ( (Array.max gsSub) - (Array.min gsSub) ) |> abs
-            let gsValue = Array.Parallel.map getGradientResultValue gs
-            let gsSubsets = Array.Parallel.init (Differentiation.NumberOfCandidates - Differentiation.ExtrapolationLength + 1) (fun i -> Array.sub gsValue i Differentiation.ExtrapolationLength)
-            let gsSubsetRanges = Array.Parallel.map range gsSubsets
+            let gsValue = Array.map getGradientResultValue gs
+            let gsSubsets = Array.init (Differentiation.NumberOfCandidates - Differentiation.ExtrapolationLength + 1) (fun i -> Array.sub gsValue i Differentiation.ExtrapolationLength)
+            let gsSubsetRanges = Array.map range gsSubsets
             let minError = Array.min gsSubsetRanges
             gsSubsets.[(Array.findIndex (fun x -> x = minError) gsSubsetRanges)]
 
@@ -151,7 +151,7 @@ type Differentiation() =
                 smallerHG + (smallerHG - greaterHG) / (Differentiation.DenominatorMultiplier**(2.0 * (float trial)) - 1.0)
 
             let hGTuples = Array.zip (Array.sub fds 0 (fds.Length-1)) (Array.sub fds 1 (fds.Length-1)) 
-            let newDs = Array.Parallel.map getOneExtrapolation hGTuples
+            let newDs = Array.map getOneExtrapolation hGTuples
             if Array.length newDs = 1 then newDs.[0] else richardsonExtrapolation newDs (trial+1)
         
         let searchResult = Differentiation.searchInitial (f, xs, index)
