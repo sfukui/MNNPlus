@@ -100,8 +100,8 @@ type Differentiation() =
 
     static member private searchInitial ((f: Vector<float> -> float), (xs: Vector<float>), index) = 
         let getGradientCandidates (initialGradients : (float * GradientResult) array) (initialDenominator : float) (length : int) =
-            let newGradients = Array.Parallel.init (length - initialGradients.Length) (fun i -> let h = initialDenominator * Differentiation.DenominatorMultiplier**(float i)
-                                                                                                (h, Differentiation.oneGradient(f, xs, h, index)) ) |> Array.rev
+            let newGradients = Array.init (length - initialGradients.Length) (fun i -> let h = initialDenominator * Differentiation.DenominatorMultiplier**(float i)
+                                                                                       (h, Differentiation.oneGradient(f, xs, h, index)) ) |> Array.rev
             Array.append newGradients initialGradients
 
         let isInvalid grad = match (snd grad) with
@@ -171,11 +171,11 @@ type Differentiation() =
         | _ -> Double.NaN
 
     static member Gradient ((f: Vector<float> -> float), xs: Vector<float>, hs: Vector<float>) =
-        let tRes = Array.init xs.Count (fun i -> Differentiation.oneGradient(f, xs, hs.[i], i))
+        let tRes = Array.Parallel.init xs.Count (fun i -> Differentiation.oneGradient(f, xs, hs.[i], i))
         DenseVector.init tRes.Length (fun i -> Differentiation.gradientResultToDouble tRes.[i])
         
     static member Gradient ((f: Vector<float> -> float), xs: Vector<float>) =
-        let tRes = Array.init xs.Count (fun i -> Differentiation.oneGradient(f, xs, i))
+        let tRes = Array.Parallel.init xs.Count (fun i -> Differentiation.oneGradient(f, xs, i))
         DenseVector.init tRes.Length (fun i -> Differentiation.gradientResultToDouble tRes.[i])
 
 (*    

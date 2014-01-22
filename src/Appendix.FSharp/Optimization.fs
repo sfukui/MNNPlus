@@ -242,6 +242,11 @@ type QuasiNewtonSearchBuilder() =
 
 type QuasiNewtonMethodResultFSharp = { Status: int; Parameters: Vector<double>; FunctionValue: System.Nullable<float>; InvertedWeightMatrix: Matrix<float> }
 
+[<CompiledName "TraceOutputFSharp">]
+type TraceOutput<'a> =
+    TextWriter of 'a
+    | StdOut
+    | NoTrace 
 
 [<CompiledName "BFGSFSharp">]
 type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =  
@@ -260,7 +265,7 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
     let mutable m_LatestGradientVector = None
     let mutable m_LatestWeightMatrix = None
 
-    let mutable m_WriteTrace : option<string -> unit> = None
+    let mutable m_WriteTrace = NoTrace
 
     let isInvalidFloat (x: float) =
         if System.Double.IsInfinity x || System.Double.IsNaN x then true
@@ -281,13 +286,13 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
     member this.LatestWeightMatrix with get() = m_LatestWeightMatrix
 
     member this.TraceToStdOut = 
-        do m_WriteTrace <- Some(System.Console.WriteLine)
+        do m_WriteTrace <- StdOut
 
-    member this.TraceToGeneralOut (writer: string -> unit) =
-        do m_WriteTrace <- Some(writer)
+    member this.TraceToTextWriter (writer: System.IO.TextWriter) =
+        do m_WriteTrace <- TextWriter(writer)
 
     member this.TraceNone =
-        do m_WriteTrace <- None
+        do m_WriteTrace <- NoTrace
 
     member private this.differentiation x =
         let tRes = this.DerivationMethod x
@@ -318,25 +323,27 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
             | WeightMatrixInvalid -> { Status = 4; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
             | LineSearchFailure -> { Status = 5; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
 
-    member this.Trace (write: string -> unit) (w: Matrix<float>) (r: Vector<float>) (g: Vector<float>) (sw: System.Diagnostics.Stopwatch) =
-        do write("---- Tracing Log of BFGS Oprimization ----")
-        do write("Elapsed Time:")
-        do write(sw.Elapsed.ToString())
-        do write("Estimated Parameters:")
-        do write(r.ToVectorString(1, r.Count, null))
-        do write("Gradients:")
-        do write(g.ToVectorString(1, g.Count, null))
-        do write("Weight Matrix:")
-        do write(w.ToMatrixString(w.RowCount, w.ColumnCount, null))
+    member private this.Trace (writeline: string -> unit) (w: Matrix<float>) (r: Vector<float>) (g: Vector<float>) (sw: System.Diagnostics.Stopwatch) =
+        do writeline("---- Tracing Log of BFGS Oprimization ----")
+        do writeline("Elapsed Time:")
+        do writeline(sw.Elapsed.ToString())
+        do writeline("Estimated Parameters:")
+        do writeline(r.ToVectorString(1, r.Count, null))
+        do writeline("Gradients:")
+        do writeline(g.ToVectorString(1, g.Count, null))
+        do writeline("Weight Matrix:")
+        do writeline(w.ToMatrixString(w.RowCount, w.ColumnCount, null))
 
     member this.Minimize(initVal: Vector<float>) =
         let sw = new System.Diagnostics.Stopwatch();
         do sw.Start()
 
-        let rec search (w: Matrix<float>) (r: Vector<float>) (g: Vector<float>) count =
-            if m_WriteTrace.IsSome
-            then let writer = m_WriteTrace.Value
-                 do this.Trace writer w r g sw  
+        let rec search (w: Matrix<float>) (r: Vector<float>) (g: Vector<float>) count = 
+            match m_WriteTrace with
+            | StdOut -> do this.Trace (System.Console.WriteLine) w r g sw
+            | TextWriter(writer) -> do this.Trace writer.WriteLine w r g sw
+                                    do writer.Flush()
+            | NoTrace -> ()
 
             qnsearch {
                 let wi = w.Inverse()
