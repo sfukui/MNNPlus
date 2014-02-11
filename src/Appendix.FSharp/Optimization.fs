@@ -323,16 +323,26 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
             | WeightMatrixInvalid -> { Status = 4; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
             | LineSearchFailure -> { Status = 5; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
 
-    member private this.Trace (writeline: string -> unit) (w: Matrix<float>) (r: Vector<float>) (g: Vector<float>) (sw: System.Diagnostics.Stopwatch) =
+    member private this.Trace (writeline: string -> unit) (sw: System.Diagnostics.Stopwatch) =
         do writeline("---- Tracing Log of BFGS Oprimization ----")
         do writeline("Elapsed Time:")
         do writeline(sw.Elapsed.ToString())
         do writeline("Estimated Parameters:")
-        do writeline(r.ToVectorString(1, r.Count, null))
+        match this.LatestXVector with
+        | Some(x : Vector<float>) -> writeline(x.ToVectorString(1, x.Count, null))
+        | None -> writeline("NaN")
         do writeline("Gradients:")
-        do writeline(g.ToVectorString(1, g.Count, null))
+        match this.LatestGradientVector with
+        | Some(x : Vector<float>) -> writeline(x.ToVectorString(1, x.Count, null))
+        | None -> writeline("NaN")
         do writeline("Weight Matrix:")
-        do writeline(w.ToMatrixString(w.RowCount, w.ColumnCount, null))
+        match this.LatestWeightMatrix with
+        | Some(x : Matrix<float>) -> writeline(x.ToMatrixString(x.RowCount, x.ColumnCount, null))
+        | None -> writeline("NaN")
+        do writeline("Step Size:")
+        match this.LatestStepSize with
+        | Some(x : float) -> writeline(x.ToString())
+        | None -> writeline("NaN")
 
     member this.Minimize(initVal: Vector<float>) =
         let sw = new System.Diagnostics.Stopwatch();
@@ -340,8 +350,8 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
 
         let rec search (w: Matrix<float>) (r: Vector<float>) (g: Vector<float>) count = 
             match m_WriteTrace with
-            | StdOut -> do this.Trace (System.Console.WriteLine) w r g sw
-            | TextWriter(writer) -> do this.Trace writer.WriteLine w r g sw
+            | StdOut -> do this.Trace (System.Console.WriteLine) sw
+            | TextWriter(writer) -> do this.Trace writer.WriteLine sw
                                     do writer.Flush()
             | NoTrace -> ()
 
