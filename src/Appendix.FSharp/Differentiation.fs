@@ -171,11 +171,13 @@ type Differentiation() =
         | _ -> Double.NaN
 
     static member Gradient ((f: Vector<float> -> float), xs: Vector<float>, hs: Vector<float>) =
-        let tRes = Array.Parallel.init xs.Count (fun i -> Differentiation.oneGradient(f, xs, hs.[i], i))
+        let tRes = Array.init xs.Count (fun i -> Differentiation.oneGradient(f, xs, hs.[i], i))
+//        let tRes = Array.Parallel.init xs.Count (fun i -> Differentiation.oneGradient(f, xs, hs.[i], i))
         DenseVector.init tRes.Length (fun i -> Differentiation.gradientResultToDouble tRes.[i])
         
     static member Gradient ((f: Vector<float> -> float), xs: Vector<float>) =
-        let tRes = Array.Parallel.init xs.Count (fun i -> Differentiation.oneGradient(f, xs, i))
+        let tRes = Array.init xs.Count (fun i -> Differentiation.oneGradient(f, xs, i))
+//        let tRes = Array.Parallel.init xs.Count (fun i -> Differentiation.oneGradient(f, xs, i))
         DenseVector.init tRes.Length (fun i -> Differentiation.gradientResultToDouble tRes.[i])
 
 (*    
