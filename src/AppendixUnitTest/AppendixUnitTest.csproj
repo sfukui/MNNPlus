@@ -59,6 +59,7 @@
     <Compile Include="MCMCTests\ARMSSamplingTests.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="MCMCTests\SliceSamplerTests.cs" />
     <Compile Include="OptimizationTests\MaximumLikelihoodTests.cs" />
     <Compile Include="OptimizationTests\SimpleOptimizationTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

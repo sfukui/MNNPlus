@@ -33,6 +33,7 @@ open MathNet.Numerics.LinearAlgebra
 open MathNet.Numerics.LinearAlgebra.Double
 open MathNet.Numerics.Random
 open MathNet.Numerics.Integration
+open System.Threading.Tasks
 
 [<CompiledName "ZoneInfoFSharp">]
 type ZoneInfo = {
@@ -213,3 +214,117 @@ type AdaptiveRejectionMetropolisSampler =
         { m_LnPdf = lnPdf; m_XMin = xMin; m_XMax = xMax; m_X1 = x1t; m_Xn = xnt; Abscissas = List.empty; ProposalInfos = List.empty; m_Sampler = new MersenneTwister(seed)}  
         then
             this.Abscissas <- [this.m_X1; (this.m_X1 + this.m_Xn) * 0.5; this.m_Xn]
+
+
+[<CompiledName "SliceSamplerFSharp">]
+type SliceSampler =
+    val m_LnPdf : float -> float
+    val m_XMin : float
+    val m_XMax : float
+    val m_Sampler : RandomSource
+    val m_LimitSliceMultiplier : int
+
+    new(lnPdf: (float -> float)) =
+        {m_LnPdf  =lnPdf; m_XMin = System.Double.NegativeInfinity; m_XMax = System.Double.PositiveInfinity;
+            m_Sampler = new MersenneTwister(); m_LimitSliceMultiplier = 1000}
+
+    new(lnPdf: (float -> float), xMin: float, xMax: float) =
+        {m_LnPdf = lnPdf; m_XMin = xMin; m_XMax = xMax; m_Sampler = new MersenneTwister(); m_LimitSliceMultiplier = 1000}
+
+    new(lnPdf: (float -> float), xMin: float, xMax: float, seed: int, m: int) =
+        {m_LnPdf = lnPdf; m_XMin = xMin; m_XMax = xMax; m_Sampler = new MersenneTwister(seed); m_LimitSliceMultiplier = m}
+
+//    member this.Doubling(p: int) =
+//        let u_dst = new Distributions.ContinuousUniform(0.0, 1.0, this.m_Sampler)
+//        
+//        let getinterval(x0: float, y: float, w: float) =
+//            let rec doubling(interval: (float * float), k: int) =
+//                let (l,r) = interval
+//                if (k > 0 && (y < (this.Pdf l) || y < (this.Pdf r))) then
+//                    let v = u_dst.Sample()
+//                    if (v < 0.5) then doubling(((max this.m_XMin (l - (r - l))), r), k-1)
+//                    else doubling((l, (min this.m_XMax (r + (r - l)))), k-1)
+//                else (l,r)
+//            
+//            let u = u_dst.Sample()
+//            let int_l = x0 - w * u
+//            doubling((int_l, int_l + w), p)
+//            
+//        getinterval
+
+    member this.SteppingOut(m: int) =
+        let u_dst = new Distributions.ContinuousUniform(0.0, 1.0, this.m_Sampler)
+        
+        let getinterval (x0:float) (y: float) (w: float) =
+            let u = u_dst.Sample()
+            let l = x0 - w * u
+            let r = l + w
+            let v = u_dst.Sample()
+            let j = (float m) |> (*) v |> int
+            let k = (m - 1) - j
+            let rec getleft (countj: int) (left: float) =
+                    if (countj > 0 && y < this.Pdf(left)) then getleft (countj - 1) (left - w)
+                    else left
+            let rec getright (countk: int) (right: float) =
+                if (countk > 0 && y < this.Pdf(right)) then getright(countk - 1) (right + w)
+                else right
+
+            ( (getleft j l), (getright k r) )
+
+        getinterval
+
+    member private this.Pdf(x: float) =
+        exp <| (this.m_LnPdf x)
+
+    member private this.Denom() =
+        Integration.DoubleExponentialTransformation.Integrate((fun x -> (this.Pdf x)), 
+                                                              this.m_XMin, this.m_XMax, 1.0e-3)
+
+    member private this.Mean() =
+        Integration.DoubleExponentialTransformation.Integrate((fun x -> x * (this.Pdf x)),
+                                                              this.m_XMin, this.m_XMax, 1.0e-3) / this.Denom()
+
+    member private this.SD() =
+        let denom = this.Denom()
+        let mean = Integration.DoubleExponentialTransformation.Integrate((fun x -> x * (this.Pdf x)),
+                                                                          this.m_XMin, this.m_XMax, 1.0e-3) / denom
+        let var = Integration.DoubleExponentialTransformation.Integrate((fun x -> (x - mean)**2.0 * (this.Pdf x)),
+                                                                         this.m_XMin, this.m_XMax, 1.0e-3) / denom
+        sqrt var
+
+    member private this.Shrinkage(x0: float, y: float, interval: (float * float)) =
+        let u_dst = new Distributions.ContinuousUniform(0.0, 1.0, this.m_Sampler)
+        let rec getx1(s_interval: (float * float)) =
+            let (l, r) = s_interval
+            let u = u_dst.Sample()
+            let x1 = l + u * (r - l)
+
+            if (y < this.Pdf(x1)) then x1
+            else
+                if (x1 < x0) then getx1((x1, r))
+                else getx1((l, x1))
+        
+        getx1(interval)
+            
+    member this.Sample(x0: float, iteration: int, burnin: int, width: float, 
+                       intervalfinder: (float -> float -> float -> (float * float) ) ) =
+        let exp_dst = new Distributions.Exponential(1.0, this.m_Sampler)
+
+        let rec getvalues (xinit: float) (acc: (float list)) (iter: int) =
+            if (iter >= iteration) then acc
+            else
+                let y = exp <| ((this.m_LnPdf xinit) - exp_dst.Sample())
+
+                let interval = (intervalfinder xinit y width)
+                let xnew = this.Shrinkage(xinit, y, interval)
+                if (iter < burnin) then getvalues xnew acc (iter+1)
+                else getvalues xnew (xnew :: acc) (iter + 1)
+
+        getvalues x0 List.empty 0
+
+    member this.Sample(iteration: int, burnin: int) = 
+        let mean, sd = (this.Mean(), this.SD())
+        let vmin, vmax = (mean - 4.0 * sd, mean + 4.0 * sd)
+        let width = 8.0 * sd / (float this.m_LimitSliceMultiplier)
+
+        this.Sample(mean, iteration, burnin, width, this.SteppingOut(this.m_LimitSliceMultiplier))
