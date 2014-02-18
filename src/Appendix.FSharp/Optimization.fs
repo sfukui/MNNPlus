@@ -251,7 +251,7 @@ type TraceOutput<'a> =
 [<CompiledName "BFGSFSharp">]
 type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =  
     let defaultIteration = 100
-    let defaultTolerance = 1e-3
+    let defaultTolerance = 1e-1
 
     let mutable m_Iteration = iteration
     let mutable m_Tolerance = tolerance
