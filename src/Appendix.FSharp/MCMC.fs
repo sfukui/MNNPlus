@@ -255,7 +255,7 @@ type SliceSampler =
     member this.SteppingOut(m: int) =
         let u_dst = new Distributions.ContinuousUniform(0.0, 1.0, this.m_Sampler)
         
-        let getinterval (x0:float) (y: float) (w: float) =
+        let getinterval (x0:float) (lny: float) (w: float) (lnpdf: float -> float) =
             let u = u_dst.Sample()
             let l = x0 - w * u
             let r = l + w
@@ -263,43 +263,26 @@ type SliceSampler =
             let j = (float m) |> (*) v |> int
             let k = (m - 1) - j
             let rec getleft (countj: int) (left: float) =
-                    if (countj > 0 && y < this.Pdf(left)) then getleft (countj - 1) (left - w)
-                    else left
+                if (left <= this.m_XMin) then this.m_XMin
+                else if (countj > 0 && lny < lnpdf(left)) then getleft (countj - 1) (left - w)
+                else left
             let rec getright (countk: int) (right: float) =
-                if (countk > 0 && y < this.Pdf(right)) then getright(countk - 1) (right + w)
+                if (right >= this.m_XMax) then this.m_XMax
+                else if (countk > 0 && lny < lnpdf(right)) then getright(countk - 1) (right + w)
                 else right
 
             ( (getleft j l), (getright k r) )
 
         getinterval
 
-    member private this.Pdf(x: float) =
-        exp <| (this.m_LnPdf x)
-
-    member private this.Denom() =
-        Integration.DoubleExponentialTransformation.Integrate((fun x -> (this.Pdf x)), 
-                                                              this.m_XMin, this.m_XMax, 1.0e-3)
-
-    member private this.Mean() =
-        Integration.DoubleExponentialTransformation.Integrate((fun x -> x * (this.Pdf x)),
-                                                              this.m_XMin, this.m_XMax, 1.0e-3) / this.Denom()
-
-    member private this.SD() =
-        let denom = this.Denom()
-        let mean = Integration.DoubleExponentialTransformation.Integrate((fun x -> x * (this.Pdf x)),
-                                                                          this.m_XMin, this.m_XMax, 1.0e-3) / denom
-        let var = Integration.DoubleExponentialTransformation.Integrate((fun x -> (x - mean)**2.0 * (this.Pdf x)),
-                                                                         this.m_XMin, this.m_XMax, 1.0e-3) / denom
-        sqrt var
-
-    member private this.Shrinkage(x0: float, y: float, interval: (float * float)) =
+    member private this.Shrinkage(x0: float, lny: float, interval: (float * float), lnpdf: float -> float) =
         let u_dst = new Distributions.ContinuousUniform(0.0, 1.0, this.m_Sampler)
         let rec getx1(s_interval: (float * float)) =
             let (l, r) = s_interval
             let u = u_dst.Sample()
             let x1 = l + u * (r - l)
 
-            if (y < this.Pdf(x1)) then x1
+            if (lny < lnpdf(x1)) then x1
             else
                 if (x1 < x0) then getx1((x1, r))
                 else getx1((l, x1))
@@ -307,24 +290,43 @@ type SliceSampler =
         getx1(interval)
             
     member this.Sample(x0: float, iteration: int, burnin: int, width: float, 
-                       intervalfinder: (float -> float -> float -> (float * float) ) ) =
+                       intervalfinder: (float -> float -> float -> (float -> float) -> (float * float) ) ) =
         let exp_dst = new Distributions.Exponential(1.0, this.m_Sampler)
+        let lnpdf = this.m_LnPdf
 
         let rec getvalues (xinit: float) (acc: (float list)) (iter: int) =
-            if (iter >= iteration) then acc
+            if (iter >= iteration + burnin) then acc
             else
-                let y = exp <| ((this.m_LnPdf xinit) - exp_dst.Sample())
+                let lny = ((lnpdf xinit) - exp_dst.Sample())
 
-                let interval = (intervalfinder xinit y width)
-                let xnew = this.Shrinkage(xinit, y, interval)
-                if (iter < burnin) then getvalues xnew acc (iter+1)
-                else getvalues xnew (xnew :: acc) (iter + 1)
+                let interval = (intervalfinder xinit lny width lnpdf)
+                let xnew = this.Shrinkage(xinit, lny, interval, lnpdf)
+                if (iter >= burnin) then getvalues xnew (xnew :: acc) (iter+1)
+                else getvalues xnew acc (iter + 1)
 
         getvalues x0 List.empty 0
 
-    member this.Sample(iteration: int, burnin: int) = 
-        let mean, sd = (this.Mean(), this.SD())
-        let vmin, vmax = (mean - 4.0 * sd, mean + 4.0 * sd)
-        let width = 8.0 * sd / (float this.m_LimitSliceMultiplier)
+    member this.Sample(x0: float, iteration: int, burnin: int, width: float) =
+        this.Sample(x0, iteration, burnin, width, this.SteppingOut(this.m_LimitSliceMultiplier))
 
-        this.Sample(mean, iteration, burnin, width, this.SteppingOut(this.m_LimitSliceMultiplier))
+    member this.ScaledSample(x0: float, iteration: int, burnin: int, width: float, 
+                             intervalfinder: (float -> float -> float -> (float -> float) -> (float * float) ) ) =
+        let exp_dst = new Distributions.Exponential(1.0, this.m_Sampler)
+
+        let rec getvalues (xinit: float) (acc: (float list)) (iter: int) =
+            if (iter >= iteration + burnin) then acc
+            else
+                let scale = (this.m_LnPdf xinit)
+                let lnpdf y = (this.m_LnPdf y) - scale
+
+                let lny = ((lnpdf xinit) - exp_dst.Sample())
+
+                let interval = (intervalfinder xinit lny width lnpdf)
+                let xnew = this.Shrinkage(xinit, lny, interval, lnpdf)
+                if (iter >= burnin) then getvalues xnew (xnew :: acc) (iter+1)
+                else getvalues xnew acc (iter + 1)
+
+        getvalues x0 List.empty 0
+
+    member this.ScaledSample(x0: float, iteration: int, burnin: int, width: float) =
+        this.ScaledSample(x0, iteration, burnin, width, this.SteppingOut(this.m_LimitSliceMultiplier))

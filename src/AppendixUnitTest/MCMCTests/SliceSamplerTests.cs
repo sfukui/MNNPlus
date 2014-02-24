@@ -66,8 +66,9 @@ namespace AppendixUnitTest.MCMCTests
             Func<double, double> lnpdf = (double x) => { return lnPDF_Normal(x, parameters); };
 
             double xmin = mean - 4.0 * Math.Sqrt(variance), xmax = mean + 4.0 * Math.Sqrt(variance);
+            double width = Math.Sqrt(variance) * 0.08;
             var ssampler = new SliceSampler(lnpdf,xmin, xmax);
-            double[] sample = ssampler.Sample(Iteration_NormalTest, BurnIn_NormalTest);
+            double[] sample = ssampler.Sample(mean, Iteration_NormalTest, BurnIn_NormalTest, width);
 
             double mean_sim = sample.Average(), variance_sim = 0.0;
             int i = 0;
@@ -97,7 +98,7 @@ namespace AppendixUnitTest.MCMCTests
 
             double xmin = 0.0, xmax = 20000.0;
             var ssampler = new SliceSampler(lnpdf, xmin, xmax);
-            double[] sample = ssampler.Sample(Iteration_GB2Test, BurnIn_GB2Test);
+            double[] sample = ssampler.Sample(300.0, Iteration_GB2Test, BurnIn_GB2Test, 10.0);
 
             double mean = Integrate.OnClosedInterval((double x) => { return x * Math.Exp(lnpdf(x)); }, 0.0, 20000.0);
             double variance = Integrate.OnClosedInterval((double x) => { return Math.Pow((x - mean), 2.0) * Math.Exp(lnpdf(x)); }, 0.0, 20000.0);

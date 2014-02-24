@@ -83,9 +83,10 @@ namespace MathNet.Numerics.Statistics.Mcmc
             return Microsoft.FSharp.Core.FSharpFunc<double, double>.FromConverter(fConv);
         }
 
-        public double[] Sample(int iteration, int burnin)
+        public double[] Sample(double x0, int iteration, int burnin, double width)
         {
-            return m_SSampler.Sample(iteration, burnin).ToArray<double>();
+            var res = m_SSampler.Sample(x0, iteration, burnin, width);
+            return res.ToArray<double>();
         }
     }
 }
