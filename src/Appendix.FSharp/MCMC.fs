@@ -308,25 +308,3 @@ type SliceSampler =
 
     member this.Sample(x0: float, iteration: int, burnin: int, width: float) =
         this.Sample(x0, iteration, burnin, width, this.SteppingOut(this.m_LimitSliceMultiplier))
-
-    member this.ScaledSample(x0: float, iteration: int, burnin: int, width: float, 
-                             intervalfinder: (float -> float -> float -> (float -> float) -> (float * float) ) ) =
-        let exp_dst = new Distributions.Exponential(1.0, this.m_Sampler)
-
-        let rec getvalues (xinit: float) (acc: (float list)) (iter: int) =
-            if (iter >= iteration + burnin) then acc
-            else
-                let scale = (this.m_LnPdf xinit)
-                let lnpdf y = (this.m_LnPdf y) - scale
-
-                let lny = ((lnpdf xinit) - exp_dst.Sample())
-
-                let interval = (intervalfinder xinit lny width lnpdf)
-                let xnew = this.Shrinkage(xinit, lny, interval, lnpdf)
-                if (iter >= burnin) then getvalues xnew (xnew :: acc) (iter+1)
-                else getvalues xnew acc (iter + 1)
-
-        getvalues x0 List.empty 0
-
-    member this.ScaledSample(x0: float, iteration: int, burnin: int, width: float) =
-        this.ScaledSample(x0, iteration, burnin, width, this.SteppingOut(this.m_LimitSliceMultiplier))
