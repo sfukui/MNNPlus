@@ -46,6 +46,7 @@
   <ItemGroup>
     <Compile Include="Common.cs" />
     <Compile Include="Differentiation.cs" />
+    <Compile Include="GeneralizedBeta2.cs" />
     <Compile Include="MCMC.cs" />
     <Compile Include="Optimization.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
