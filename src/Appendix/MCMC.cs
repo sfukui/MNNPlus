@@ -57,36 +57,4 @@ namespace MathNet.Numerics.Statistics.Mcmc
             return m_ARMSFS.Sample(iteration).ToArray<double>();
         }
     }
-
-    public class SliceSampler
-    {
-        private SliceSamplerFSharp m_SSampler;
-
-        public SliceSampler(System.Func<double, double> lnPdf)
-        {
-            m_SSampler = new SliceSamplerFSharp(CSFuncToFSFunc(lnPdf));
-        }
-
-        public SliceSampler(System.Func<double, double> lnPdf, double xMin, double xMax)
-        {
-            m_SSampler = new SliceSamplerFSharp(CSFuncToFSFunc(lnPdf), xMin, xMax);
-        }
-
-        public SliceSampler(System.Func<double, double> lnPdf, double xMin, double xMax, int seed, int m)
-        {
-            m_SSampler = new SliceSamplerFSharp(CSFuncToFSFunc(lnPdf), xMin, xMax, seed, m);
-        }
-
-        private Microsoft.FSharp.Core.FSharpFunc<double, double> CSFuncToFSFunc(System.Func<double, double> func)
-        {
-            var fConv = new Converter<double, double>(func);
-            return Microsoft.FSharp.Core.FSharpFunc<double, double>.FromConverter(fConv);
-        }
-
-        public double[] Sample(double x0, int iteration, int burnin, double width)
-        {
-            var res = m_SSampler.Sample(x0, iteration, burnin, width);
-            return res.ToArray<double>();
-        }
-    }
 }
