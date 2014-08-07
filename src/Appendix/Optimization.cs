@@ -15,12 +15,15 @@ namespace MathNet.Numerics.Optimization
     {
         private LineSearchFSharp m_LineSearchFS;
 
-        public LineSearch(System.Func<Vector<double>, double> f, double xInit, double xMax)
+        public LineSearch(System.Func<Vector<double>, double> f, double xInit, double xMax, System.Func<Vector<double>, Vector<double>> derivationmethod)
         {
             var fConv = new Converter<Vector<double>, double>(f);
             var fFS = Microsoft.FSharp.Core.FSharpFunc<Vector<double>, double>.FromConverter(fConv);
 
-            m_LineSearchFS = new LineSearchFSharp(fFS, xInit, xMax);
+            var dmConv = new Converter<Vector<double>, Vector<double>>(derivationmethod);
+            var dmFS = Microsoft.FSharp.Core.FSharpFunc<Vector<double>, Vector<double>>.FromConverter(dmConv);
+
+            m_LineSearchFS = new LineSearchFSharp(fFS, xInit, xMax, dmConv);
         }
 
         public double Search(Vector<double> v, Vector<double> d)

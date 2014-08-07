@@ -63,6 +63,7 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Differentiation_Obsolete.fs" />
     <Compile Include="Differentiation.fs" />
     <Compile Include="MCMC.fs" />
     <Compile Include="Optimization.fs" />

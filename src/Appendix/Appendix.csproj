@@ -46,6 +46,7 @@
   <ItemGroup>
     <Compile Include="Common.cs" />
     <Compile Include="Differentiation.cs" />
+    <Compile Include="Differentiation_Obsolete.cs" />
     <Compile Include="GeneralizedBeta2.cs" />
     <Compile Include="MCMC.cs" />
     <Compile Include="Optimization.cs" />
@@ -60,6 +61,9 @@
       <Project>{b7cae5f4-a23f-4438-b5be-41226618b695}</Project>
       <Name>Numerics</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Parallel\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

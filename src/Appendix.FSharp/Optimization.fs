@@ -33,7 +33,7 @@ open MathNet.Numerics.LinearAlgebra
 open MathNet.Numerics.LinearAlgebra.Double
 
 [<CompiledName "LineSearchFSharp">]
-type LineSearch (f: (Vector<float> -> float), xInit, xMax) =
+type LineSearch ( f: (Vector<float> -> float), xInit, xMax, derivationmethod: (Vector<float> -> Vector<float>) ) =
     let c1, c2 = 10.0**(-4.0), 0.9
     let dMin = 1e-16
     let rescueStepSize = 1.0
@@ -75,7 +75,7 @@ type LineSearch (f: (Vector<float> -> float), xInit, xMax) =
         | Some(maxStep) -> 
             let actualInitStep = if maxStep < xInit then 0.5 * maxStep else xInit
             let phi = (fun (a: Vector<float>) -> f (v + a.[0] * d))
-            let dphi = (fun a -> let res = Differentiation.Gradient(phi, a)
+            let dphi = (fun a -> let res = Differentiation.Derivative(phi, a)
                                  res.[0])
             let phi_0, dphi_0 = DenseVector.Create(1, 0.0) |> (fun x -> (phi x, dphi x))
             let phiMax, dphiMax = DenseVector.Create(1, maxStep) |> (fun x -> (phi x, dphi x))
@@ -257,7 +257,7 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
     let mutable m_Tolerance = tolerance
     let mutable m_InitialStepSize = 1.0
     let mutable m_MaxStepSize = 10.0
-    let mutable m_DerivationMethod = (fun x -> Differentiation.Gradient(f, x))
+    let mutable m_DerivationMethod = (fun x -> Differentiation.Derivative(f, x, true, false))
     let mutable m_FirstTimeStepSizeMuiltiplier = 1.0
 
     let mutable m_LatestStepSize = None
@@ -308,7 +308,7 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
              NotConverged(tRes)
 
     member private this.lineSearch r g =
-        let ls = LineSearch(f, this.InitialStepSize, this.MaxStepSize)
+        let ls = LineSearch(f, this.InitialStepSize, this.MaxStepSize, m_DerivationMethod)
         let tRes = ls.Search r g
         if isInvalidFloat tRes then LineSearchFailure
         else do m_LatestStepSize <- Some(tRes)
