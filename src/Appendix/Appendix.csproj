@@ -37,6 +37,7 @@
     <Reference Include="FSharp.Core, Version=4.3.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Numerics" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -50,6 +51,10 @@
     <Compile Include="GeneralizedBeta2.cs" />
     <Compile Include="MCMC.cs" />
     <Compile Include="Optimization.cs" />
+    <Compile Include="Parallel\Diffetentiation.cs" />
+    <Compile Include="Parallel\Integrate.cs" />
+    <Compile Include="Parallel\Integration\DoubleExponentialTransformation.cs" />
+    <Compile Include="Parallel\Integration\NewtonCotesTrapeziumRule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -62,9 +67,7 @@
       <Name>Numerics</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Parallel\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

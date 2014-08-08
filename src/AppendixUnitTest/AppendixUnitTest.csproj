@@ -55,7 +55,7 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
-    <Compile Include="DifferentiationTests\FunctionDerivationTests.cs" />
+    <Compile Include="ParallelTests\SimpleParallelCalculationTests.cs" />
     <Compile Include="DistributionTests\GeneralizedBeta2Tests.cs" />
     <Compile Include="MCMCTests\ARMSSamplingTests.cs">
       <SubType>Code</SubType>

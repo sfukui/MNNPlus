@@ -8,7 +8,7 @@ using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 using MathNet.Numerics.Appendix;
 
-namespace MathNet.Numerics.Differentiation
+namespace MathNet.Numerics.Parallel.Differentiation
 {
     public static class Differentiation
     {
@@ -19,8 +19,8 @@ namespace MathNet.Numerics.Differentiation
             var fFS = Microsoft.FSharp.Core.FSharpFunc<Vector<double>, double>.FromConverter(fConv);
 
             var fine_on0 = new Microsoft.FSharp.Core.FSharpOption<bool>(fine_on);
-            var parallel_false = new Microsoft.FSharp.Core.FSharpOption<bool>(false);
-            return DifferentiationFSharp.Derivative(fFS, xs, fine_on0, parallel_false);
+            var parallel_true = new Microsoft.FSharp.Core.FSharpOption<bool>(true);
+            return MathNet.Numerics.Differentiation.DifferentiationFSharp.Derivative(fFS, xs, fine_on0, parallel_true);
         }
     }
 }
