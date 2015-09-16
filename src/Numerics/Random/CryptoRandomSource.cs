@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2013 Math.NET
+// Copyright (c) 2009-2014 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -28,11 +28,11 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
-using System.Collections.Generic;
-
 #if !PORTABLE
 
 using System;
+using System.Collections.Generic;
+using System.Runtime;
 using System.Security.Cryptography;
 
 namespace MathNet.Numerics.Random
@@ -40,7 +40,7 @@ namespace MathNet.Numerics.Random
     /// <summary>
     /// A random number generator based on the <see cref="System.Security.Cryptography.RandomNumberGenerator"/> class in the .NET library.
     /// </summary>
-    public class CryptoRandomSource : RandomSource, IDisposable
+    public sealed class CryptoRandomSource : RandomSource, IDisposable
     {
         const double Reciprocal = 1.0/uint.MaxValue;
         readonly RandomNumberGenerator _crypto;
@@ -48,7 +48,7 @@ namespace MathNet.Numerics.Random
         /// <summary>
         /// Construct a new random number generator with a random seed.
         /// </summary>
-        /// <remarks>Uses <see cref="System.Security.Cryptography.RNGCryptoServiceProvider"/> and uses the value of 
+        /// <remarks>Uses <see cref="System.Security.Cryptography.RNGCryptoServiceProvider"/> and uses the value of
         /// <see cref="Control.ThreadSafeRandomNumberGenerators"/> to set whether the instance is thread safe.</remarks>
         public CryptoRandomSource()
         {
@@ -85,7 +85,6 @@ namespace MathNet.Numerics.Random
             _crypto = rng;
         }
 
-
         /// <summary>
         /// Returns a random number between 0.0 and 1.0.
         /// </summary>
@@ -107,24 +106,45 @@ namespace MathNet.Numerics.Random
         }
 
         /// <summary>
+        /// Fills an array with random numbers greater than or equal to 0.0 and less than 1.0.
+        /// </summary>
+        /// <remarks>Supports being called in parallel from multiple threads.</remarks>
+        public static void Doubles(double[] values)
+        {
+            var bytes = new byte[values.Length*4];
+
+#if !NET35
+            using (var rnd = new RNGCryptoServiceProvider())
+            {
+                rnd.GetBytes(bytes);
+            }
+#else
+            var rnd = new RNGCryptoServiceProvider();
+            rnd.GetBytes(bytes);
+#endif
+
+            for (int i = 0; i < values.Length; i++)
+            {
+                values[i] = BitConverter.ToUInt32(bytes, i*4)*Reciprocal;
+            }
+        }
+
+        /// <summary>
         /// Returns an array of random numbers greater than or equal to 0.0 and less than 1.0.
         /// </summary>
+        /// <remarks>Supports being called in parallel from multiple threads.</remarks>
+        [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
         public static double[] Doubles(int length)
         {
-            var rnd = new RNGCryptoServiceProvider();
-            var bytes = new byte[length*4];
-            rnd.GetBytes(bytes);
             var data = new double[length];
-            for (int i = 0; i < data.Length; i++)
-            {
-                data[i] = BitConverter.ToUInt32(bytes, i*4)*Reciprocal;
-            }
+            Doubles(data);
             return data;
         }
 
         /// <summary>
         /// Returns an infinite sequence of random numbers greater than or equal to 0.0 and less than 1.0.
         /// </summary>
+        /// <remarks>Supports being called in parallel from multiple threads.</remarks>
         public static IEnumerable<double> DoubleSequence()
         {
             var rnd = new RNGCryptoServiceProvider();

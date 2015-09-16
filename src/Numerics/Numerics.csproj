@@ -3,8 +3,6 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.30729</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{B7CAE5F4-A23F-4438-B5BE-41226618B695}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -31,7 +29,7 @@
     <BootstrapperEnabled>true</BootstrapperEnabled>
     <!-- Conditional Strong Name -->
     <AssemblyOriginatorKeyFile>..\MathNet.Numerics.snk</AssemblyOriginatorKeyFile>
-    <SignAssembly Condition=" '$(SignAssembly)' == '' ">false</SignAssembly>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <OutputPath>..\..\out\lib\Net40\</OutputPath>
@@ -39,31 +37,30 @@
     <BaseIntermediateOutputPath>..\..\obj\lib\Net40\</BaseIntermediateOutputPath>
     <DocumentationFile>..\..\out\lib\Net40\MathNet.Numerics.xml</DocumentationFile>
     <!-- Conditional Strong Name: NO -->
-    <SignAssembly>false</SignAssembly>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <DefineConstants>TRACE;NATIVEMKL</DefineConstants>
+    <DefineConstants>TRACE;NATIVE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <NoWarn>1591</NoWarn>
     <Prefer32Bit>false</Prefer32Bit>
+    <LangVersion>5</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <OutputPath>..\..\out\lib-debug\Net40\</OutputPath>
     <IntermediateOutputPath>..\..\obj\lib-debug\Net40\</IntermediateOutputPath>
     <BaseIntermediateOutputPath>..\..\obj\lib-debug\Net40\</BaseIntermediateOutputPath>
     <!-- Conditional Strong Name: NO -->
-    <SignAssembly>false</SignAssembly>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <DefineConstants>TRACE;DEBUG;NATIVEMKL</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;NATIVE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile />
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>false</Prefer32Bit>
+    <LangVersion>5</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release-Signed|AnyCPU'">
     <OutputPath>..\..\out\lib-signed\Net40\</OutputPath>
@@ -75,26 +72,42 @@
     <DebugType>pdbonly</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <Optimize>true</Optimize>
-    <DefineConstants>TRACE;NATIVEMKL;STRONGNAME</DefineConstants>
+    <DefineConstants>TRACE;NATIVE;STRONGNAME</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <NoWarn>1591</NoWarn>
     <Prefer32Bit>false</Prefer32Bit>
+    <LangVersion>5</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Data" />
     <Reference Include="System.Numerics" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Differentiate.cs" />
+    <Compile Include="Differentiation\FiniteDifferenceCoefficients.cs" />
+    <Compile Include="Differentiation\NumericalDerivative.cs" />
+    <Compile Include="Differentiation\NumericalHessian.cs" />
+    <Compile Include="Differentiation\NumericalJacobian.cs" />
+    <Compile Include="Distributions\Triangular.cs" />
     <Compile Include="Euclid.cs" />
     <Compile Include="Generate.cs" />
     <Compile Include="GoodnessOfFit.cs" />
+    <Compile Include="IntegralTransforms\Fourier.cs" />
+    <Compile Include="IntegralTransforms\Hartley.cs" />
+    <Compile Include="Interpolation\Barycentric.cs" />
     <Compile Include="Interpolation\CubicSpline.cs" />
+    <Compile Include="Interpolation\LogLinear.cs" />
     <Compile Include="Interpolation\QuadraticSpline.cs" />
+    <Compile Include="Interpolation\StepInterpolation.cs" />
+    <Compile Include="Interpolation\TransformedInterpolation.cs" />
+    <Compile Include="LinearAlgebra\CreateMatrix.cs" />
+    <Compile Include="LinearAlgebra\Options.cs" />
+    <Compile Include="LinearAlgebra\Solvers\DelegateStopCriterion.cs" />
+    <Compile Include="LinearAlgebra\CreateVector.cs" />
+    <Compile Include="LinearRegression\Options.cs" />
     <Compile Include="Precision.Comparison.cs" />
     <Compile Include="Precision.Equality.cs" />
     <Compile Include="Distributions\Bernoulli.cs" />
@@ -138,10 +151,10 @@
     <Compile Include="LinearAlgebra\Double\Solvers\MILU0Preconditioner.cs" />
     <Compile Include="LinearAlgebra\Matrix.Solve.cs" />
     <Compile Include="LinearAlgebra\Single\Solvers\MILU0Preconditioner.cs" />
-    <Compile Include="LinearAlgebra\Solvers\CancellationStopCriterium.cs" />
+    <Compile Include="LinearAlgebra\Solvers\CancellationStopCriterion.cs" />
     <Compile Include="LinearAlgebra\Solvers\IterationStatus.cs" />
     <Compile Include="LinearAlgebra\Solvers\Iterator.cs" />
-    <Compile Include="LinearAlgebra\Solvers\IterationCountStopCriterium.cs" />
+    <Compile Include="LinearAlgebra\Solvers\IterationCountStopCriterion.cs" />
     <Compile Include="LinearAlgebra\Solvers\SolverSetup.cs" />
     <Compile Include="LinearRegression\MultipleRegression.cs" />
     <Compile Include="LinearRegression\WeightedRegression.cs" />
@@ -152,12 +165,20 @@
     <Compile Include="Providers\LinearAlgebra\Acml\AcmlLinearAlgebraProvider.Double.cs" />
     <Compile Include="Providers\LinearAlgebra\Acml\AcmlLinearAlgebraProvider.Single.cs" />
     <Compile Include="Providers\LinearAlgebra\Acml\SafeNativeMethods.cs" />
-    <Compile Include="Providers\LinearAlgebra\GotoBlas\GotoBlasLinearAlgebraProvider.cs" />
-    <Compile Include="Providers\LinearAlgebra\GotoBlas\GotoBlasLinearAlgebraProvider.Complex.cs" />
-    <Compile Include="Providers\LinearAlgebra\GotoBlas\GotoBlasLinearAlgebraProvider.Complex32.cs" />
-    <Compile Include="Providers\LinearAlgebra\GotoBlas\GotoBlasLinearAlgebraProvider.Double.cs" />
-    <Compile Include="Providers\LinearAlgebra\GotoBlas\GotoBlasLinearAlgebraProvider.Single.cs" />
-    <Compile Include="Providers\LinearAlgebra\GotoBlas\SafeNativeMethods.cs" />
+    <Compile Include="Providers\LinearAlgebra\Cuda\CudaLinearAlgebraProvider.Complex.cs" />
+    <Compile Include="Providers\LinearAlgebra\Cuda\CudaLinearAlgebraProvider.Complex32.cs" />
+    <Compile Include="Providers\LinearAlgebra\Cuda\CudaLinearAlgebraProvider.cs" />
+    <Compile Include="Providers\LinearAlgebra\Cuda\CudaLinearAlgebraProvider.Double.cs" />
+    <Compile Include="Providers\LinearAlgebra\Cuda\CudaLinearAlgebraProvider.Single.cs" />
+    <Compile Include="Providers\LinearAlgebra\Cuda\CudaProviderCapabilities.cs" />
+    <Compile Include="Providers\LinearAlgebra\Cuda\SafeNativeMethods.cs" />
+    <Compile Include="Providers\LinearAlgebra\Mkl\MklProviderCapabilities.cs" />
+    <Compile Include="Providers\LinearAlgebra\OpenBlas\OpenBlasLinearAlgebraProvider.cs" />
+    <Compile Include="Providers\LinearAlgebra\OpenBlas\OpenBlasLinearAlgebraProvider.Complex.cs" />
+    <Compile Include="Providers\LinearAlgebra\OpenBlas\OpenBlasLinearAlgebraProvider.Complex32.cs" />
+    <Compile Include="Providers\LinearAlgebra\OpenBlas\OpenBlasLinearAlgebraProvider.Double.cs" />
+    <Compile Include="Providers\LinearAlgebra\OpenBlas\OpenBlasLinearAlgebraProvider.Single.cs" />
+    <Compile Include="Providers\LinearAlgebra\OpenBlas\SafeNativeMethods.cs" />
     <Compile Include="Providers\LinearAlgebra\ManagedLinearAlgebraProvider.Complex32.cs" />
     <Compile Include="Providers\LinearAlgebra\ManagedLinearAlgebraProvider.Complex.cs" />
     <Compile Include="Providers\LinearAlgebra\ManagedLinearAlgebraProvider.Double.cs" />
@@ -186,22 +207,32 @@
     <Compile Include="LinearAlgebra\Vector.Arithmetic.cs" />
     <Compile Include="LinearAlgebra\Vector.BCL.cs" />
     <Compile Include="LinearAlgebra\Vector.Operators.cs" />
-    <Compile Include="NonConvergenceException.cs" />
+    <Compile Include="Exceptions.cs" />
+    <Compile Include="Providers\LinearAlgebra\OpenBlas\OpenBlasProviderCapabilities.cs" />
+    <Compile Include="Providers\NativeProviderLoader.cs" />
     <Compile Include="Random\SystemRandomSource.cs" />
     <Compile Include="Random\RandomSeed.cs" />
     <Compile Include="RootFinding\Broyden.cs" />
+    <Compile Include="RootFinding\Cubic.cs" />
     <Compile Include="RootFinding\NewtonRaphson.cs" />
     <Compile Include="RootFinding\RobustNewtonRaphson.cs" />
+    <Compile Include="RootFinding\Secant.cs" />
     <Compile Include="RootFinding\ZeroCrossingBracketing.cs" />
     <Compile Include="RootFinding\Brent.cs" />
     <Compile Include="FindRoots.cs" />
     <Compile Include="RootFinding\Bisection.cs" />
     <Compile Include="SpecialFunctions\Evaluate.cs" />
+    <Compile Include="ExcelFunctions.cs" />
+    <Compile Include="SpecialFunctions\ExponentialIntegral.cs" />
     <Compile Include="SpecialFunctions\ModifiedStruve.cs" />
     <Compile Include="SpecialFunctions\ModifiedBessel.cs" />
     <Compile Include="SpecialFunctions\Logistic.cs" />
+    <Compile Include="SpecialFunctions\TestFunctions.cs" />
     <Compile Include="Statistics\ArrayStatistics.cs" />
+    <Compile Include="Statistics\MovingStatistics.cs" />
+    <Compile Include="Statistics\RunningStatistics.cs" />
     <Compile Include="Statistics\QuantileDefinition.cs" />
+    <Compile Include="Statistics\RankDefinition.cs" />
     <Compile Include="Statistics\StreamingStatistics.cs" />
     <Compile Include="Statistics\SortedArrayStatistics.cs" />
     <Compile Include="LinearAlgebra\Storage\SparseVectorStorage.cs" />
@@ -242,7 +273,7 @@
     <Compile Include="LinearAlgebra\Solvers\IIterativeSolver.cs" />
     <Compile Include="LinearAlgebra\Solvers\IIterativeSolverSetup.cs" />
     <Compile Include="LinearAlgebra\Solvers\IPreconditioner.cs" />
-    <Compile Include="LinearAlgebra\Solvers\IIterationStopCriterium.cs" />
+    <Compile Include="LinearAlgebra\Solvers\IIterationStopCriterion.cs" />
     <Compile Include="LinearAlgebra\Double\SparseMatrix.cs" />
     <Compile Include="LinearAlgebra\Double\Vector.cs" />
     <Compile Include="LinearAlgebra\Complex32\DenseVector.cs" />
@@ -324,8 +355,8 @@
     <Compile Include="LinearAlgebra\Single\Solvers\DiagonalPreconditioner.cs" />
     <Compile Include="LinearAlgebra\Single\Solvers\ILUTPPreconditioner.cs" />
     <Compile Include="LinearAlgebra\Single\Solvers\ILU0Preconditioner.cs" />
-    <Compile Include="LinearAlgebra\Solvers\DivergenceStopCriterium.cs" />
-    <Compile Include="LinearAlgebra\Solvers\FailureStopCriterium.cs" />
+    <Compile Include="LinearAlgebra\Solvers\DivergenceStopCriterion.cs" />
+    <Compile Include="LinearAlgebra\Solvers\FailureStopCriterion.cs" />
     <Compile Include="LinearAlgebra\Single\SparseMatrix.cs" />
     <Compile Include="LinearAlgebra\Single\SparseVector.cs" />
     <Compile Include="LinearAlgebra\Factorization\Cholesky.cs" />
@@ -351,7 +382,7 @@
     <Compile Include="LinearAlgebra\Double\Solvers\ILUTPPreconditioner.cs" />
     <Compile Include="LinearAlgebra\Double\Solvers\ILU0Preconditioner.cs" />
     <Compile Include="LinearAlgebra\Solvers\UnitPreconditioner.cs" />
-    <Compile Include="LinearAlgebra\Solvers\ResidualStopCriterium.cs" />
+    <Compile Include="LinearAlgebra\Solvers\ResidualStopCriterion.cs" />
     <Compile Include="LinearAlgebra\Double\SparseVector.cs" />
     <Compile Include="LinearAlgebra\Matrix.Arithmetic.cs" />
     <Compile Include="LinearAlgebra\Matrix.cs" />
@@ -367,24 +398,18 @@
     <Compile Include="Distributions\IContinuousDistribution.cs" />
     <Compile Include="Distributions\IDiscreteDistribution.cs" />
     <Compile Include="Distributions\IUnivariateDistribution.cs" />
-    <Compile Include="IntegralTransforms\Algorithms\DiscreteHartleyTransform.Naive.cs" />
-    <Compile Include="IntegralTransforms\Algorithms\DiscreteHartleyTransform.Options.cs" />
+    <Compile Include="IntegralTransforms\Hartley.Naive.cs" />
     <Compile Include="IntegralTransforms\HartleyOptions.cs" />
     <Compile Include="GlobalizationHelper.cs" />
-    <Compile Include="Interpolation\EquidistantPolynomialInterpolation.cs" />
-    <Compile Include="IntegralTransforms\Algorithms\DiscreteFourierTransform.Options.cs" />
-    <Compile Include="IntegralTransforms\Algorithms\DiscreteFourierTransform.Bluestein.cs" />
-    <Compile Include="IntegralTransforms\Algorithms\DiscreteFourierTransform.Naive.cs" />
-    <Compile Include="IntegralTransforms\Algorithms\DiscreteFourierTransform.RadixN.cs" />
-    <Compile Include="IntegralTransforms\Transform.cs" />
+    <Compile Include="IntegralTransforms\Fourier.Bluestein.cs" />
+    <Compile Include="IntegralTransforms\Fourier.Naive.cs" />
+    <Compile Include="IntegralTransforms\Fourier.RadixN.cs" />
     <Compile Include="IntegralTransforms\FourierOptions.cs" />
     <Compile Include="Integration\DoubleExponentialTransformation.cs" />
     <Compile Include="Integration\SimpsonRule.cs" />
     <Compile Include="Integration\NewtonCotesTrapeziumRule.cs" />
     <Compile Include="Integrate.cs" />
-    <Compile Include="Interpolation\BarycentricInterpolation.cs" />
     <Compile Include="Interpolation\BulirschStoerRationalInterpolation.cs" />
-    <Compile Include="Interpolation\FloaterHormannRationalInterpolation.cs" />
     <Compile Include="Interpolation\LinearSpline.cs" />
     <Compile Include="Interpolation\NevillePolynomialInterpolation.cs" />
     <Compile Include="Interpolation\IInterpolation.cs" />
@@ -440,6 +465,5 @@
       <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

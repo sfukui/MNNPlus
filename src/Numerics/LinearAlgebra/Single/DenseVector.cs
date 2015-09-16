@@ -137,7 +137,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         public static DenseVector Create(int length, float value)
         {
             if (value == 0f) return new DenseVector(length);
-            return new DenseVector(DenseVectorStorage<float>.OfInit(length, i => value));
+            return new DenseVector(DenseVectorStorage<float>.OfValue(length, value));
         }
 
         /// <summary>
@@ -153,8 +153,8 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         /// </summary>
         public static DenseVector CreateRandom(int length, IContinuousDistribution distribution)
         {
-            return new DenseVector(DenseVectorStorage<float>.OfInit(length,
-                i => (float)distribution.Sample()));
+            var samples = Generate.RandomSingle(length, distribution);
+            return new DenseVector(new DenseVectorStorage<float>(length, samples));
         }
 
         /// <summary>
@@ -178,7 +178,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         {
             if (vector == null)
             {
-                throw new ArgumentNullException();
+                throw new ArgumentNullException("vector");
             }
 
             return vector.Values;
@@ -195,7 +195,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         {
             if (array == null)
             {
-                throw new ArgumentNullException();
+                throw new ArgumentNullException("array");
             }
 
             return new DenseVector(array);
@@ -458,9 +458,10 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         }
 
         /// <summary>
-        /// Computes the modulus for each element of the vector for the given divisor.
+        /// Computes the canonical modulus, where the result has the sign of the divisor,
+        /// for each element of the vector for the given divisor.
         /// </summary>
-        /// <param name="divisor">The divisor to use.</param>
+        /// <param name="divisor">The scalar denominator to use.</param>
         /// <param name="result">A vector to store the results in.</param>
         protected override void DoModulus(float divisor, Vector<float> result)
         {
@@ -472,17 +473,43 @@ namespace MathNet.Numerics.LinearAlgebra.Single
             else
             {
                 CommonParallel.For(0, _length, 4096, (a, b) =>
+                {
+                    for (int i = a; i < b; i++)
                     {
-                        for (int i = a; i < b; i++)
-                        {
-                            dense._values[i] = _values[i]%divisor;
-                        }
-                    });
+                        dense._values[i] = Euclid.Modulus(_values[i], divisor);
+                    }
+                });
             }
         }
 
         /// <summary>
-        /// Computes the modulus of each element of the vector of the given divisor.
+        /// Computes the remainder (% operator), where the result has the sign of the dividend,
+        /// for each element of the vector for the given divisor.
+        /// </summary>
+        /// <param name="divisor">The scalar denominator to use.</param>
+        /// <param name="result">A vector to store the results in.</param>
+        protected override void DoRemainder(float divisor, Vector<float> result)
+        {
+            var dense = result as DenseVector;
+            if (dense == null)
+            {
+                base.DoRemainder(divisor, result);
+            }
+            else
+            {
+                CommonParallel.For(0, _length, 4096, (a, b) =>
+                {
+                    for (int i = a; i < b; i++)
+                    {
+                        dense._values[i] = _values[i]%divisor;
+                    }
+                });
+            }
+        }
+
+        /// <summary>
+        /// Computes the remainder (% operator), where the result has the sign of the dividend,
+        /// of each element of the vector of the given divisor.
         /// </summary>
         /// <param name="leftSide">The vector whose elements we want to compute the modulus of.</param>
         /// <param name="rightSide">The divisor to use,</param>
@@ -495,7 +522,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single
                 throw new ArgumentNullException("leftSide");
             }
 
-            return (DenseVector)leftSide.Modulus(rightSide);
+            return (DenseVector)leftSide.Remainder(rightSide);
         }
 
         /// <summary>
@@ -639,7 +666,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         /// <summary>
         /// Calculates the infinity norm of the vector.
         /// </summary>
-        /// <returns>The square root of the sum of the squared values.</returns>
+        /// <returns>The maximum absolute value.</returns>
         public override double InfinityNorm()
         {
             return CommonParallel.Aggregate(_values, (i, v) => Math.Abs(v), Math.Max, 0f);
@@ -705,53 +732,6 @@ namespace MathNet.Numerics.LinearAlgebra.Single
             {
                 Control.LinearAlgebraProvider.PointWiseDivideArrays(_values, denseOther._values, denseResult._values);
             }
-        }
-
-        /// <summary>
-        /// Outer product of two vectors
-        /// </summary>
-        /// <param name="u">First vector</param>
-        /// <param name="v">Second vector</param>
-        /// <returns>Matrix M[i,j] = u[i]*v[j] </returns>
-        /// <exception cref="ArgumentNullException">If the u vector is <see langword="null" />.</exception>
-        /// <exception cref="ArgumentNullException">If the v vector is <see langword="null" />.</exception>
-        public static DenseMatrix OuterProduct(DenseVector u, DenseVector v)
-        {
-            if (u == null)
-            {
-                throw new ArgumentNullException("u");
-            }
-
-            if (v == null)
-            {
-                throw new ArgumentNullException("v");
-            }
-
-            var matrix = new DenseMatrix(u.Count, v.Count);
-            CommonParallel.For(0, u.Count, (a, b) =>
-                {
-                    for (int i = a; i < b; i++)
-                    {
-                        for (var j = 0; j < v.Count; j++)
-                        {
-                            matrix.At(i, j, u._values[i]*v._values[j]);
-                        }
-                    }
-                });
-            return matrix;
-        }
-
-        /// <summary>
-        /// Outer product of this and another vector.
-        /// </summary>
-        /// <param name="v">The vector to operate on.</param>
-        /// <returns>
-        /// Matrix M[i,j] = this[i] * v[j].
-        /// </returns>
-        /// <seealso cref="OuterProduct(DenseVector, DenseVector)"/>
-        public Matrix<float> OuterProduct(DenseVector v)
-        {
-            return OuterProduct(this, v);
         }
 
         #region Parse Functions

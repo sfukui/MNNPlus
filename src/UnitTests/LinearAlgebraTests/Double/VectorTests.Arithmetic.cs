@@ -95,7 +95,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         {
             var vector = CreateVector(Data.Length);
             var result = CreateVector(Data.Length + 1);
-            Assert.Throws<ArgumentException>(() => vector.Add(0.0, result));
+            Assert.That(() => vector.Add(0.0, result), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -106,7 +106,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         {
             var vector = CreateVector(Data.Length);
             var other = CreateVector(Data.Length + 1);
-            Assert.Throws<ArgumentException>(() => vector.Add(other));
+            Assert.That(() => vector.Add(other), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -118,7 +118,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             var vector = CreateVector(Data.Length);
             var other = CreateVector(Data.Length);
             var result = CreateVector(Data.Length + 1);
-            Assert.Throws<ArgumentException>(() => vector.Add(other, result));
+            Assert.That(() => vector.Add(other, result), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -129,7 +129,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         {
             var a = CreateVector(Data.Length);
             var b = CreateVector(Data.Length + 1);
-            Assert.Throws<ArgumentException>(() => a += b);
+            Assert.That(() => a += b, Throws.ArgumentException);
         }
 
         /// <summary>
@@ -315,7 +315,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         {
             var vector = CreateVector(Data.Length);
             var result = CreateVector(Data.Length + 1);
-            Assert.Throws<ArgumentException>(() => vector.Subtract(0.0, result));
+            Assert.That(() => vector.Subtract(0.0, result), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -326,7 +326,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         {
             var vector = CreateVector(Data.Length);
             var other = CreateVector(Data.Length + 1);
-            Assert.Throws<ArgumentException>(() => vector.Subtract(other));
+            Assert.That(() => vector.Subtract(other), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -338,7 +338,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             var vector = CreateVector(Data.Length);
             var other = CreateVector(Data.Length);
             var result = CreateVector(Data.Length + 1);
-            Assert.Throws<ArgumentException>(() => vector.Subtract(other, result));
+            Assert.That(() => vector.Subtract(other, result), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -349,7 +349,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         {
             var a = CreateVector(Data.Length);
             var b = CreateVector(Data.Length + 1);
-            Assert.Throws<ArgumentException>(() => a -= b);
+            Assert.That(() => a -= b, Throws.ArgumentException);
         }
 
         /// <summary>
@@ -550,7 +550,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         {
             var vector = CreateVector(Data.Length);
             var result = CreateVector(Data.Length + 1);
-            Assert.Throws<ArgumentException>(() => vector.Multiply(0.0, result));
+            Assert.That(() => vector.Multiply(0.0, result), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -561,7 +561,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         {
             var vector = CreateVector(Data.Length);
             var result = CreateVector(Data.Length + 1);
-            Assert.Throws<ArgumentException>(() => vector.Divide(0.0, result));
+            Assert.That(() => vector.Divide(0.0, result), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -641,7 +641,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             var dataA = CreateVector(Data);
             var dataB = CreateVector(new double[] { 1, 2, 3, 4, 5, 6 });
 
-            Assert.Throws<ArgumentException>(() => dataA.DotProduct(dataB));
+            Assert.That(() => dataA.DotProduct(dataB), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -708,7 +708,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             var vector1 = CreateVector(Data);
             var vector2 = vector1.Clone();
             var result = CreateVector(vector1.Count + 1);
-            Assert.Throws<ArgumentException>(() => vector1.PointwiseMultiply(vector2, result));
+            Assert.That(() => vector1.PointwiseMultiply(vector2, result), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -751,7 +751,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             var vector1 = CreateVector(Data);
             var vector2 = vector1.Clone();
             var result = CreateVector(vector1.Count + 1);
-            Assert.Throws<ArgumentException>(() => vector1.PointwiseDivide(vector2, result));
+            Assert.That(() => vector1.PointwiseDivide(vector2, result), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -790,62 +790,82 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             }
         }
 
-        /// <summary>
-        /// Can compute the modules of each element of vector.
-        /// </summary>
+        [Test]
+        public void CanComputeRemainderUsingOperator()
+        {
+            var vector = CreateVector(Data);
+            var mod = vector % (-4.5);
+            for (var index = 0; index < Data.Length; index++)
+            {
+                AssertHelpers.AlmostEqualRelative(Euclid.Remainder(Data[index], -4.5), mod[index], 14);
+            }
+        }
+
+        [Test]
+        public void CanComputeRemainder()
+        {
+            var vector = CreateVector(Data);
+            var mod = vector.Remainder(-3.2);
+            for (var index = 0; index < Data.Length; index++)
+            {
+                AssertHelpers.AlmostEqualRelative(Euclid.Remainder(Data[index], -3.2), mod[index], 14);
+            }
+        }
+
+        [Test]
+        public void CanComputeRemainderUsingResultVector()
+        {
+            var vector = CreateVector(Data);
+            var mod = CreateVector(vector.Count);
+            vector.Remainder(-3.2, mod);
+            for (var index = 0; index < Data.Length; index++)
+            {
+                AssertHelpers.AlmostEqualRelative(Euclid.Remainder(Data[index], -3.2), mod[index], 14);
+            }
+        }
+
+        [Test]
+        public void CanComputeRemainderUsingSameResultVector()
+        {
+            var vector = CreateVector(Data);
+            vector.Remainder(-3.2, vector);
+            for (var index = 0; index < Data.Length; index++)
+            {
+                AssertHelpers.AlmostEqualRelative(Euclid.Remainder(Data[index], -3.2), vector[index], 14);
+            }
+        }
+
         [Test]
         public void CanComputeModulus()
         {
             var vector = CreateVector(Data);
-            var mod = vector.Modulus(3.2);
+            var mod = vector.Modulus(-3.2);
             for (var index = 0; index < Data.Length; index++)
             {
-                AssertHelpers.AlmostEqualRelative(Data[index] % 3.2, mod[index], 14);
+                AssertHelpers.AlmostEqualRelative(Euclid.Modulus(Data[index], -3.2), mod[index], 14);
             }
         }
 
-        /// <summary>
-        /// Can compute the modules of each element of vector using a result vector.
-        /// </summary>
         [Test]
         public void CanComputeModulusUsingResultVector()
         {
             var vector = CreateVector(Data);
             var mod = CreateVector(vector.Count);
-            vector.Modulus(3.2, mod);
-
+            vector.Modulus(-3.2, mod);
             for (var index = 0; index < Data.Length; index++)
             {
-                AssertHelpers.AlmostEqualRelative(Data[index] % 3.2, mod[index], 14);
+                AssertHelpers.AlmostEqualRelative(Euclid.Modulus(Data[index], -3.2), mod[index], 14);
             }
         }
 
-        /// <summary>
-        /// Can compute the modules of each element of vector using a result vector.
-        /// </summary>
         [Test]
         public void CanComputeModulusUsingSameResultVector()
         {
             var vector = CreateVector(Data);
-            vector.Modulus(3.2, vector);
-
+            vector.Modulus(-3.2, vector);
             for (var index = 0; index < Data.Length; index++)
             {
-                AssertHelpers.AlmostEqualRelative(Data[index] % 3.2, vector[index], 14);
-            }
-        }
-
-        /// <summary>
-        /// Can compute the modules of each element of vector using the operator %.
-        /// </summary>
-        [Test]
-        public void CanComputeModulusUsingOperator()
-        {
-            var vector = CreateVector(Data);
-            var mod = vector % 4.5;
-            for (var index = 0; index < Data.Length; index++)
-            {
-                AssertHelpers.AlmostEqualRelative(Data[index] % 4.5, mod[index], 14);
+                AssertHelpers.AlmostEqualRelative(Euclid.Modulus(Data[index], -3.2), vector[index], 14);
             }
         }
     }

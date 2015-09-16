@@ -88,8 +88,8 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Multivariate
         [Test]
         public void FailCreateDirichlet()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new Dirichlet(0.0, 5));
-            Assert.Throws<ArgumentOutOfRangeException>(() => new Dirichlet(-0.1, 5));
+            Assert.That(() => new Dirichlet(0.0, 5), Throws.ArgumentException);
+            Assert.That(() => new Dirichlet(-0.1, 5), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -108,10 +108,10 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Multivariate
         [Test]
         public void CanSetRandomSource()
         {
-            new Dirichlet(0.3, 5)
+            GC.KeepAlive(new Dirichlet(0.3, 5)
             {
                 RandomSource = new Random(0)
-            };
+            });
         }
 
         [Test]
@@ -143,23 +143,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Multivariate
             {
                 Assert.AreEqual(0.3, d.Alpha[i]);
             }
-        }
-
-        /// <summary>
-        /// Can set alpha.
-        /// </summary>
-        [Test]
-        public void CanSetAlpha()
-        {
-            var d = new Dirichlet(0.3, 10);
-
-            var alpha = new double[10];
-            for (var i = 0; i < 10; i++)
-            {
-                alpha[i] = i;
-            }
-
-            d.Alpha = alpha;
         }
 
         /// <summary>

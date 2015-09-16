@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2013 Math.NET
+// Copyright (c) 2009-2014 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -40,6 +40,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Solvers
     using Complex = Numerics.Complex;
 #else
     using Complex = System.Numerics.Complex;
+
 #endif
 
     /// <summary>
@@ -68,20 +69,20 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Solvers
         [Test]
         public void DetermineStatusWithNegativeIterationNumberThrowsArgumentOutOfRangeException()
         {
-            var criteria = new List<IIterationStopCriterium<Complex>>
+            var criteria = new List<IIterationStopCriterion<Complex>>
             {
-                new FailureStopCriterium<Complex>(),
-                new DivergenceStopCriterium<Complex>(),
-                new IterationCountStopCriterium<Complex>(),
-                new ResidualStopCriterium<Complex>(1e-12)
+                new FailureStopCriterion<Complex>(),
+                new DivergenceStopCriterion<Complex>(),
+                new IterationCountStopCriterion<Complex>(),
+                new ResidualStopCriterion<Complex>(1e-12)
             };
             var iterator = new Iterator<Complex>(criteria);
 
-            Assert.Throws<ArgumentOutOfRangeException>(() => iterator.DetermineStatus(
+            Assert.That(() => iterator.DetermineStatus(
                 -1,
                 Vector<Complex>.Build.Dense(3, 4),
                 Vector<Complex>.Build.Dense(3, 5),
-                Vector<Complex>.Build.Dense(3, 6)));
+                Vector<Complex>.Build.Dense(3, 6)), Throws.TypeOf<ArgumentOutOfRangeException>());
         }
 
         /// <summary>
@@ -90,11 +91,11 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Solvers
         [Test]
         public void DetermineStatus()
         {
-            var criteria = new List<IIterationStopCriterium<Complex>>
+            var criteria = new List<IIterationStopCriterion<Complex>>
             {
-                new FailureStopCriterium<Complex>(),
-                new DivergenceStopCriterium<Complex>(),
-                new IterationCountStopCriterium<Complex>(1)
+                new FailureStopCriterion<Complex>(),
+                new DivergenceStopCriterion<Complex>(),
+                new IterationCountStopCriterion<Complex>(1)
             };
 
             var iterator = new Iterator<Complex>(criteria);
@@ -122,11 +123,11 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Solvers
         [Test]
         public void ResetToPrecalculationState()
         {
-            var criteria = new List<IIterationStopCriterium<Complex>>
+            var criteria = new List<IIterationStopCriterion<Complex>>
             {
-                new FailureStopCriterium<Complex>(),
-                new DivergenceStopCriterium<Complex>(),
-                new IterationCountStopCriterium<Complex>(1)
+                new FailureStopCriterion<Complex>(),
+                new DivergenceStopCriterion<Complex>(),
+                new IterationCountStopCriterion<Complex>(1)
             };
 
             var iterator = new Iterator<Complex>(criteria);

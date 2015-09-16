@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2014 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -39,15 +43,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
     [TestFixture, Category("Distributions")]
     public class ContinuousUniformTests
     {
-        /// <summary>
-        /// Set-up parameters.
-        /// </summary>
-        [SetUp]
-        public void SetUp()
-        {
-            Control.CheckDistributionParameters = true;
-        }
-
         /// <summary>
         /// Can create continuous uniform.
         /// </summary>
@@ -89,7 +84,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [TestCase(1.0, 0.0)]
         public void ContinuousUniformCreateFailsWithBadParameters(double lower, double upper)
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new ContinuousUniform(lower, upper));
+            Assert.That(() => new ContinuousUniform(lower, upper), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -100,58 +95,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         {
             var n = new ContinuousUniform(1.0, 2.0);
             Assert.AreEqual("ContinuousUniform(Lower = 1, Upper = 2)", n.ToString());
-        }
-
-        /// <summary>
-        /// Can set lower bound.
-        /// </summary>
-        /// <param name="lower">Lower bound.</param>
-        [TestCase(-10.0)]
-        [TestCase(-0.0)]
-        [TestCase(0.0)]
-        [TestCase(0.1)]
-        [TestCase(1.0)]
-        public void CanSetLower(double lower)
-        {
-            new ContinuousUniform
-            {
-                LowerBound = lower
-            };
-        }
-
-        /// <summary>
-        /// Set bad lower bound fails.
-        /// </summary>
-        [Test]
-        public void SetBadLowerFails()
-        {
-            var n = new ContinuousUniform();
-            Assert.Throws<ArgumentOutOfRangeException>(() => n.LowerBound = 3.0);
-        }
-
-        /// <summary>
-        /// Can set upper bound.
-        /// </summary>
-        /// <param name="upper">Upper bound.</param>
-        [TestCase(1.0)]
-        [TestCase(2.0)]
-        [TestCase(12.0)]
-        public void CanSetUpper(double upper)
-        {
-            new ContinuousUniform
-            {
-                UpperBound = upper
-            };
-        }
-
-        /// <summary>
-        /// Set bad upper fails.
-        /// </summary>
-        [Test]
-        public void SetBadUpperFails()
-        {
-            var n = new ContinuousUniform();
-            Assert.Throws<ArgumentOutOfRangeException>(() => n.UpperBound = -1.0);
         }
 
         /// <summary>
@@ -332,7 +275,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void CanSampleSequenceStatic()
         {
             var ied = ContinuousUniform.Samples(new Random(0), 0.0, 1.0);
-            ied.Take(5).ToArray();
+            GC.KeepAlive(ied.Take(5).ToArray());
         }
 
         /// <summary>
@@ -341,7 +284,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [Test]
         public void FailSampleStatic()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => ContinuousUniform.Sample(new Random(0), 0.0, -1.0));
+            Assert.That(() => ContinuousUniform.Sample(new Random(0), 0.0, -1.0), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -350,7 +293,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [Test]
         public void FailSampleSequenceStatic()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => ContinuousUniform.Samples(new Random(0), 0.0, -1.0).First());
+            Assert.That(() => ContinuousUniform.Samples(new Random(0), 0.0, -1.0).First(), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -371,7 +314,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         {
             var n = new ContinuousUniform();
             var ied = n.Samples();
-            ied.Take(5).ToArray();
+            GC.KeepAlive(ied.Take(5).ToArray());
         }
 
         /// <summary>

@@ -348,7 +348,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         public static DenseMatrix Create(int rows, int columns, Complex32 value)
         {
             if (value == Complex32.Zero) return new DenseMatrix(rows, columns);
-            return new DenseMatrix(DenseColumnMajorMatrixStorage<Complex32>.OfInit(rows, columns, (i, j) => value));
+            return new DenseMatrix(DenseColumnMajorMatrixStorage<Complex32>.OfValue(rows, columns, value));
         }
 
         /// <summary>
@@ -389,8 +389,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         /// </summary>
         public static DenseMatrix CreateRandom(int rows, int columns, IContinuousDistribution distribution)
         {
-            return new DenseMatrix(DenseColumnMajorMatrixStorage<Complex32>.OfInit(rows, columns,
-                (i, j) => new Complex32((float) distribution.Sample(), (float) distribution.Sample())));
+            return new DenseMatrix(new DenseColumnMajorMatrixStorage<Complex32>(rows, columns, Generate.RandomComplex32(rows*columns, distribution)));
         }
 
         /// <summary>
@@ -456,42 +455,6 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         }
 
         /// <summary>
-        /// Returns the transpose of this matrix.
-        /// </summary>
-        /// <returns>The transpose of this matrix.</returns>
-        public override Matrix<Complex32> Transpose()
-        {
-            var ret = new DenseMatrix(_columnCount, _rowCount);
-            for (var j = 0; j < _columnCount; j++)
-            {
-                var index = j * _rowCount;
-                for (var i = 0; i < _rowCount; i++)
-                {
-                    ret._values[(i * _columnCount) + j] = _values[index + i];
-                }
-            }
-            return ret;
-        }
-
-        /// <summary>
-        /// Returns the conjugate transpose of this matrix.
-        /// </summary>
-        /// <returns>The conjugate transpose of this matrix.</returns>
-        public override Matrix<Complex32> ConjugateTranspose()
-        {
-            var ret = new DenseMatrix(_columnCount, _rowCount);
-            for (var j = 0; j < _columnCount; j++)
-            {
-                var index = j * _rowCount;
-                for (var i = 0; i < _rowCount; i++)
-                {
-                    ret._values[(i * _columnCount) + j] = _values[index + i].Conjugate();
-                }
-            }
-            return ret;
-        }
-
-        /// <summary>
         /// Add a scalar to each element of the matrix and stores the result in the result vector.
         /// </summary>
         /// <param name="scalar">The scalar to add.</param>
@@ -537,7 +500,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
             var diagonalOther = other.Storage as DiagonalMatrixStorage<Complex32>;
             if (diagonalOther != null)
             {
-                Storage.CopyToUnchecked(result.Storage);
+                Storage.CopyToUnchecked(result.Storage, ExistingData.Clear);
                 var diagonal = diagonalOther.Data;
                 for (int i = 0; i < diagonal.Length; i++)
                 {
@@ -639,17 +602,13 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
             }
             else
             {
-                Control.LinearAlgebraProvider.MatrixMultiplyWithUpdate(
-                    Providers.LinearAlgebra.Transpose.DontTranspose,
-                    Providers.LinearAlgebra.Transpose.DontTranspose,
-                    1.0f,
+                Control.LinearAlgebraProvider.MatrixMultiply(
                     _values,
                     _rowCount,
                     _columnCount,
                     denseRight.Values,
                     denseRight.Count,
                     1,
-                    0.0f,
                     denseResult.Values);
             }
         }
@@ -665,17 +624,13 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
             var denseResult = result as DenseMatrix;
             if (denseOther != null && denseResult != null)
             {
-                Control.LinearAlgebraProvider.MatrixMultiplyWithUpdate(
-                    Providers.LinearAlgebra.Transpose.DontTranspose,
-                    Providers.LinearAlgebra.Transpose.DontTranspose,
-                    1.0f,
+                Control.LinearAlgebraProvider.MatrixMultiply(
                     _values,
                     _rowCount,
                     _columnCount,
                     denseOther._values,
                     denseOther._rowCount,
                     denseOther._columnCount,
-                    0.0f,
                     denseResult._values);
                 return;
             }
@@ -1258,7 +1213,66 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
                 throw new ArgumentNullException("leftSide");
             }
 
-            return (DenseMatrix)leftSide.Modulus(rightSide);
+            return (DenseMatrix)leftSide.Remainder(rightSide);
+        }
+
+        /// <summary>
+        /// Evaluates whether this matrix is symmetric.
+        /// </summary>
+        public override bool IsSymmetric()
+        {
+            if (RowCount != ColumnCount)
+            {
+                return false;
+            }
+
+            for (var j = 0; j < ColumnCount; j++)
+            {
+                var index = j * RowCount;
+                for (var i = j + 1; i < RowCount; i++)
+                {
+                    if (_values[(i*ColumnCount) + j] != _values[index + i])
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Evaluates whether this matrix is hermitian (conjugate symmetric).
+        /// </summary>
+        public override bool IsHermitian()
+        {
+            if (RowCount != ColumnCount)
+            {
+                return false;
+            }
+
+            int stride = RowCount + 1;
+            for (var k = 0; k < _values.Length; k += stride)
+            {
+                if (!_values[k].IsReal())
+                {
+                    return false;
+                }
+            }
+
+            for (var j = 0; j < ColumnCount; j++)
+            {
+                var index = j * RowCount;
+                for (var i = j + 1; i < RowCount; i++)
+                {
+                    if (_values[(i*ColumnCount) + j] != _values[index + i].Conjugate())
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
         }
 
         public override Cholesky<Complex32> Cholesky()
@@ -1286,9 +1300,9 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
             return DenseSvd.Create(this, computeVectors);
         }
 
-        public override Evd<Complex32> Evd()
+        public override Evd<Complex32> Evd(Symmetricity symmetricity = Symmetricity.Unknown)
         {
-            return DenseEvd.Create(this);
+            return DenseEvd.Create(this, symmetricity);
         }
     }
 }

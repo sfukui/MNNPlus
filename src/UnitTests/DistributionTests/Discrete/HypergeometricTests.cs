@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2014 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -37,15 +41,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
     [TestFixture, Category("Distributions")]
     public class HypergeometricTests
     {
-        /// <summary>
-        /// Set-up parameters.
-        /// </summary>
-        [SetUp]
-        public void SetUp()
-        {
-            Control.CheckDistributionParameters = true;
-        }
-
         /// <summary>
         /// Can create Hypergeometric.
         /// </summary>
@@ -78,7 +73,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         [TestCase(0, 1, 1)]
         public void HypergeometricCreateFailsWithBadParameters(int population, int success, int n)
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new Hypergeometric(population, success, n));
+            Assert.That(() => new Hypergeometric(population, success, n), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -89,89 +84,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         {
             var d = new Hypergeometric(10, 1, 1);
             Assert.AreEqual("Hypergeometric(N = 10, M = 1, n = 1)", d.ToString());
-        }
-
-        /// <summary>
-        /// Can set size.
-        /// </summary>
-        /// <param name="population">Population size.</param>
-        [TestCase(5)]
-        [TestCase(10)]
-        [TestCase(20)]
-        public void CanSetPopulation(int population)
-        {
-            new Hypergeometric(10, 1, 1)
-                {
-                    Population = population
-                };
-        }
-
-        /// <summary>
-        /// Set size fails with bad values.
-        /// </summary>
-        /// <param name="population">Population size.</param>
-        [TestCase(-1)]
-        [TestCase(0)]
-        public void SetPopulationFails(int population)
-        {
-            var d = new Hypergeometric(10, 1, 1);
-            Assert.Throws<ArgumentOutOfRangeException>(() => d.Population = population);
-        }
-
-        /// <summary>
-        /// Can set M.
-        /// </summary>
-        /// <param name="success">M parameter.</param>
-        [TestCase(0)]
-        [TestCase(1)]
-        [TestCase(2)]
-        [TestCase(5)]
-        public void CanSetSuccess(int success)
-        {
-            new Hypergeometric(10, 1, 1)
-                {
-                    Success = success
-                };
-        }
-
-        /// <summary>
-        /// Set M fails with bad values.
-        /// </summary>
-        /// <param name="success">M parameter.</param>
-        [TestCase(11)]
-        [TestCase(-1)]
-        public void SetSuccessFails(int success)
-        {
-            var d = new Hypergeometric(10, 1, 1);
-            Assert.Throws<ArgumentOutOfRangeException>(() => d.Success = success);
-        }
-
-        /// <summary>
-        /// Can set N.
-        /// </summary>
-        /// <param name="draws">N parameter.</param>
-        [TestCase(0)]
-        [TestCase(1)]
-        [TestCase(2)]
-        [TestCase(5)]
-        public void CanSetDraws(int draws)
-        {
-            new Hypergeometric(10, 1, 1)
-                {
-                    Draws = draws
-                };
-        }
-
-        /// <summary>
-        /// Set N fails with bad values.
-        /// </summary>
-        /// <param name="draws">N parameter.</param>
-        [TestCase(11)]
-        [TestCase(-1)]
-        public void SetDrawsFails(int draws)
-        {
-            var d = new Hypergeometric(10, 1, 1);
-            Assert.Throws<ArgumentOutOfRangeException>(() => d.Draws = draws);
         }
 
         /// <summary>
@@ -285,7 +197,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         public void ValidateProbability(int population, int success, int draws, int x)
         {
             var d = new Hypergeometric(population, success, draws);
-            Assert.AreEqual(SpecialFunctions.Binomial(success, x)*SpecialFunctions.Binomial(population - success, draws - x)/SpecialFunctions.Binomial(population, draws), d.Probability(x));
+            Assert.That(d.Probability(x), Is.EqualTo(SpecialFunctions.Binomial(success, x)*SpecialFunctions.Binomial(population - success, draws - x)/SpecialFunctions.Binomial(population, draws)));
         }
 
         /// <summary>
@@ -307,7 +219,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         public void ValidateProbabilityLn(int population, int success, int draws, int x)
         {
             var d = new Hypergeometric(population, success, draws);
-            Assert.AreEqual(Math.Log(d.Probability(x)), d.ProbabilityLn(x));
+            Assert.That(d.ProbabilityLn(x), Is.EqualTo(Math.Log(d.Probability(x))).Within(1e-14));
         }
 
         /// <summary>
@@ -328,7 +240,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         {
             var d = new Hypergeometric(10, 1, 1);
             var ied = d.Samples();
-            ied.Take(5).ToArray();
+            GC.KeepAlive(ied.Take(5).ToArray());
         }
 
         /// <summary>

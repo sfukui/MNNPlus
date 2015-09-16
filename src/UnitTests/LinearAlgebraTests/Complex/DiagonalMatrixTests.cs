@@ -185,7 +185,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
         [TestCase(-1)]
         public void IdentityWithWrongOrderThrowsArgumentOutOfRangeException(int order)
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => DiagonalMatrix.CreateIdentity(order));
+            Assert.That(() => DiagonalMatrix.CreateIdentity(order), Throws.TypeOf<ArgumentOutOfRangeException>());
         }
 
         /// <summary>
@@ -220,7 +220,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
         {
             var matrixp = DiagonalMatrix.OfArray(TestData2D["Singular3x3"]);
             var permutation = new Permutation(new[] {2, 0, 1});
-            Assert.Throws<InvalidOperationException>(() => matrixp.PermuteRows(permutation));
+            Assert.That(() => matrixp.PermuteRows(permutation), Throws.InvalidOperationException);
         }
 
         /// <summary>
@@ -231,7 +231,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
         {
             var matrixp = DiagonalMatrix.OfArray(TestData2D["Singular3x3"]);
             var permutation = new Permutation(new[] {2, 0, 1});
-            Assert.Throws<InvalidOperationException>(() => matrixp.PermuteColumns(permutation));
+            Assert.That(() => matrixp.PermuteColumns(permutation), Throws.InvalidOperationException);
         }
 
         /// <summary>
@@ -352,7 +352,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
         public void DeterminantNotSquareMatrixThrowsArgumentException()
         {
             var matrix = TestMatrices["Tall3x2"];
-            Assert.Throws<ArgumentException>(() => matrix.Determinant());
+            Assert.That(() => matrix.Determinant(), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -362,13 +362,13 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
         public override void CanCheckIfMatrixIsSymmetric()
         {
             var matrix = TestMatrices["Square3x3"];
-            Assert.IsTrue(matrix.IsSymmetric);
+            Assert.IsTrue(matrix.IsSymmetric());
         }
 
         [Test]
         public void DenseDiagonalMatrixMultiply()
         {
-            var dist = new ContinuousUniform(-1.0, 1.0, new MersenneTwister());
+            var dist = new ContinuousUniform(-1.0, 1.0, new SystemRandomSource(1));
             Assert.IsInstanceOf<DiagonalMatrix>(Matrix<Complex>.Build.DiagonalIdentity(3, 3));
 
             var tall = Matrix<Complex>.Build.Random(8, 3, dist);
@@ -385,7 +385,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
         [Test]
         public void DenseDiagonalMatrixTransposeAndMultiply()
         {
-            var dist = new ContinuousUniform(-1.0, 1.0, new MersenneTwister());
+            var dist = new ContinuousUniform(-1.0, 1.0, new SystemRandomSource(1));
             Assert.IsInstanceOf<DiagonalMatrix>(Matrix<Complex>.Build.DiagonalIdentity(3, 3));
 
             var tall = Matrix<Complex>.Build.Random(8, 3, dist);
@@ -402,7 +402,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
         [Test]
         public void DenseDiagonalMatrixTransposeThisAndMultiply()
         {
-            var dist = new ContinuousUniform(-1.0, 1.0, new MersenneTwister());
+            var dist = new ContinuousUniform(-1.0, 1.0, new SystemRandomSource(1));
             Assert.IsInstanceOf<DiagonalMatrix>(Matrix<Complex>.Build.DiagonalIdentity(3, 3));
 
             var wide = Matrix<Complex>.Build.Random(3, 8, dist);
@@ -419,7 +419,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
         [Test]
         public void DiagonalDenseMatrixMultiply()
         {
-            var dist = new ContinuousUniform(-1.0, 1.0, new MersenneTwister());
+            var dist = new ContinuousUniform(-1.0, 1.0, new SystemRandomSource(1));
             Assert.IsInstanceOf<DiagonalMatrix>(Matrix<Complex>.Build.DiagonalIdentity(3, 3));
 
             var wide = Matrix<Complex>.Build.Random(3, 8, dist);
@@ -436,7 +436,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
         [Test]
         public void DiagonalDenseMatrixTransposeAndMultiply()
         {
-            var dist = new ContinuousUniform(-1.0, 1.0, new MersenneTwister());
+            var dist = new ContinuousUniform(-1.0, 1.0, new SystemRandomSource(1));
             Assert.IsInstanceOf<DiagonalMatrix>(Matrix<Complex>.Build.DiagonalIdentity(3, 3));
 
             var tall = Matrix<Complex>.Build.Random(8, 3, dist);
@@ -453,7 +453,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
         [Test]
         public void DiagonalDenseMatrixTransposeThisAndMultiply()
         {
-            var dist = new ContinuousUniform(-1.0, 1.0, new MersenneTwister());
+            var dist = new ContinuousUniform(-1.0, 1.0, new SystemRandomSource(1));
             Assert.IsInstanceOf<DiagonalMatrix>(Matrix<Complex>.Build.DiagonalIdentity(3, 3));
 
             var wide = Matrix<Complex>.Build.Random(3, 8, dist);

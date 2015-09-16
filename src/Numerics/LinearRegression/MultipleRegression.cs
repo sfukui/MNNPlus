@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 // 
-// Copyright (c) 2009-2013 Math.NET
+// Copyright (c) 2009-2014 Math.NET
 // 
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -38,6 +38,96 @@ namespace MathNet.Numerics.LinearRegression
     {
         /// <summary>
         /// Find the model parameters β such that X*β with predictor X becomes as close to response Y as possible, with least squares residuals.
+        /// </summary>
+        /// <param name="x">Predictor matrix X</param>
+        /// <param name="y">Response vector Y</param>
+        /// <param name="method">The direct method to be used to compute the regression.</param>
+        /// <returns>Best fitting vector for model parameters β</returns>
+        public static Vector<T> DirectMethod<T>(Matrix<T> x, Vector<T> y, DirectRegressionMethod method = DirectRegressionMethod.NormalEquations) where T : struct, IEquatable<T>, IFormattable
+        {
+            switch (method)
+            {
+                case DirectRegressionMethod.NormalEquations:
+                    return NormalEquations(x, y);
+                case DirectRegressionMethod.QR:
+                    return QR(x, y);
+                case DirectRegressionMethod.Svd:
+                    return Svd(x, y);
+                default:
+                    throw new NotSupportedException(method.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Find the model parameters β such that X*β with predictor X becomes as close to response Y as possible, with least squares residuals.
+        /// </summary>
+        /// <param name="x">Predictor matrix X</param>
+        /// <param name="y">Response matrix Y</param>
+        /// <param name="method">The direct method to be used to compute the regression.</param>
+        /// <returns>Best fitting vector for model parameters β</returns>
+        public static Matrix<T> DirectMethod<T>(Matrix<T> x, Matrix<T> y, DirectRegressionMethod method = DirectRegressionMethod.NormalEquations) where T : struct, IEquatable<T>, IFormattable
+        {
+            switch (method)
+            {
+                case DirectRegressionMethod.NormalEquations:
+                    return NormalEquations(x, y);
+                case DirectRegressionMethod.QR:
+                    return QR(x, y);
+                case DirectRegressionMethod.Svd:
+                    return Svd(x, y);
+                default:
+                    throw new NotSupportedException(method.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Find the model parameters β such that their linear combination with all predictor-arrays in X become as close to their response in Y as possible, with least squares residuals.
+        /// </summary>
+        /// <param name="x">List of predictor-arrays.</param>
+        /// <param name="y">List of responses</param>
+        /// <param name="intercept">True if an intercept should be added as first artificial predictor value. Default = false.</param>
+        /// <param name="method">The direct method to be used to compute the regression.</param>
+        /// <returns>Best fitting list of model parameters β for each element in the predictor-arrays.</returns>
+        public static T[] DirectMethod<T>(T[][] x, T[] y, bool intercept = false, DirectRegressionMethod method = DirectRegressionMethod.NormalEquations) where T : struct, IEquatable<T>, IFormattable
+        {
+            switch (method)
+            {
+                case DirectRegressionMethod.NormalEquations:
+                    return NormalEquations(x, y, intercept);
+                case DirectRegressionMethod.QR:
+                    return QR(x, y, intercept);
+                case DirectRegressionMethod.Svd:
+                    return Svd(x, y, intercept);
+                default:
+                    throw new NotSupportedException(method.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Find the model parameters β such that their linear combination with all predictor-arrays in X become as close to their response in Y as possible, with least squares residuals.
+        /// Uses the cholesky decomposition of the normal equations.
+        /// </summary>
+        /// <param name="samples">Sequence of predictor-arrays and their response.</param>
+        /// <param name="intercept">True if an intercept should be added as first artificial predictor value. Default = false.</param>
+        /// <param name="method">The direct method to be used to compute the regression.</param>
+        /// <returns>Best fitting list of model parameters β for each element in the predictor-arrays.</returns>
+        public static T[] DirectMethod<T>(IEnumerable<Tuple<T[], T>> samples, bool intercept = false, DirectRegressionMethod method = DirectRegressionMethod.NormalEquations) where T : struct, IEquatable<T>, IFormattable
+        {
+            switch (method)
+            {
+                case DirectRegressionMethod.NormalEquations:
+                    return NormalEquations(samples, intercept);
+                case DirectRegressionMethod.QR:
+                    return QR(samples, intercept);
+                case DirectRegressionMethod.Svd:
+                    return Svd(samples, intercept);
+                default:
+                    throw new NotSupportedException(method.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Find the model parameters β such that X*β with predictor X becomes as close to response Y as possible, with least squares residuals.
         /// Uses the cholesky decomposition of the normal equations.
         /// </summary>
         /// <param name="x">Predictor matrix X</param>
@@ -66,7 +156,7 @@ namespace MathNet.Numerics.LinearRegression
         /// </summary>
         /// <param name="x">List of predictor-arrays.</param>
         /// <param name="y">List of responses</param>
-        /// <param name="intercept">True if an intercept should be added as first artificial perdictor value. Default = false.</param>
+        /// <param name="intercept">True if an intercept should be added as first artificial predictor value. Default = false.</param>
         /// <returns>Best fitting list of model parameters β for each element in the predictor-arrays.</returns>
         public static T[] NormalEquations<T>(T[][] x, T[] y, bool intercept = false) where T : struct, IEquatable<T>, IFormattable
         {
@@ -75,6 +165,7 @@ namespace MathNet.Numerics.LinearRegression
             {
                 predictor = predictor.InsertColumn(0, Vector<T>.Build.Dense(predictor.RowCount, Vector<T>.One));
             }
+
             var response = Vector<T>.Build.Dense(y);
             return predictor.TransposeThisAndMultiply(predictor).Cholesky().Solve(predictor.TransposeThisAndMultiply(response)).ToArray();
         }
@@ -84,7 +175,7 @@ namespace MathNet.Numerics.LinearRegression
         /// Uses the cholesky decomposition of the normal equations.
         /// </summary>
         /// <param name="samples">Sequence of predictor-arrays and their response.</param>
-        /// <param name="intercept">True if an intercept should be added as first artificial perdictor value. Default = false.</param>
+        /// <param name="intercept">True if an intercept should be added as first artificial predictor value. Default = false.</param>
         /// <returns>Best fitting list of model parameters β for each element in the predictor-arrays.</returns>
         public static T[] NormalEquations<T>(IEnumerable<Tuple<T[], T>> samples, bool intercept = false) where T : struct, IEquatable<T>, IFormattable
         {
@@ -122,7 +213,7 @@ namespace MathNet.Numerics.LinearRegression
         /// </summary>
         /// <param name="x">List of predictor-arrays.</param>
         /// <param name="y">List of responses</param>
-        /// <param name="intercept">True if an intercept should be added as first artificial perdictor value. Default = false.</param>
+        /// <param name="intercept">True if an intercept should be added as first artificial predictor value. Default = false.</param>
         /// <returns>Best fitting list of model parameters β for each element in the predictor-arrays.</returns>
         public static T[] QR<T>(T[][] x, T[] y, bool intercept = false) where T : struct, IEquatable<T>, IFormattable
         {
@@ -131,6 +222,7 @@ namespace MathNet.Numerics.LinearRegression
             {
                 predictor = predictor.InsertColumn(0, Vector<T>.Build.Dense(predictor.RowCount, Vector<T>.One));
             }
+
             return predictor.QR().Solve(Vector<T>.Build.Dense(y)).ToArray();
         }
 
@@ -139,7 +231,7 @@ namespace MathNet.Numerics.LinearRegression
         /// Uses an orthogonal decomposition and is therefore more numerically stable than the normal equations but also slower.
         /// </summary>
         /// <param name="samples">Sequence of predictor-arrays and their response.</param>
-        /// <param name="intercept">True if an intercept should be added as first artificial perdictor value. Default = false.</param>
+        /// <param name="intercept">True if an intercept should be added as first artificial predictor value. Default = false.</param>
         /// <returns>Best fitting list of model parameters β for each element in the predictor-arrays.</returns>
         public static T[] QR<T>(IEnumerable<Tuple<T[], T>> samples, bool intercept = false) where T : struct, IEquatable<T>, IFormattable
         {
@@ -177,7 +269,7 @@ namespace MathNet.Numerics.LinearRegression
         /// </summary>
         /// <param name="x">List of predictor-arrays.</param>
         /// <param name="y">List of responses</param>
-        /// <param name="intercept">True if an intercept should be added as first artificial perdictor value. Default = false.</param>
+        /// <param name="intercept">True if an intercept should be added as first artificial predictor value. Default = false.</param>
         /// <returns>Best fitting list of model parameters β for each element in the predictor-arrays.</returns>
         public static T[] Svd<T>(T[][] x, T[] y, bool intercept = false) where T : struct, IEquatable<T>, IFormattable
         {
@@ -186,6 +278,7 @@ namespace MathNet.Numerics.LinearRegression
             {
                 predictor = predictor.InsertColumn(0, Vector<T>.Build.Dense(predictor.RowCount, Vector<T>.One));
             }
+
             return predictor.Svd().Solve(Vector<T>.Build.Dense(y)).ToArray();
         }
 
@@ -194,7 +287,7 @@ namespace MathNet.Numerics.LinearRegression
         /// Uses a singular value decomposition and is therefore more numerically stable (especially if ill-conditioned) than the normal equations or QR but also slower.
         /// </summary>
         /// <param name="samples">Sequence of predictor-arrays and their response.</param>
-        /// <param name="intercept">True if an intercept should be added as first artificial perdictor value. Default = false.</param>
+        /// <param name="intercept">True if an intercept should be added as first artificial predictor value. Default = false.</param>
         /// <returns>Best fitting list of model parameters β for each element in the predictor-arrays.</returns>
         public static T[] Svd<T>(IEnumerable<Tuple<T[], T>> samples, bool intercept = false) where T : struct, IEquatable<T>, IFormattable
         {

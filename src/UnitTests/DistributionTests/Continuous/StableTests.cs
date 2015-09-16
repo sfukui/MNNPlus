@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2014 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -37,15 +41,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
     [TestFixture, Category("Distributions")]
     public class StableTests
     {
-        /// <summary>
-        /// Set-up parameters.
-        /// </summary>
-        [SetUp]
-        public void SetUp()
-        {
-            Control.CheckDistributionParameters = true;
-        }
-
         /// <summary>
         /// Can create stable.
         /// </summary>
@@ -94,7 +89,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [TestCase(2.1, 1.0, 1.0, 1.0)]
         public void StableCreateFailsWithBadParameters(double alpha, double beta, double location, double scale)
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new Stable(alpha, beta, location, scale));
+            Assert.That(() => new Stable(alpha, beta, location, scale), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -105,128 +100,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         {
             var n = new Stable(1.2d, 0.3d, 1d, 2d);
             Assert.AreEqual("Stable(α = 1.2, β = 0.3, c = 1, μ = 2)", n.ToString());
-        }
-
-        /// <summary>
-        /// Can set alpha.
-        /// </summary>
-        /// <param name="alpha">Alpha value.</param>
-        [TestCase(0.1)]
-        [TestCase(1.0)]
-        [TestCase(2.0)]
-        public void CanSetAlpha(double alpha)
-        {
-            new Stable(1.0, 1.0, 1.0, 1.0)
-            {
-                Alpha = alpha
-            };
-        }
-
-        /// <summary>
-        /// Set alpha fails with bad values.
-        /// </summary>
-        /// <param name="alpha">Alpha value.</param>
-        [TestCase(Double.NaN)]
-        [TestCase(-0.0)]
-        [TestCase(0.0)]
-        [TestCase(2.1)]
-        [TestCase(Double.NegativeInfinity)]
-        [TestCase(Double.PositiveInfinity)]
-        public void SetAlphaFail(double alpha)
-        {
-            var n = new Stable(1.0, 1.0, 1.0, 1.0);
-            Assert.Throws<ArgumentOutOfRangeException>(() => n.Alpha = alpha);
-        }
-
-        /// <summary>
-        /// Can set beta.
-        /// </summary>
-        /// <param name="beta">Beta value.</param>
-        [TestCase(-1.0)]
-        [TestCase(-0.1)]
-        [TestCase(-0.0)]
-        [TestCase(0.0)]
-        [TestCase(0.1)]
-        [TestCase(1.0)]
-        public void CanSetBeta(double beta)
-        {
-            new Stable(1.0, 1.0, 1.0, 1.0)
-            {
-                Beta = beta
-            };
-        }
-
-        /// <summary>
-        /// Set beta fails with bad values.
-        /// </summary>
-        /// <param name="beta">Beta value.</param>
-        [TestCase(Double.NaN)]
-        [TestCase(-1.1)]
-        [TestCase(1.1)]
-        [TestCase(Double.NegativeInfinity)]
-        [TestCase(Double.PositiveInfinity)]
-        public void SetBetaFail(double beta)
-        {
-            var n = new Stable(1.0, 1.0, 1.0, 1.0);
-            Assert.Throws<ArgumentOutOfRangeException>(() => n.Beta = beta);
-        }
-
-        /// <summary>
-        /// Can set scale.
-        /// </summary>
-        /// <param name="scale">Scale value.</param>
-        [TestCase(0.1)]
-        [TestCase(1.0)]
-        [TestCase(10.0)]
-        [TestCase(Double.PositiveInfinity)]
-        public void CanSetScale(double scale)
-        {
-            new Stable(1.0, 1.0, 1.0, 1.0)
-            {
-                Scale = scale
-            };
-        }
-
-        /// <summary>
-        /// Set scale fails with bad values.
-        /// </summary>
-        /// <param name="scale">Scale value.</param>
-        [TestCase(Double.NaN)]
-        [TestCase(0.0)]
-        public void SetScaleFail(double scale)
-        {
-            var n = new Stable(1.0, 1.0, 1.0, 1.0);
-            Assert.Throws<ArgumentOutOfRangeException>(() => n.Scale = scale);
-        }
-
-        /// <summary>
-        /// Can set location.
-        /// </summary>
-        /// <param name="location">Location value.</param>
-        [TestCase(Double.NegativeInfinity)]
-        [TestCase(-10.0)]
-        [TestCase(-1.0)]
-        [TestCase(-0.1)]
-        [TestCase(0.1)]
-        [TestCase(1.0)]
-        [TestCase(10.0)]
-        [TestCase(Double.PositiveInfinity)]
-        public void CanSetLocation(double location)
-        {
-            new Stable(1.0, 1.0, 1.0, 1.0)
-            {
-                Location = location
-            };
-        }
-
-        /// <summary>
-        /// Set location fails with bad values.
-        /// </summary>
-        [Test]
-        public void SetLocationFail()
-        {
-            var n = new Stable(1.0, 1.0, 1.0, 1.0);
-            Assert.Throws<ArgumentOutOfRangeException>(() => n.Location = Double.NaN);
         }
 
         /// <summary>
@@ -386,7 +259,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         {
             var n = new Stable(1.0, 1.0, 1.0, 1.0);
             var ied = n.Samples();
-            ied.Take(5).ToArray();
+            GC.KeepAlive(ied.Take(5).ToArray());
         }
 
         /// <summary>

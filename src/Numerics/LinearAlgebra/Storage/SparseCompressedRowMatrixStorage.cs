@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2013 Math.NET
+// Copyright (c) 2009-2015 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -42,7 +42,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
         // [ruegg] public fields are OK here
 
         /// <summary>
-        /// The array containing the row indices of the existing rows. Element "i" of the array gives the index of the 
+        /// The array containing the row indices of the existing rows. Element "i" of the array gives the index of the
         /// element in the <see cref="Values"/> array that is first non-zero element in a row "i".
         /// The last value is equal to ValueCount, so that the number of non-zero entries in row "i" is always
         /// given by RowPointers[i+i] - RowPointers[i]. This array thus has length RowCount+1.
@@ -50,13 +50,13 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
         public readonly int[] RowPointers;
 
         /// <summary>
-        /// An array containing the column indices of the non-zero values. Element "j" of the array 
+        /// An array containing the column indices of the non-zero values. Element "j" of the array
         /// is the number of the column in matrix that contains the j-th value in the <see cref="Values"/> array.
         /// </summary>
         public int[] ColumnIndices;
 
         /// <summary>
-        /// Array that contains the non-zero elements of matrix. Values of the non-zero elements of matrix are mapped into the values 
+        /// Array that contains the non-zero elements of matrix. Values of the non-zero elements of matrix are mapped into the values
         /// array using the row-major storage mapping described in a compressed sparse row (CSR) format.
         /// </summary>
         public T[] Values;
@@ -159,18 +159,18 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
                 var valueCount = RowPointers[RowPointers.Length - 1];
 
                 // Check if the storage needs to be increased
-                if ((valueCount == Values.Length) && (valueCount < ((long)RowCount * ColumnCount)))
+                if ((valueCount == Values.Length) && (valueCount < ((long)RowCount*ColumnCount)))
                 {
                     // Value array is completely full so we increase the size
                     // Determine the increase in size. We will not grow beyond the size of the matrix
-                    var size = Math.Min(Values.Length + GrowthSize(), (long) RowCount*ColumnCount);
+                    var size = Math.Min(Values.Length + GrowthSize(), (long)RowCount*ColumnCount);
                     if (size > int.MaxValue)
                     {
                         throw new NotSupportedException(Resources.TooManyElements);
                     }
 
-                    Array.Resize(ref Values, (int) size);
-                    Array.Resize(ref ColumnIndices, (int) size);
+                    Array.Resize(ref Values, (int)size);
+                    Array.Resize(ref ColumnIndices, (int)size);
                 }
 
                 // Move all values (with a position larger than index) in the value array to the next position
@@ -214,9 +214,9 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
 
             valueCount -= 1;
 
-            // Check whether we need to shrink the arrays. This is reasonable to do if 
+            // Check whether we need to shrink the arrays. This is reasonable to do if
             // there are a lot of non-zero elements and storage is two times bigger
-            if ((valueCount > 1024) && (valueCount < Values.Length / 2))
+            if ((valueCount > 1024) && (valueCount < Values.Length/2))
             {
                 Array.Resize(ref Values, valueCount);
                 Array.Resize(ref ColumnIndices, valueCount);
@@ -232,7 +232,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
         /// <remarks>WARNING: This method is not thread safe. Use "lock" with it and be sure to avoid deadlocks</remarks>
         public int FindItem(int row, int column)
         {
-            // Determin bounds in columnIndices array where this item should be searched (using rowIndex)
+            // Determine bounds in columnIndices array where this item should be searched (using rowIndex)
             return Array.BinarySearch(ColumnIndices, RowPointers[row], RowPointers[row + 1] - RowPointers[row], column);
         }
 
@@ -263,12 +263,59 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             return delta;
         }
 
+        public void Normalize()
+        {
+            NormalizeOrdering();
+            NormalizeZeros();
+        }
+
+        public void NormalizeOrdering()
+        {
+            for (int i = 0; i < RowCount; i++)
+            {
+                int index = RowPointers[i];
+                int count = RowPointers[i + 1] - index;
+                if (count > 1)
+                {
+                    Sorting.Sort(ColumnIndices, Values, index, count);
+                }
+            }
+        }
+
+        public void NormalizeZeros()
+        {
+            MapInplace(x => x, Zeros.AllowSkip);
+        }
+
+        /// <summary>
+        /// Returns a hash code for this instance.
+        /// </summary>
+        /// <returns>
+        /// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table.
+        /// </returns>
+        public override int GetHashCode()
+        {
+            var values = Values;
+            var hashNum = Math.Min(ValueCount, 25);
+            int hash = 17;
+            unchecked
+            {
+                for (var i = 0; i < hashNum; i++)
+                {
+                    hash = hash*31 + values[i].GetHashCode();
+                }
+            }
+            return hash;
+        }
+
+        // CLEARING
+
         public override void Clear()
         {
             Array.Clear(RowPointers, 0, RowPointers.Length);
         }
 
-        public override void Clear(int rowIndex, int rowCount, int columnIndex, int columnCount)
+        internal override void ClearUnchecked(int rowIndex, int rowCount, int columnIndex, int columnCount)
         {
             if (rowIndex == 0 && columnIndex == 0 && rowCount == RowCount && columnCount == ColumnCount)
             {
@@ -315,80 +362,31 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
 
             // Check whether we need to shrink the arrays. This is reasonable to do if
             // there are a lot of non-zero elements and storage is two times bigger
-            if ((valueCount > 1024) && (valueCount < Values.Length / 2))
+            if ((valueCount > 1024) && (valueCount < Values.Length/2))
             {
                 Array.Resize(ref Values, valueCount);
                 Array.Resize(ref ColumnIndices, valueCount);
             }
         }
 
-        /// <summary>
-        /// Indicates whether the current object is equal to another object of the same type.
-        /// </summary>
-        /// <param name="other">
-        /// An object to compare with this object.
-        /// </param>
-        /// <returns>
-        /// <c>true</c> if the current object is equal to the <paramref name="other"/> parameter; otherwise, <c>false</c>.
-        /// </returns>
-        public override bool Equals(MatrixStorage<T> other)
+        internal override void ClearRowsUnchecked(int[] rowIndices)
         {
-            // Reject equality when the argument is null or has a different shape.
-            if (other == null || ColumnCount != other.ColumnCount || RowCount != other.RowCount)
+            var rows = new bool[RowCount];
+            for (int i = 0; i < rowIndices.Length; i++)
             {
-                return false;
+                rows[rowIndices[i]] = true;
             }
-
-            // Accept if the argument is the same object as this.
-            if (ReferenceEquals(this, other))
-            {
-                return true;
-            }
-
-            var sparse = other as SparseCompressedRowMatrixStorage<T>;
-            if (sparse == null)
-            {
-                return base.Equals(other);
-            }
-
-            if (ValueCount != sparse.ValueCount)
-            {
-                // TODO: this is only correct if normalized
-                return false;
-            }
-
-            // If all else fails, perform element wise comparison.
-            for (var index = 0; index < ValueCount; index++)
-            {
-                // TODO: AlmostEquals
-                if (!Values[index].Equals(sparse.Values[index]) || ColumnIndices[index] != sparse.ColumnIndices[index])
-                {
-                    return false;
-                }
-            }
-
-            return true;
+            MapIndexedInplace((i, j, x) => rows[i] ? Zero : x, Zeros.AllowSkip);
         }
 
-        /// <summary>
-        /// Returns a hash code for this instance.
-        /// </summary>
-        /// <returns>
-        /// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table. 
-        /// </returns>
-        public override int GetHashCode()
+        internal override void ClearColumnsUnchecked(int[] columnIndices)
         {
-            var values = Values;
-            var hashNum = Math.Min(ValueCount, 25);
-            int hash = 17;
-            unchecked
+            var columns = new bool[ColumnCount];
+            for (int i = 0; i < columnIndices.Length; i++)
             {
-                for (var i = 0; i < hashNum; i++)
-                {
-                    hash = hash*31 + values[i].GetHashCode();
-                }
+                columns[columnIndices[i]] = true;
             }
-            return hash;
+            MapIndexedInplace((i, j, x) => columns[j] ? Zero : x, Zeros.AllowSkip);
         }
 
         // INITIALIZATION
@@ -396,9 +394,47 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
         public static SparseCompressedRowMatrixStorage<T> OfMatrix(MatrixStorage<T> matrix)
         {
             var storage = new SparseCompressedRowMatrixStorage<T>(matrix.RowCount, matrix.ColumnCount);
-            matrix.CopyToUnchecked(storage, skipClearing: true);
+            matrix.CopyToUnchecked(storage, ExistingData.AssumeZeros);
             return storage;
         }
+
+        public static SparseCompressedRowMatrixStorage<T> OfValue(int rows, int columns, T value)
+        {
+            if (Zero.Equals(value))
+            {
+                return new SparseCompressedRowMatrixStorage<T>(rows, columns);
+            }
+
+            var storage = new SparseCompressedRowMatrixStorage<T>(rows, columns);
+
+            var values = new T[rows * columns];
+            for (int i = 0; i < values.Length; i++)
+            {
+                values[i] = value;
+            }
+
+            var rowPointers = storage.RowPointers;
+            for (int i = 0; i <= rows; i++)
+            {
+                rowPointers[i] = i*columns;
+            }
+
+            var columnIndices = new int[values.Length];
+            for (int row = 0; row < rows; row++)
+            {
+                int offset = row*columns;
+                for (int col = 0; col < columns; col++)
+                {
+                    columnIndices[offset + col] = col;
+                }
+            }
+
+            rowPointers[rows] = values.Length;
+            storage.ColumnIndices = columnIndices;
+            storage.Values = values;
+            return storage;
+        }
+
 
         public static SparseCompressedRowMatrixStorage<T> OfInit(int rows, int columns, Func<int, int, T> init)
         {
@@ -480,6 +516,11 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
 
         public static SparseCompressedRowMatrixStorage<T> OfRowArrays(T[][] data)
         {
+            if (data.Length <= 0)
+            {
+                throw new ArgumentOutOfRangeException("data", Resources.MatrixCanNotBeEmpty);
+            }
+
             var storage = new SparseCompressedRowMatrixStorage<T>(data.Length, data[0].Length);
             var rowPointers = storage.RowPointers;
             var columnIndices = new List<int>();
@@ -507,6 +548,11 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
 
         public static SparseCompressedRowMatrixStorage<T> OfColumnArrays(T[][] data)
         {
+            if (data.Length <= 0)
+            {
+                throw new ArgumentOutOfRangeException("data", Resources.MatrixCanNotBeEmpty);
+            }
+
             var storage = new SparseCompressedRowMatrixStorage<T>(data[0].Length, data.Length);
             var rowPointers = storage.RowPointers;
             var columnIndices = new List<int>();
@@ -534,6 +580,11 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
 
         public static SparseCompressedRowMatrixStorage<T> OfRowVectors(VectorStorage<T>[] data)
         {
+            if (data.Length <= 0)
+            {
+                throw new ArgumentOutOfRangeException("data", Resources.MatrixCanNotBeEmpty);
+            }
+
             var storage = new SparseCompressedRowMatrixStorage<T>(data.Length, data[0].Length);
             var rowPointers = storage.RowPointers;
             var columnIndices = new List<int>();
@@ -563,6 +614,11 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
 
         public static SparseCompressedRowMatrixStorage<T> OfColumnVectors(VectorStorage<T>[] data)
         {
+            if (data.Length <= 0)
+            {
+                throw new ArgumentOutOfRangeException("data", Resources.MatrixCanNotBeEmpty);
+            }
+
             var storage = new SparseCompressedRowMatrixStorage<T>(data[0].Length, data.Length);
             var rowPointers = storage.RowPointers;
             var columnIndices = new List<int>();
@@ -750,7 +806,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
         {
             if (rows*columns != data.Count)
             {
-                throw new ArgumentOutOfRangeException(Resources.ArgumentMatrixDimensions);
+                throw new ArgumentException(Resources.ArgumentMatrixDimensions);
             }
 
             var storage = new SparseCompressedRowMatrixStorage<T>(rows, columns);
@@ -780,7 +836,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
 
         // MATRIX COPY
 
-        internal override void CopyToUnchecked(MatrixStorage<T> target, bool skipClearing = false)
+        internal override void CopyToUnchecked(MatrixStorage<T> target, ExistingData existingData)
         {
             var sparseTarget = target as SparseCompressedRowMatrixStorage<T>;
             if (sparseTarget != null)
@@ -792,13 +848,13 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             var denseTarget = target as DenseColumnMajorMatrixStorage<T>;
             if (denseTarget != null)
             {
-                CopyToUnchecked(denseTarget, skipClearing);
+                CopyToUnchecked(denseTarget, existingData);
                 return;
             }
 
             // FALL BACK
 
-            if (!skipClearing)
+            if (existingData == ExistingData.Clear)
             {
                 target.Clear();
             }
@@ -830,12 +886,14 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             }
         }
 
-        void CopyToUnchecked(DenseColumnMajorMatrixStorage<T> target, bool skipClearing)
+        void CopyToUnchecked(DenseColumnMajorMatrixStorage<T> target, ExistingData existingData)
         {
-            if (!skipClearing)
+            if (existingData == ExistingData.Clear)
             {
                 target.Clear();
             }
+
+            // TODO: proper implementation
 
             if (ValueCount != 0)
             {
@@ -854,7 +912,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
         internal override void CopySubMatrixToUnchecked(MatrixStorage<T> target,
             int sourceRowIndex, int targetRowIndex, int rowCount,
             int sourceColumnIndex, int targetColumnIndex, int columnCount,
-            bool skipClearing = false)
+            ExistingData existingData)
         {
             if (target == null)
             {
@@ -867,15 +925,15 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
                 CopySubMatrixToUnchecked(sparseTarget,
                     sourceRowIndex, targetRowIndex, rowCount,
                     sourceColumnIndex, targetColumnIndex, columnCount,
-                    skipClearing);
+                    existingData);
                 return;
             }
 
             // FALL BACK
 
-            if (!skipClearing)
+            if (existingData == ExistingData.Clear)
             {
-                target.Clear(targetRowIndex, rowCount, targetColumnIndex, columnCount);
+                target.ClearUnchecked(targetRowIndex, rowCount, targetColumnIndex, columnCount);
             }
 
             for (int i = sourceRowIndex, row = 0; i < sourceRowIndex + rowCount; i++, row++)
@@ -898,7 +956,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
         void CopySubMatrixToUnchecked(SparseCompressedRowMatrixStorage<T> target,
             int sourceRowIndex, int targetRowIndex, int rowCount,
             int sourceColumnIndex, int targetColumnIndex, int columnCount,
-            bool skipClearing)
+            ExistingData existingData)
         {
             var rowOffset = targetRowIndex - sourceRowIndex;
             var columnOffset = targetColumnIndex - sourceColumnIndex;
@@ -912,7 +970,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
                 var columnIndices = new List<int>(ValueCount);
                 var rowPointers = target.RowPointers;
 
-                for (int i = sourceRowIndex, row = 0; i < sourceRowIndex + rowCount; i++, row++)
+                for (int i = sourceRowIndex; i < sourceRowIndex + rowCount; i++)
                 {
                     rowPointers[i + rowOffset] = values.Count;
 
@@ -920,13 +978,13 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
                     var endIndex = RowPointers[i + 1];
 
                     // note: we might be able to replace this loop with Array.Copy (perf)
-                    for (int j = startIndex; j < endIndex; j++)
+                    for (int k = startIndex; k < endIndex; k++)
                     {
                         // check if the column index is in the range
-                        if ((ColumnIndices[j] >= sourceColumnIndex) && (ColumnIndices[j] < sourceColumnIndex + columnCount))
+                        if ((ColumnIndices[k] >= sourceColumnIndex) && (ColumnIndices[k] < sourceColumnIndex + columnCount))
                         {
-                            values.Add(Values[j]);
-                            columnIndices.Add(ColumnIndices[j] + columnOffset);
+                            values.Add(Values[k]);
+                            columnIndices.Add(ColumnIndices[k] + columnOffset);
                         }
                     }
                 }
@@ -943,13 +1001,13 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
                 return;
             }
 
-            if (!skipClearing)
+            if (existingData == ExistingData.Clear)
             {
-                target.Clear(targetRowIndex, rowCount, targetColumnIndex, columnCount);
+                target.ClearUnchecked(targetRowIndex, rowCount, targetColumnIndex, columnCount);
             }
 
             // NOTE: potential for more efficient implementation
-            for (int i = sourceRowIndex, row = 0; i < sourceRowIndex + rowCount; i++, row++)
+            for (int i = sourceRowIndex, row = 0; row < rowCount; i++, row++)
             {
                 var startIndex = RowPointers[i];
                 var endIndex = RowPointers[i + 1];
@@ -969,10 +1027,9 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
         // ROW COPY
 
         internal override void CopySubRowToUnchecked(VectorStorage<T> target, int rowIndex,
-            int sourceColumnIndex, int targetColumnIndex, int columnCount,
-            bool skipClearing = false)
+            int sourceColumnIndex, int targetColumnIndex, int columnCount, ExistingData existingData)
         {
-            if (!skipClearing)
+            if (existingData == ExistingData.Clear)
             {
                 target.Clear(targetColumnIndex, columnCount);
             }
@@ -991,6 +1048,105 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             {
                 var index = FindItem(rowIndex, i);
                 target.At(j, index >= 0 ? Values[index] : Zero);
+            }
+        }
+
+        // TRANSPOSE
+
+        internal override void TransposeToUnchecked(MatrixStorage<T> target, ExistingData existingData)
+        {
+            var sparseTarget = target as SparseCompressedRowMatrixStorage<T>;
+            if (sparseTarget != null)
+            {
+                TransposeToUnchecked(sparseTarget);
+                return;
+            }
+
+            var denseTarget = target as DenseColumnMajorMatrixStorage<T>;
+            if (denseTarget != null)
+            {
+                TransposeToUnchecked(denseTarget, existingData);
+                return;
+            }
+
+            // FALL BACK
+
+            if (existingData == ExistingData.Clear)
+            {
+                target.Clear();
+            }
+
+            if (ValueCount != 0)
+            {
+                for (int row = 0; row < RowCount; row++)
+                {
+                    var startIndex = RowPointers[row];
+                    var endIndex = RowPointers[row + 1];
+                    for (var j = startIndex; j < endIndex; j++)
+                    {
+                        target.At(ColumnIndices[j], row, Values[j]);
+                    }
+                }
+            }
+        }
+
+        void TransposeToUnchecked(SparseCompressedRowMatrixStorage<T> target)
+        {
+            target.Values = new T[ValueCount];
+            target.ColumnIndices = new int[ValueCount];
+            var cx = target.Values;
+            var cp = target.RowPointers;
+            var ci = target.ColumnIndices;
+
+            // Column counts
+            int[] w = new int[ColumnCount];
+            for (int p = 0; p < RowPointers[RowCount]; p++)
+            {
+                w[ColumnIndices[p]]++;
+            }
+
+            // Column pointers
+            int nz = 0;
+            for (int i = 0; i < ColumnCount; i++)
+            {
+                cp[i] = nz;
+                nz += w[i];
+                w[i] = cp[i];
+            }
+            cp[ColumnCount] = nz;
+
+            for (int i = 0; i < RowCount; i++)
+            {
+                for (int p = RowPointers[i]; p < RowPointers[i + 1]; p++)
+                {
+                    int j = w[ColumnIndices[p]]++;
+
+                    // Place A(i,j) as entry C(j,i)
+                    ci[j] = i;
+                    cx[j] = Values[p];
+                }
+            }
+        }
+
+        void TransposeToUnchecked(DenseColumnMajorMatrixStorage<T> target, ExistingData existingData)
+        {
+            if (existingData == ExistingData.Clear)
+            {
+                target.Clear();
+            }
+
+            if (ValueCount != 0)
+            {
+                for (int row = 0; row < RowCount; row++)
+                {
+                    var targetIndex = row * ColumnCount;
+                    var startIndex = RowPointers[row];
+                    var endIndex = RowPointers[row + 1];
+                    for (var j = startIndex; j < endIndex; j++)
+                    {
+                        target.Data[targetIndex + ColumnIndices[j]] = Values[j];
+                    }
+                }
             }
         }
 
@@ -1027,6 +1183,48 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
                     for (var j = startIndex; j < endIndex; j++)
                     {
                         ret[(ColumnIndices[j])*RowCount + row] = Values[j];
+                    }
+                }
+            }
+            return ret;
+        }
+
+        public override T[][] ToRowArrays()
+        {
+            var ret = new T[RowCount][];
+            if (ValueCount != 0)
+            {
+                for (int row = 0; row < RowCount; row++)
+                {
+                    var array = new T[ColumnCount];
+                    var startIndex = RowPointers[row];
+                    var endIndex = RowPointers[row + 1];
+                    for (var j = startIndex; j < endIndex; j++)
+                    {
+                        array[ColumnIndices[j]] = Values[j];
+                    }
+                    ret[row] = array;
+                }
+            }
+            return ret;
+        }
+
+        public override T[][] ToColumnArrays()
+        {
+            var ret = new T[ColumnCount][];
+            for (int j = 0; j < ColumnCount; j++)
+            {
+                ret[j] = new T[RowCount];
+            }
+            if (ValueCount != 0)
+            {
+                for (int row = 0; row < RowCount; row++)
+                {
+                    var startIndex = RowPointers[row];
+                    var endIndex = RowPointers[row + 1];
+                    for (var j = startIndex; j < endIndex; j++)
+                    {
+                        ret[ColumnIndices[j]][row] = Values[j];
                     }
                 }
             }
@@ -1102,16 +1300,201 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             }
         }
 
-        // FUNCTIONAL COMBINATORS
+        // FIND
 
-        public override void MapInplace(Func<T, T> f, bool forceMapZeros = false)
+        public override Tuple<int, int, T> Find(Func<T, bool> predicate, Zeros zeros)
         {
-            var newRowPointers = new int[RowCount+1];
-            var newColumnIndices = new List<int>();
-            var newValues = new List<T>();
-
-            if (forceMapZeros || !Zero.Equals(f(Zero)))
+            for (int row = 0; row < RowCount; row++)
             {
+                var startIndex = RowPointers[row];
+                var endIndex = RowPointers[row + 1];
+                for (var j = startIndex; j < endIndex; j++)
+                {
+                    if (predicate(Values[j]))
+                    {
+                        return new Tuple<int, int, T>(row, ColumnIndices[j], Values[j]);
+                    }
+                }
+            }
+            if (zeros == Zeros.Include && ValueCount < (RowCount * ColumnCount))
+            {
+                if (predicate(Zero))
+                {
+                    int k = 0;
+                    for (int row = 0; row < RowCount; row++)
+                    {
+                        for (int col = 0; col < ColumnCount; col++)
+                        {
+                            if (k < RowPointers[row + 1] && ColumnIndices[k] == col)
+                            {
+                                k++;
+                            }
+                            else
+                            {
+                                return new Tuple<int, int, T>(row, col, Zero);
+                            }
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        internal override Tuple<int, int, T, TOther> Find2Unchecked<TOther>(MatrixStorage<TOther> other, Func<T, TOther, bool> predicate, Zeros zeros)
+        {
+            var denseOther = other as DenseColumnMajorMatrixStorage<TOther>;
+            if (denseOther != null)
+            {
+                TOther[] otherData = denseOther.Data;
+                int k = 0;
+                for (int row = 0; row < RowCount; row++)
+                {
+                    for (int col = 0; col < ColumnCount; col++)
+                    {
+                        bool available = k < RowPointers[row + 1] && ColumnIndices[k] == col;
+                        if (predicate(available ? Values[k++] : Zero, otherData[col*RowCount + row]))
+                        {
+                            return new Tuple<int, int, T, TOther>(row, col, available ? Values[k - 1] : Zero, otherData[col*RowCount + row]);
+                        }
+                    }
+                }
+                return null;
+            }
+
+            var diagonalOther = other as DiagonalMatrixStorage<TOther>;
+            if (diagonalOther != null)
+            {
+                TOther[] otherData = diagonalOther.Data;
+                TOther otherZero = BuilderInstance<TOther>.Matrix.Zero;
+
+                // Full Scan
+                if (zeros == Zeros.Include && predicate(Zero, otherZero))
+                {
+                    int k = 0;
+                    for (int row = 0; row < RowCount; row++)
+                    {
+                        for (int col = 0; col < ColumnCount; col++)
+                        {
+                            bool available = k < RowPointers[row + 1] && ColumnIndices[k] == col;
+                            if (predicate(available ? Values[k++] : Zero, row == col ? otherData[row] : otherZero))
+                            {
+                                return new Tuple<int, int, T, TOther>(row, col, available ? Values[k - 1] : Zero, row == col ? otherData[row] : otherZero);
+                            }
+                        }
+                    }
+                    return null;
+                }
+
+                // Sparse Scan
+                for (int row = 0; row < RowCount; row++)
+                {
+                    bool diagonal = false;
+                    var startIndex = RowPointers[row];
+                    var endIndex = RowPointers[row + 1];
+                    for (var j = startIndex; j < endIndex; j++)
+                    {
+                        if (ColumnIndices[j] == row)
+                        {
+                            diagonal = true;
+                            if (predicate(Values[j], otherData[row]))
+                            {
+                                return new Tuple<int, int, T, TOther>(row, row, Values[j], otherData[row]);
+                            }
+                        }
+                        else
+                        {
+                            if (predicate(Values[j], otherZero))
+                            {
+                                return new Tuple<int, int, T, TOther>(row, ColumnIndices[j], Values[j], otherZero);
+                            }
+                        }
+                    }
+                    if (!diagonal && row < ColumnCount)
+                    {
+                        if (predicate(Zero, otherData[row]))
+                        {
+                            return new Tuple<int, int, T, TOther>(row, row, Zero, otherData[row]);
+                        }
+                    }
+                }
+                return null;
+            }
+
+            var sparseOther = other as SparseCompressedRowMatrixStorage<TOther>;
+            if (sparseOther != null)
+            {
+                int[] otherRowPointers = sparseOther.RowPointers;
+                int[] otherColumnIndices = sparseOther.ColumnIndices;
+                TOther[] otherValues = sparseOther.Values;
+                TOther otherZero = BuilderInstance<TOther>.Matrix.Zero;
+
+                if (zeros == Zeros.Include)
+                {
+                    int k = 0, otherk = 0;
+                    for (int row = 0; row < RowCount; row++)
+                    {
+                        for (int col = 0; col < ColumnCount; col++)
+                        {
+                            bool available = k < RowPointers[row + 1] && ColumnIndices[k] == col;
+                            bool otherAvailable = otherk < otherRowPointers[row + 1] && otherColumnIndices[otherk] == col;
+                            if (predicate(available ? Values[k++] : Zero, otherAvailable ? otherValues[otherk++] : otherZero))
+                            {
+                                return new Tuple<int, int, T, TOther>(row, col, available ? Values[k - 1] : Zero, otherAvailable ? otherValues[otherk - 1] : otherZero);
+                            }
+                        }
+                    }
+                    return null;
+                }
+
+                for (int row = 0; row < RowCount; row++)
+                {
+                    var endIndex = RowPointers[row + 1];
+                    var otherEndIndex = otherRowPointers[row + 1];
+                    var k = RowPointers[row];
+                    var otherk = otherRowPointers[row];
+                    while (k < endIndex || otherk < otherEndIndex)
+                    {
+                        if (k == endIndex || otherk < otherEndIndex && ColumnIndices[k] > otherColumnIndices[otherk])
+                        {
+                            if (predicate(Zero, otherValues[otherk++]))
+                            {
+                                return new Tuple<int, int, T, TOther>(row, otherColumnIndices[otherk - 1], Zero, otherValues[otherk - 1]);
+                            }
+                        }
+                        else if (otherk == otherEndIndex || ColumnIndices[k] < otherColumnIndices[otherk])
+                        {
+                            if (predicate(Values[k++], otherZero))
+                            {
+                                return new Tuple<int, int, T, TOther>(row, ColumnIndices[k - 1], Values[k - 1], otherZero);
+                            }
+                        }
+                        else
+                        {
+                            if (predicate(Values[k++], otherValues[otherk++]))
+                            {
+                                return new Tuple<int, int, T, TOther>(row, ColumnIndices[k - 1], Values[k - 1], otherValues[otherk - 1]);
+                            }
+                        }
+                    }
+                }
+                return null;
+            }
+
+            // FALL BACK
+
+            return base.Find2Unchecked(other, predicate, zeros);
+        }
+
+        // FUNCTIONAL COMBINATORS: MAP
+
+        public override void MapInplace(Func<T, T> f, Zeros zeros = Zeros.AllowSkip)
+        {
+            if (zeros == Zeros.Include || !Zero.Equals(f(Zero)))
+            {
+                var newRowPointers = RowPointers;
+                var newColumnIndices = new List<int>(ColumnIndices.Length);
+                var newValues = new List<T>(Values.Length);
+
                 int k = 0;
                 for (int row = 0; row < RowCount; row++)
                 {
@@ -1126,40 +1509,45 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
                         }
                     }
                 }
+
+                ColumnIndices = newColumnIndices.ToArray();
+                Values = newValues.ToArray();
+                newRowPointers[RowCount] = newValues.Count;
             }
             else
             {
+                // we can safely do this in-place:
+                int nonZero = 0;
                 for (int row = 0; row < RowCount; row++)
                 {
-                    newRowPointers[row] = newValues.Count;
                     var startIndex = RowPointers[row];
                     var endIndex = RowPointers[row + 1];
+                    RowPointers[row] = nonZero;
                     for (var j = startIndex; j < endIndex; j++)
                     {
                         var item = f(Values[j]);
                         if (!Zero.Equals(item))
                         {
-                            newValues.Add(item);
-                            newColumnIndices.Add(ColumnIndices[j]);
+                            Values[nonZero] = item;
+                            ColumnIndices[nonZero] = ColumnIndices[j];
+                            nonZero++;
                         }
                     }
                 }
+                Array.Resize(ref ColumnIndices, nonZero);
+                Array.Resize(ref Values, nonZero);
+                RowPointers[RowCount] = nonZero;
             }
-
-            ColumnIndices = newColumnIndices.ToArray();
-            Values = newValues.ToArray();
-            newRowPointers[RowCount] = newValues.Count;
-            Array.Copy(newRowPointers, RowPointers, newRowPointers.Length);
         }
 
-        public override void MapIndexedInplace(Func<int, int, T, T> f, bool forceMapZeros = false)
+        public override void MapIndexedInplace(Func<int, int, T, T> f, Zeros zeros = Zeros.AllowSkip)
         {
-            var newRowPointers = new int[RowCount+1];
-            var newColumnIndices = new List<int>();
-            var newValues = new List<T>();
-
-            if (forceMapZeros || !Zero.Equals(f(0, 0, Zero)))
+            if (zeros == Zeros.Include || !Zero.Equals(f(0, 1, Zero)))
             {
+                var newRowPointers = RowPointers;
+                var newColumnIndices = new List<int>(ColumnIndices.Length);
+                var newValues = new List<T>(Values.Length);
+
                 int k = 0;
                 for (int row = 0; row < RowCount; row++)
                 {
@@ -1174,30 +1562,648 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
                         }
                     }
                 }
+
+                ColumnIndices = newColumnIndices.ToArray();
+                Values = newValues.ToArray();
+                newRowPointers[RowCount] = newValues.Count;
             }
             else
             {
+                // we can safely do this in-place:
+                int nonZero = 0;
                 for (int row = 0; row < RowCount; row++)
                 {
-                    newRowPointers[row] = newValues.Count;
                     var startIndex = RowPointers[row];
                     var endIndex = RowPointers[row + 1];
+                    RowPointers[row] = nonZero;
                     for (var j = startIndex; j < endIndex; j++)
                     {
                         var item = f(row, ColumnIndices[j], Values[j]);
                         if (!Zero.Equals(item))
                         {
-                            newValues.Add(item);
-                            newColumnIndices.Add(ColumnIndices[j]);
+                            Values[nonZero] = item;
+                            ColumnIndices[nonZero] = ColumnIndices[j];
+                            nonZero++;
+                        }
+                    }
+                }
+                Array.Resize(ref ColumnIndices, nonZero);
+                Array.Resize(ref Values, nonZero);
+                RowPointers[RowCount] = nonZero;
+            }
+        }
+
+        internal override void MapToUnchecked<TU>(MatrixStorage<TU> target, Func<T, TU> f, Zeros zeros, ExistingData existingData)
+        {
+            var processZeros = zeros == Zeros.Include || !Zero.Equals(f(Zero));
+
+            var sparseTarget = target as SparseCompressedRowMatrixStorage<TU>;
+            if (sparseTarget != null)
+            {
+                var newRowPointers = sparseTarget.RowPointers;
+                var newColumnIndices = new List<int>(ColumnIndices.Length);
+                var newValues = new List<TU>(Values.Length);
+
+                if (processZeros)
+                {
+                    int k = 0;
+                    for (int row = 0; row < RowCount; row++)
+                    {
+                        newRowPointers[row] = newValues.Count;
+                        for (int col = 0; col < ColumnCount; col++)
+                        {
+                            var item = k < RowPointers[row + 1] && ColumnIndices[k] == col ? f(Values[k++]) : f(Zero);
+                            if (!Zero.Equals(item))
+                            {
+                                newValues.Add(item);
+                                newColumnIndices.Add(col);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    for (int row = 0; row < RowCount; row++)
+                    {
+                        newRowPointers[row] = newValues.Count;
+                        var startIndex = RowPointers[row];
+                        var endIndex = RowPointers[row + 1];
+                        for (var j = startIndex; j < endIndex; j++)
+                        {
+                            var item = f(Values[j]);
+                            if (!Zero.Equals(item))
+                            {
+                                newValues.Add(item);
+                                newColumnIndices.Add(ColumnIndices[j]);
+                            }
+                        }
+                    }
+                }
+
+                sparseTarget.ColumnIndices = newColumnIndices.ToArray();
+                sparseTarget.Values = newValues.ToArray();
+                newRowPointers[RowCount] = newValues.Count;
+                return;
+            }
+
+            // FALL BACK
+
+            if (existingData == ExistingData.Clear && !processZeros)
+            {
+                target.Clear();
+            }
+
+            if (processZeros)
+            {
+                for (int row = 0; row < RowCount; row++)
+                {
+                    var index = RowPointers[row];
+                    var endIndex = RowPointers[row + 1];
+                    for (int j = 0; j < ColumnCount; j++)
+                    {
+                        if (index < endIndex && j == ColumnIndices[index])
+                        {
+                            target.At(row, j, f(Values[index]));
+                            index = Math.Min(index + 1, endIndex);
+                        }
+                        else
+                        {
+                            target.At(row, j, f(Zero));
                         }
                     }
                 }
             }
+            else
+            {
+                for (int row = 0; row < RowCount; row++)
+                {
+                    var startIndex = RowPointers[row];
+                    var endIndex = RowPointers[row + 1];
+                    for (var j = startIndex; j < endIndex; j++)
+                    {
+                        target.At(row, ColumnIndices[j], f(Values[j]));
+                    }
+                }
+            }
+        }
 
-            ColumnIndices = newColumnIndices.ToArray();
-            Values = newValues.ToArray();
-            newRowPointers[RowCount] = newValues.Count;
-            Array.Copy(newRowPointers, RowPointers, newRowPointers.Length);
+        internal override void MapIndexedToUnchecked<TU>(MatrixStorage<TU> target, Func<int, int, T, TU> f, Zeros zeros, ExistingData existingData)
+        {
+            var processZeros = zeros == Zeros.Include || !Zero.Equals(f(0, 1, Zero));
+
+            var sparseTarget = target as SparseCompressedRowMatrixStorage<TU>;
+            if (sparseTarget != null)
+            {
+                var newRowPointers = sparseTarget.RowPointers;
+                var newColumnIndices = new List<int>(ColumnIndices.Length);
+                var newValues = new List<TU>(Values.Length);
+
+                if (processZeros)
+                {
+                    int k = 0;
+                    for (int row = 0; row < RowCount; row++)
+                    {
+                        newRowPointers[row] = newValues.Count;
+                        for (int col = 0; col < ColumnCount; col++)
+                        {
+                            var item = k < RowPointers[row + 1] && ColumnIndices[k] == col ? f(row, col, Values[k++]) : f(row, col, Zero);
+                            if (!Zero.Equals(item))
+                            {
+                                newValues.Add(item);
+                                newColumnIndices.Add(col);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    for (int row = 0; row < RowCount; row++)
+                    {
+                        newRowPointers[row] = newValues.Count;
+                        var startIndex = RowPointers[row];
+                        var endIndex = RowPointers[row + 1];
+                        for (var j = startIndex; j < endIndex; j++)
+                        {
+                            var item = f(row, ColumnIndices[j], Values[j]);
+                            if (!Zero.Equals(item))
+                            {
+                                newValues.Add(item);
+                                newColumnIndices.Add(ColumnIndices[j]);
+                            }
+                        }
+                    }
+                }
+
+                sparseTarget.ColumnIndices = newColumnIndices.ToArray();
+                sparseTarget.Values = newValues.ToArray();
+                newRowPointers[RowCount] = newValues.Count;
+                return;
+            }
+
+            // FALL BACK
+
+            if (existingData == ExistingData.Clear && !processZeros)
+            {
+                target.Clear();
+            }
+
+            if (processZeros)
+            {
+                for (int row = 0; row < RowCount; row++)
+                {
+                    var index = RowPointers[row];
+                    var endIndex = RowPointers[row + 1];
+                    for (int j = 0; j < ColumnCount; j++)
+                    {
+                        if (index < endIndex && j == ColumnIndices[index])
+                        {
+                            target.At(row, j, f(row, j, Values[index]));
+                            index = Math.Min(index + 1, endIndex);
+                        }
+                        else
+                        {
+                            target.At(row, j, f(row, j, Zero));
+                        }
+                    }
+                }
+            }
+            else
+            {
+                for (int row = 0; row < RowCount; row++)
+                {
+                    var startIndex = RowPointers[row];
+                    var endIndex = RowPointers[row + 1];
+                    for (var j = startIndex; j < endIndex; j++)
+                    {
+                        target.At(row, ColumnIndices[j], f(row, ColumnIndices[j], Values[j]));
+                    }
+                }
+            }
+        }
+
+        internal override void MapSubMatrixIndexedToUnchecked<TU>(MatrixStorage<TU> target, Func<int, int, T, TU> f,
+            int sourceRowIndex, int targetRowIndex, int rowCount,
+            int sourceColumnIndex, int targetColumnIndex, int columnCount,
+            Zeros zeros, ExistingData existingData)
+        {
+            var sparseTarget = target as SparseCompressedRowMatrixStorage<TU>;
+            if (sparseTarget != null)
+            {
+                MapSubMatrixIndexedToUnchecked(sparseTarget, f, sourceRowIndex, targetRowIndex, rowCount, sourceColumnIndex, targetColumnIndex, columnCount, zeros, existingData);
+                return;
+            }
+
+            // FALL BACK
+
+            var processZeros = zeros == Zeros.Include || !Zero.Equals(f(0, 1, Zero));
+            if (existingData == ExistingData.Clear && !processZeros)
+            {
+                target.ClearUnchecked(targetRowIndex, rowCount, targetColumnIndex, columnCount);
+            }
+
+            if (processZeros)
+            {
+                for (int sr = sourceRowIndex, tr = targetRowIndex; sr < sourceRowIndex + rowCount; sr++, tr++)
+                {
+                    var index = RowPointers[sr];
+                    var endIndex = RowPointers[sr + 1];
+
+                    // move forward to our sub-range
+                    for (; ColumnIndices[index] < sourceColumnIndex && index < endIndex; index++)
+                    {
+                    }
+                    for (int sc = sourceColumnIndex, tc = targetColumnIndex; sc < sourceColumnIndex + columnCount; sc++, tc++)
+                    {
+                        if (index < endIndex && sc == ColumnIndices[index])
+                        {
+                            target.At(tr, tc, f(tr, tc, Values[index]));
+                            index = Math.Min(index + 1, endIndex);
+                        }
+                        else
+                        {
+                            target.At(tr, tc, f(tr, tc, Zero));
+                        }
+                    }
+                }
+            }
+            else
+            {
+                int columnOffset = targetColumnIndex - sourceColumnIndex;
+                for (int sr = sourceRowIndex, tr = targetRowIndex; sr < sourceRowIndex + rowCount; sr++, tr++)
+                {
+                    var startIndex = RowPointers[sr];
+                    var endIndex = RowPointers[sr + 1];
+                    for (int k = startIndex; k < endIndex; k++)
+                    {
+                        // check if the column index is in the range
+                        if ((ColumnIndices[k] >= sourceColumnIndex) && (ColumnIndices[k] < sourceColumnIndex + columnCount))
+                        {
+                            int tc = ColumnIndices[k] + columnOffset;
+                            target.At(tr, tc, f(tr, tc, Values[k]));
+                        }
+                    }
+                }
+            }
+        }
+
+        void MapSubMatrixIndexedToUnchecked<TU>(SparseCompressedRowMatrixStorage<TU> target, Func<int, int, T, TU> f,
+            int sourceRowIndex, int targetRowIndex, int rowCount,
+            int sourceColumnIndex, int targetColumnIndex, int columnCount,
+            Zeros zeros, ExistingData existingData)
+            where TU : struct, IEquatable<TU>, IFormattable
+        {
+            var processZeros = zeros == Zeros.Include || !Zero.Equals(f(0, 1, Zero));
+            if (existingData == ExistingData.Clear && !processZeros)
+            {
+                target.ClearUnchecked(targetRowIndex, rowCount, targetColumnIndex, columnCount);
+            }
+
+            var rowOffset = targetRowIndex - sourceRowIndex;
+            var columnOffset = targetColumnIndex - sourceColumnIndex;
+            var zero = Matrix<TU>.Zero;
+
+            // special case for empty target - much faster
+            if (target.ValueCount == 0)
+            {
+                var values = new List<TU>(ValueCount);
+                var columnIndices = new List<int>(ValueCount);
+                var rowPointers = target.RowPointers;
+
+                if (processZeros)
+                {
+                    for (int sr = sourceRowIndex; sr < sourceRowIndex + rowCount; sr++)
+                    {
+                        int tr = sr + rowOffset;
+                        rowPointers[tr] = values.Count;
+
+                        var index = RowPointers[sr];
+                        var endIndex = RowPointers[sr + 1];
+
+                        // move forward to our sub-range
+                        for (; ColumnIndices[index] < sourceColumnIndex && index < endIndex; index++)
+                        {
+                        }
+                        for (int sc = sourceColumnIndex, tc = targetColumnIndex; sc < sourceColumnIndex + columnCount; sc++, tc++)
+                        {
+                            if (index < endIndex && sc == ColumnIndices[index])
+                            {
+                                TU item = f(tr, tc, Values[index]);
+                                if (!zero.Equals(item))
+                                {
+                                    values.Add(item);
+                                    columnIndices.Add(tc);
+                                }
+                                index = Math.Min(index + 1, endIndex);
+                            }
+                            else
+                            {
+                                TU item = f(tr, tc, Zero);
+                                if (!zero.Equals(item))
+                                {
+                                    values.Add(item);
+                                    columnIndices.Add(tc);
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    for (int sr = sourceRowIndex; sr < sourceRowIndex + rowCount; sr++)
+                    {
+                        int tr = sr + rowOffset;
+                        rowPointers[tr] = values.Count;
+
+                        var startIndex = RowPointers[sr];
+                        var endIndex = RowPointers[sr + 1];
+
+                        for (int k = startIndex; k < endIndex; k++)
+                        {
+                            // check if the column index is in the range
+                            if ((ColumnIndices[k] >= sourceColumnIndex) && (ColumnIndices[k] < sourceColumnIndex + columnCount))
+                            {
+                                int tc = ColumnIndices[k] + columnOffset;
+                                TU item = f(tr, tc, Values[k]);
+                                if (!zero.Equals(item))
+                                {
+                                    values.Add(item);
+                                    columnIndices.Add(tc);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                for (int i = targetRowIndex + rowCount; i < rowPointers.Length; i++)
+                {
+                    rowPointers[i] = values.Count;
+                }
+
+                target.RowPointers[target.RowCount] = values.Count;
+                target.Values = values.ToArray();
+                target.ColumnIndices = columnIndices.ToArray();
+                return;
+            }
+
+            // TODO: proper general sparse case - the following is essentially a fall back, not leveraging the target data structure
+
+            if (processZeros)
+            {
+                for (int sr = sourceRowIndex, tr = targetRowIndex; sr < sourceRowIndex + rowCount; sr++, tr++)
+                {
+                    var index = RowPointers[sr];
+                    var endIndex = RowPointers[sr + 1];
+
+                    // move forward to our sub-range
+                    for (; ColumnIndices[index] < sourceColumnIndex && index < endIndex; index++)
+                    {
+                    }
+                    for (int sc = sourceColumnIndex, tc = targetColumnIndex; sc < sourceColumnIndex + columnCount; sc++, tc++)
+                    {
+                        if (index < endIndex && sc == ColumnIndices[index])
+                        {
+                            target.At(tr, tc, f(tr, tc, Values[index]));
+                            index = Math.Min(index + 1, endIndex);
+                        }
+                        else
+                        {
+                            target.At(tr, tc, f(tr, tc, Zero));
+                        }
+                    }
+                }
+            }
+            else
+            {
+                for (int sr = sourceRowIndex, tr = targetRowIndex; sr < sourceRowIndex + rowCount; sr++, tr++)
+                {
+                    var startIndex = RowPointers[sr];
+                    var endIndex = RowPointers[sr + 1];
+                    for (int k = startIndex; k < endIndex; k++)
+                    {
+                        // check if the column index is in the range
+                        if ((ColumnIndices[k] >= sourceColumnIndex) && (ColumnIndices[k] < sourceColumnIndex + columnCount))
+                        {
+                            int tc = ColumnIndices[k] + columnOffset;
+                            target.At(tr, tc, f(tr, tc, Values[k]));
+                        }
+                    }
+                }
+            }
+        }
+
+        // FUNCTIONAL COMBINATORS: FOLD
+
+        internal override void FoldByRowUnchecked<TU>(TU[] target, Func<TU, T, TU> f, Func<TU, int, TU> finalize, TU[] state, Zeros zeros)
+        {
+            if (zeros == Zeros.AllowSkip)
+            {
+                for (int row = 0; row < RowCount; row++)
+                {
+                    var startIndex = RowPointers[row];
+                    var endIndex = RowPointers[row + 1];
+                    TU s = state[row];
+                    for (var j = startIndex; j < endIndex; j++)
+                    {
+                        s = f(s, Values[j]);
+                    }
+                    target[row] = finalize(s, endIndex - startIndex);
+                }
+            }
+            else
+            {
+                for (int row = 0; row < RowCount; row++)
+                {
+                    var index = RowPointers[row];
+                    var endIndex = RowPointers[row + 1];
+                    TU s = state[row];
+                    for (int j = 0; j < ColumnCount; j++)
+                    {
+                        if (index < endIndex && j == ColumnIndices[index])
+                        {
+                            s = f(s, Values[index]);
+                            index = Math.Min(index + 1, endIndex);
+                        }
+                        else
+                        {
+                            s = f(s, Zero);
+                        }
+                    }
+                    target[row] = finalize(s, ColumnCount);
+                }
+            }
+        }
+
+        internal override void FoldByColumnUnchecked<TU>(TU[] target, Func<TU, T, TU> f, Func<TU, int, TU> finalize, TU[] state, Zeros zeros)
+        {
+            if (!ReferenceEquals(state, target))
+            {
+                Array.Copy(state, target, state.Length);
+            }
+            if (zeros == Zeros.AllowSkip)
+            {
+                int[] count = new int[ColumnCount];
+                for (int row = 0; row < RowCount; row++)
+                {
+                    var startIndex = RowPointers[row];
+                    var endIndex = RowPointers[row + 1];
+                    for (var j = startIndex; j < endIndex; j++)
+                    {
+                        var column = ColumnIndices[j];
+                        target[column] = f(target[column], Values[j]);
+                        count[column]++;
+                    }
+                }
+                for (int j = 0; j < ColumnCount; j++)
+                {
+                    target[j] = finalize(target[j], count[j]);
+                }
+            }
+            else
+            {
+                for (int row = 0; row < RowCount; row++)
+                {
+                    var index = RowPointers[row];
+                    var endIndex = RowPointers[row + 1];
+                    for (int j = 0; j < ColumnCount; j++)
+                    {
+                        if (index < endIndex && j == ColumnIndices[index])
+                        {
+                            target[j] = f(target[j], Values[index]);
+                            index = Math.Min(index + 1, endIndex);
+                        }
+                        else
+                        {
+                            target[j] = f(target[j], Zero);
+                        }
+                    }
+                }
+                for (int j = 0; j < ColumnCount; j++)
+                {
+                    target[j] = finalize(target[j], RowCount);
+                }
+            }
+        }
+
+        internal override TState Fold2Unchecked<TOther, TState>(MatrixStorage<TOther> other, Func<TState, T, TOther, TState> f, TState state, Zeros zeros)
+        {
+            var denseOther = other as DenseColumnMajorMatrixStorage<TOther>;
+            if (denseOther != null)
+            {
+                TOther[] otherData = denseOther.Data;
+                int k = 0;
+                for (int row = 0; row < RowCount; row++)
+                {
+                    for (int col = 0; col < ColumnCount; col++)
+                    {
+                        bool available = k < RowPointers[row + 1] && ColumnIndices[k] == col;
+                        state = f(state, available ? Values[k++] : Zero, otherData[col*RowCount + row]);
+                    }
+                }
+                return state;
+            }
+
+            var diagonalOther = other as DiagonalMatrixStorage<TOther>;
+            if (diagonalOther != null)
+            {
+                TOther[] otherData = diagonalOther.Data;
+                TOther otherZero = BuilderInstance<TOther>.Matrix.Zero;
+
+                if (zeros == Zeros.Include)
+                {
+                    int k = 0;
+                    for (int row = 0; row < RowCount; row++)
+                    {
+                        for (int col = 0; col < ColumnCount; col++)
+                        {
+                            bool available = k < RowPointers[row + 1] && ColumnIndices[k] == col;
+                            state = f(state, available ? Values[k++] : Zero, row == col ? otherData[row] : otherZero);
+                        }
+                    }
+                    return state;
+                }
+
+                for (int row = 0; row < RowCount; row++)
+                {
+                    bool diagonal = false;
+
+                    var startIndex = RowPointers[row];
+                    var endIndex = RowPointers[row + 1];
+                    for (var j = startIndex; j < endIndex; j++)
+                    {
+                        if (ColumnIndices[j] == row)
+                        {
+                            diagonal = true;
+                            state = f(state, Values[j], otherData[row]);
+                        }
+                        else
+                        {
+                            state = f(state, Values[j], otherZero);
+                        }
+                    }
+
+                    if (!diagonal && row < ColumnCount)
+                    {
+                        state = f(state, Zero, otherData[row]);
+                    }
+                }
+                return state;
+            }
+
+            var sparseOther = other as SparseCompressedRowMatrixStorage<TOther>;
+            if (sparseOther != null)
+            {
+                int[] otherRowPointers = sparseOther.RowPointers;
+                int[] otherColumnIndices = sparseOther.ColumnIndices;
+                TOther[] otherValues = sparseOther.Values;
+                TOther otherZero = BuilderInstance<TOther>.Matrix.Zero;
+
+                if (zeros == Zeros.Include)
+                {
+                    int k = 0, otherk = 0;
+                    for (int row = 0; row < RowCount; row++)
+                    {
+                        for (int col = 0; col < ColumnCount; col++)
+                        {
+                            bool available = k < RowPointers[row + 1] && ColumnIndices[k] == col;
+                            bool otherAvailable = otherk < otherRowPointers[row + 1] && otherColumnIndices[otherk] == col;
+                            state = f(state, available ? Values[k++] : Zero, otherAvailable ? otherValues[otherk++] : otherZero);
+                        }
+                    }
+                    return state;
+                }
+
+                for (int row = 0; row < RowCount; row++)
+                {
+                    var startIndex = RowPointers[row];
+                    var endIndex = RowPointers[row + 1];
+                    var otherStartIndex = otherRowPointers[row];
+                    var otherEndIndex = otherRowPointers[row + 1];
+
+                    var j1 = startIndex;
+                    var j2 = otherStartIndex;
+
+                    while (j1 < endIndex || j2 < otherEndIndex)
+                    {
+                        if (j1 == endIndex || j2 < otherEndIndex && ColumnIndices[j1] > otherColumnIndices[j2])
+                        {
+                            state = f(state, Zero, otherValues[j2++]);
+                        }
+                        else if (j2 == otherEndIndex || ColumnIndices[j1] < otherColumnIndices[j2])
+                        {
+                            state = f(state, Values[j1++], otherZero);
+                        }
+                        else
+                        {
+                            state = f(state, Values[j1++], otherValues[j2++]);
+                        }
+                    }
+                }
+                return state;
+            }
+
+            // FALL BACK
+
+            return base.Fold2Unchecked(other, f, state, zeros);
         }
     }
 }

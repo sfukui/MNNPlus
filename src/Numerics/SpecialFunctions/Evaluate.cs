@@ -32,10 +32,10 @@
 //    CERN - European Laboratory for Particle Physics
 //        http://www.docjar.com/html/api/cern/jet/math/Bessel.java.html
 //        Copyright 1999 CERN - European Laboratory for Particle Physics.
-//        Permission to use, copy, modify, distribute and sell this software and its documentation for any purpose 
-//        is hereby granted without fee, provided that the above copyright notice appear in all copies and 
-//        that both that copyright notice and this permission notice appear in supporting documentation. 
-//        CERN makes no representations about the suitability of this software for any purpose. 
+//        Permission to use, copy, modify, distribute and sell this software and its documentation for any purpose
+//        is hereby granted without fee, provided that the above copyright notice appear in all copies and
+//        that both that copyright notice and this permission notice appear in supporting documentation.
+//        CERN makes no representations about the suitability of this software for any purpose.
 //        It is provided "as is" without expressed or implied warranty.
 //    TOMS757 - Uncommon Special Functions (Fortran77) by Allan McLeod
 //        http://people.sc.fsu.edu/~jburkardt/f77_src/toms757/toms757.html
@@ -44,12 +44,16 @@
 //    ALGLIB 2.0.1, Sergey Bochkanov
 // </contribution>
 
+using System;
+
+#if !NOSYSNUMERICS
+using System.Numerics;
+#endif
+
 // ReSharper disable CheckNamespace
 namespace MathNet.Numerics
 // ReSharper restore CheckNamespace
 {
-    using System;
-
     /// <summary>
     /// Evaluation functions, useful for function approximation.
     /// </summary>
@@ -65,6 +69,44 @@ namespace MathNet.Numerics
         public static double Polynomial(double z, params double[] coefficients)
         {
             double sum = coefficients[coefficients.Length - 1];
+            for (int i = coefficients.Length - 2; i >= 0; --i)
+            {
+                sum *= z;
+                sum += coefficients[i];
+            }
+
+            return sum;
+        }
+
+        /// <summary>
+        /// Evaluate a polynomial at point x.
+        /// Coefficients are ordered by power with power k at index k.
+        /// Example: coefficients [3,-1,2] represent y=2x^2-x+3.
+        /// </summary>
+        /// <param name="z">The location where to evaluate the polynomial at.</param>
+        /// <param name="coefficients">The coefficients of the polynomial, coefficient for power k at index k.</param>
+        public static Complex Polynomial(Complex z, params double[] coefficients)
+        {
+            Complex sum = coefficients[coefficients.Length - 1];
+            for (int i = coefficients.Length - 2; i >= 0; --i)
+            {
+                sum *= z;
+                sum += coefficients[i];
+            }
+
+            return sum;
+        }
+
+        /// <summary>
+        /// Evaluate a polynomial at point x.
+        /// Coefficients are ordered by power with power k at index k.
+        /// Example: coefficients [3,-1,2] represent y=2x^2-x+3.
+        /// </summary>
+        /// <param name="z">The location where to evaluate the polynomial at.</param>
+        /// <param name="coefficients">The coefficients of the polynomial, coefficient for power k at index k.</param>
+        public static Complex Polynomial(Complex z, params Complex[] coefficients)
+        {
+            Complex sum = coefficients[coefficients.Length - 1];
             for (int i = coefficients.Length - 2; i >= 0; --i)
             {
                 sum *= z;
@@ -98,7 +140,7 @@ namespace MathNet.Numerics
                 compensation -= y;
                 sum = t;
             }
-            while (Math.Abs(sum) < Math.Abs(factor * current));
+            while (Math.Abs(sum) < Math.Abs(factor*current));
 
             return sum;
         }
@@ -144,7 +186,6 @@ namespace MathNet.Numerics
         internal static double ChebyshevA(double[] coefficients, double x)
         {
             // TODO: Unify, normalize, then make public
-
             double b2;
 
             int p = 0;
@@ -157,11 +198,11 @@ namespace MathNet.Numerics
             {
                 b2 = b1;
                 b1 = b0;
-                b0 = x * b1 - b2 + coefficients[p++];
+                b0 = x*b1 - b2 + coefficients[p++];
             }
             while (--i > 0);
 
-            return (0.5 * (b0 - b2));
+            return 0.5*(b0 - b2);
         }
 
         /// <summary>
@@ -193,10 +234,10 @@ namespace MathNet.Numerics
                 {
                     u2 = u1;
                     u1 = u0;
-                    u0 = xx * u1 + coefficients[i] - u2;
+                    u0 = xx*u1 + coefficients[i] - u2;
                 }
 
-                return (u0 - u2) / 2.0;
+                return (u0 - u2)/2.0;
             }
 
             // If ABS ( T )  > =  0.6 use the Reinsch modification
@@ -213,11 +254,11 @@ namespace MathNet.Numerics
                 {
                     d2 = d1;
                     double u2 = u1;
-                    d1 = xx * u2 + coefficients[i] + d2;
+                    d1 = xx*u2 + coefficients[i] + d2;
                     u1 = d1 + u2;
                 }
 
-                return (d1 + d2) / 2.0;
+                return (d1 + d2)/2.0;
             }
             else
             {
@@ -232,11 +273,11 @@ namespace MathNet.Numerics
                 {
                     d2 = d1;
                     double u2 = u1;
-                    d1 = xx * u2 + coefficients[i] - d2;
+                    d1 = xx*u2 + coefficients[i] - d2;
                     u1 = d1 - u2;
                 }
 
-                return (d1 - d2) / 2.0;
+                return (d1 - d2)/2.0;
             }
         }
     }

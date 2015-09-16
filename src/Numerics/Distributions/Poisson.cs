@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2013 Math.NET
+// Copyright (c) 2009-2014 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -38,7 +38,7 @@ namespace MathNet.Numerics.Distributions
     /// <summary>
     /// Discrete Univariate Poisson distribution.
     /// </summary>
-    /// <remarks> 
+    /// <remarks>
     /// <para>Distribution is described at <a href="http://en.wikipedia.org/wiki/Poisson_distribution"> Wikipedia - Poisson distribution</a>.</para>
     /// <para>Knuth's method is used to generate Poisson distributed random variables.</para>
     /// <para>f(x) = exp(-λ)*λ^x/x!;</para>
@@ -47,7 +47,7 @@ namespace MathNet.Numerics.Distributions
     {
         System.Random _random;
 
-        double _lambda;
+        readonly double _lambda;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Poisson"/> class.
@@ -56,8 +56,13 @@ namespace MathNet.Numerics.Distributions
         /// <exception cref="System.ArgumentOutOfRangeException">If <paramref name="lambda"/> is equal or less then 0.0.</exception>
         public Poisson(double lambda)
         {
-            _random = MersenneTwister.Default;
-            SetParameters(lambda);
+            if (!IsValidParameterSet(lambda))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            _random = SystemRandomSource.Default;
+            _lambda = lambda;
         }
 
         /// <summary>
@@ -68,8 +73,13 @@ namespace MathNet.Numerics.Distributions
         /// <exception cref="System.ArgumentOutOfRangeException">If <paramref name="lambda"/> is equal or less then 0.0.</exception>
         public Poisson(double lambda, System.Random randomSource)
         {
-            _random = randomSource ?? MersenneTwister.Default;
-            SetParameters(lambda);
+            if (!IsValidParameterSet(lambda))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            _random = randomSource ?? SystemRandomSource.Default;
+            _lambda = lambda;
         }
 
         /// <summary>
@@ -84,28 +94,12 @@ namespace MathNet.Numerics.Distributions
         }
 
         /// <summary>
-        /// Checks whether the parameters of the distribution are valid. 
+        /// Tests whether the provided values are valid parameters for this distribution.
         /// </summary>
         /// <param name="lambda">The lambda (λ) parameter of the Poisson distribution. Range: λ > 0.</param>
-        /// <returns><c>true</c> when the parameters are valid, <c>false</c> otherwise.</returns>
-        static bool IsValidParameterSet(double lambda)
+        public static bool IsValidParameterSet(double lambda)
         {
-            return lambda > 0.00;
-        }
-
-        /// <summary>
-        /// Sets the parameters of the distribution after checking their validity.
-        /// </summary>
-        /// <param name="lambda">The lambda (λ) parameter of the Poisson distribution. Range: λ > 0.</param>
-        /// <exception cref="ArgumentOutOfRangeException">When the parameters are out of range.</exception>
-        void SetParameters(double lambda)
-        {
-            if (Control.CheckDistributionParameters && !IsValidParameterSet(lambda))
-            {
-                throw new ArgumentOutOfRangeException(Resources.InvalidDistributionParameters);
-            }
-
-            _lambda = lambda;
+            return lambda > 0.0;
         }
 
         /// <summary>
@@ -114,7 +108,6 @@ namespace MathNet.Numerics.Distributions
         public double Lambda
         {
             get { return _lambda; }
-            set { SetParameters(value); }
         }
 
         /// <summary>
@@ -123,7 +116,7 @@ namespace MathNet.Numerics.Distributions
         public System.Random RandomSource
         {
             get { return _random; }
-            set { _random = value ?? MersenneTwister.Default; }
+            set { _random = value ?? SystemRandomSource.Default; }
         }
 
         /// <summary>
@@ -188,16 +181,16 @@ namespace MathNet.Numerics.Distributions
         /// </summary>
         public int Mode
         {
-            get { return (int) Math.Floor(_lambda); }
+            get { return (int)Math.Floor(_lambda); }
         }
 
         /// <summary>
         /// Gets the median of the distribution.
         /// </summary>
         /// <remarks>Approximation, see Wikipedia <a href="http://en.wikipedia.org/wiki/Poisson_distribution">Poisson distribution</a></remarks>
-        public int Median
+        public double Median
         {
-            get { return (int) Math.Floor(_lambda + (1.0/3.0) - (0.02/_lambda)); }
+            get { return Math.Floor(_lambda + (1.0/3.0) - (0.02/_lambda)); }
         }
 
         /// <summary>
@@ -231,6 +224,55 @@ namespace MathNet.Numerics.Distributions
         }
 
         /// <summary>
+        /// Computes the probability mass (PMF) at k, i.e. P(X = k).
+        /// </summary>
+        /// <param name="k">The location in the domain where we want to evaluate the probability mass function.</param>
+        /// <param name="lambda">The lambda (λ) parameter of the Poisson distribution. Range: λ > 0.</param>
+        /// <returns>the probability mass at location <paramref name="k"/>.</returns>
+        public static double PMF(double lambda, int k)
+        {
+            if (!(lambda > 0.0))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            return Math.Exp(-lambda + (k*Math.Log(lambda)) - SpecialFunctions.FactorialLn(k));
+        }
+
+        /// <summary>
+        /// Computes the log probability mass (lnPMF) at k, i.e. ln(P(X = k)).
+        /// </summary>
+        /// <param name="k">The location in the domain where we want to evaluate the log probability mass function.</param>
+        /// <param name="lambda">The lambda (λ) parameter of the Poisson distribution. Range: λ > 0.</param>
+        /// <returns>the log probability mass at location <paramref name="k"/>.</returns>
+        public static double PMFLn(double lambda, int k)
+        {
+            if (!(lambda > 0.0))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            return -lambda + (k*Math.Log(lambda)) - SpecialFunctions.FactorialLn(k);
+        }
+
+        /// <summary>
+        /// Computes the cumulative distribution (CDF) of the distribution at x, i.e. P(X ≤ x).
+        /// </summary>
+        /// <param name="x">The location at which to compute the cumulative distribution function.</param>
+        /// <param name="lambda">The lambda (λ) parameter of the Poisson distribution. Range: λ > 0.</param>
+        /// <returns>the cumulative distribution at location <paramref name="x"/>.</returns>
+        /// <seealso cref="CumulativeDistribution"/>
+        public static double CDF(double lambda, double x)
+        {
+            if (!(lambda > 0.0))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            return 1.0 - SpecialFunctions.GammaLowerRegularized(x + 1, lambda);
+        }
+
+        /// <summary>
         /// Generates one sample from the Poisson distribution.
         /// </summary>
         /// <param name="rnd">The random source to use.</param>
@@ -239,6 +281,73 @@ namespace MathNet.Numerics.Distributions
         static int SampleUnchecked(System.Random rnd, double lambda)
         {
             return (lambda < 30.0) ? DoSampleShort(rnd, lambda) : DoSampleLarge(rnd, lambda);
+        }
+
+        static void SamplesUnchecked(System.Random rnd, int[] values, double lambda)
+        {
+            if (lambda < 30.0)
+            {
+                var limit = Math.Exp(-lambda);
+                for (int i = 0; i < values.Length; i++)
+                {
+                    var count = 0;
+                    for (var product = rnd.NextDouble(); product >= limit; product *= rnd.NextDouble())
+                    {
+                        count++;
+                    }
+
+                    values[i] = count;
+                }
+            }
+            else
+            {
+                var c = 0.767 - (3.36/lambda);
+                var beta = Math.PI/Math.Sqrt(3.0*lambda);
+                var alpha = beta*lambda;
+                var k = Math.Log(c) - lambda - Math.Log(beta);
+                for (int i = 0; i < values.Length; i++)
+                {
+                    for (;;)
+                    {
+                        var u = rnd.NextDouble();
+                        var x = (alpha - Math.Log((1.0 - u)/u))/beta;
+                        var n = (int)Math.Floor(x + 0.5);
+                        if (n < 0)
+                        {
+                            continue;
+                        }
+
+                        var v = rnd.NextDouble();
+                        var y = alpha - (beta*x);
+                        var temp = 1.0 + Math.Exp(y);
+                        var lhs = y + Math.Log(v/(temp*temp));
+                        var rhs = k + (n*Math.Log(lambda)) - SpecialFunctions.FactorialLn(n);
+                        if (lhs <= rhs)
+                        {
+                            values[i] = n;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        static IEnumerable<int> SamplesUnchecked(System.Random rnd, double lambda)
+        {
+            if (lambda < 30.0)
+            {
+                while (true)
+                {
+                    yield return DoSampleShort(rnd, lambda);
+                }
+            }
+            else
+            {
+                while (true)
+                {
+                    yield return DoSampleLarge(rnd, lambda);
+                }
+            }
         }
 
         /// <summary>
@@ -279,7 +388,7 @@ namespace MathNet.Numerics.Distributions
             {
                 var u = rnd.NextDouble();
                 var x = (alpha - Math.Log((1.0 - u)/u))/beta;
-                var n = (int) Math.Floor(x + 0.5);
+                var n = (int)Math.Floor(x + 0.5);
                 if (n < 0)
                 {
                     continue;
@@ -307,15 +416,20 @@ namespace MathNet.Numerics.Distributions
         }
 
         /// <summary>
+        /// Fills an array with samples generated from the distribution.
+        /// </summary>
+        public void Samples(int[] values)
+        {
+            SamplesUnchecked(_random, values, _lambda);
+        }
+
+        /// <summary>
         /// Samples an array of Poisson distributed random variables.
         /// </summary>
         /// <returns>a sequence of successes in N trials.</returns>
         public IEnumerable<int> Samples()
         {
-            while (true)
-            {
-                yield return SampleUnchecked(_random, _lambda);
-            }
+            return SamplesUnchecked(_random, _lambda);
         }
 
         /// <summary>
@@ -326,9 +440,9 @@ namespace MathNet.Numerics.Distributions
         /// <returns>A sample from the Poisson distribution.</returns>
         public static int Sample(System.Random rnd, double lambda)
         {
-            if (Control.CheckDistributionParameters && !IsValidParameterSet(lambda))
+            if (!(lambda > 0.0))
             {
-                throw new ArgumentOutOfRangeException(Resources.InvalidDistributionParameters);
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
             }
 
             return SampleUnchecked(rnd, lambda);
@@ -342,15 +456,75 @@ namespace MathNet.Numerics.Distributions
         /// <returns>a sequence of samples from the distribution.</returns>
         public static IEnumerable<int> Samples(System.Random rnd, double lambda)
         {
-            if (Control.CheckDistributionParameters && !IsValidParameterSet(lambda))
+            if (!(lambda > 0.0))
             {
-                throw new ArgumentOutOfRangeException(Resources.InvalidDistributionParameters);
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
             }
 
-            while (true)
+            return SamplesUnchecked(rnd, lambda);
+        }
+
+        /// <summary>
+        /// Fills an array with samples generated from the distribution.
+        /// </summary>
+        /// <param name="rnd">The random number generator to use.</param>
+        /// <param name="values">The array to fill with the samples.</param>
+        /// <param name="lambda">The lambda (λ) parameter of the Poisson distribution. Range: λ > 0.</param>
+        /// <returns>a sequence of samples from the distribution.</returns>
+        public static void Samples(System.Random rnd, int[] values, double lambda)
+        {
+            if (!(lambda > 0.0))
             {
-                yield return SampleUnchecked(rnd, lambda);
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
             }
+
+            SamplesUnchecked(rnd, values, lambda);
+        }
+
+        /// <summary>
+        /// Samples a Poisson distributed random variable.
+        /// </summary>
+        /// <param name="lambda">The lambda (λ) parameter of the Poisson distribution. Range: λ > 0.</param>
+        /// <returns>A sample from the Poisson distribution.</returns>
+        public static int Sample(double lambda)
+        {
+            if (!(lambda > 0.0))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            return SampleUnchecked(SystemRandomSource.Default, lambda);
+        }
+
+        /// <summary>
+        /// Samples a sequence of Poisson distributed random variables.
+        /// </summary>
+        /// <param name="lambda">The lambda (λ) parameter of the Poisson distribution. Range: λ > 0.</param>
+        /// <returns>a sequence of samples from the distribution.</returns>
+        public static IEnumerable<int> Samples(double lambda)
+        {
+            if (!(lambda > 0.0))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            return SamplesUnchecked(SystemRandomSource.Default, lambda);
+        }
+
+        /// <summary>
+        /// Fills an array with samples generated from the distribution.
+        /// </summary>
+        /// <param name="values">The array to fill with the samples.</param>
+        /// <param name="lambda">The lambda (λ) parameter of the Poisson distribution. Range: λ > 0.</param>
+        /// <returns>a sequence of samples from the distribution.</returns>
+        public static void Samples(int[] values, double lambda)
+        {
+            if (!(lambda > 0.0))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            SamplesUnchecked(SystemRandomSource.Default, values, lambda);
         }
     }
 }

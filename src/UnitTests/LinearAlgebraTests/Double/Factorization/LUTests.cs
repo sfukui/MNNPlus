@@ -24,7 +24,6 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
-using System;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 using NUnit.Framework;
@@ -80,8 +79,8 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Factorization
         [Test]
         public void LUFailsWithNonSquareMatrix()
         {
-            var matrix = new DenseMatrix(3, 2);
-            Assert.Throws<ArgumentException>(() => matrix.LU());
+            var matrix = Matrix<double>.Build.Dense(3, 2);
+            Assert.That(() => matrix.LU(), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -303,7 +302,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Factorization
             var matrixB = Matrix<double>.Build.Random(order, order, 1);
             var matrixBCopy = matrixB.Clone();
 
-            var matrixX = new DenseMatrix(order, order);
+            var matrixX = Matrix<double>.Build.Dense(order, order);
             factorLU.Solve(matrixB, matrixX);
 
             // The solution X row dimension is equal to the column dimension of A

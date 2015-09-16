@@ -42,32 +42,27 @@ namespace MathNet.Numerics.Distributions
     /// for the columns (K). If the dimension of M is d-by-m then V is d-by-d and K is m-by-m.
     /// <a href="http://en.wikipedia.org/wiki/Matrix_normal_distribution">Wikipedia - MatrixNormal distribution</a>.
     /// </summary>
-    /// <remarks><para>The distribution will use the <see cref="System.Random"/> by default. 
-    /// Users can set the random number generator by using the <see cref="RandomSource"/> property.</para>
-    /// <para>The statistics classes will check all the incoming parameters whether they are in the allowed
-    /// range. This might involve heavy computation. Optionally, by setting Control.CheckDistributionParameters
-    /// to <c>false</c>, all parameter checks can be turned off.</para></remarks>
     public class MatrixNormal : IDistribution
     {
         System.Random _random;
 
         /// <summary>
-        /// The mean of the matrix normal distribution.        
+        /// The mean of the matrix normal distribution.
         /// </summary>
-        Matrix<double> _m;
+        readonly Matrix<double> _m;
 
         /// <summary>
         /// The covariance matrix for the rows.
         /// </summary>
-        Matrix<double> _v;
+        readonly Matrix<double> _v;
 
         /// <summary>
         /// The covariance matrix for the columns.
         /// </summary>
-        Matrix<double> _k;
+        readonly Matrix<double> _k;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MatrixNormal"/> class. 
+        /// Initializes a new instance of the <see cref="MatrixNormal"/> class.
         /// </summary>
         /// <param name="m">The mean of the matrix normal.</param>
         /// <param name="v">The covariance matrix for the rows.</param>
@@ -75,12 +70,19 @@ namespace MathNet.Numerics.Distributions
         /// <exception cref="ArgumentOutOfRangeException">If the dimensions of the mean and two covariance matrices don't match.</exception>
         public MatrixNormal(Matrix<double> m, Matrix<double> v, Matrix<double> k)
         {
-            _random = MersenneTwister.Default;
-            SetParameters(m, v, k);
+            if (Control.CheckDistributionParameters && !IsValidParameterSet(m, v, k))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            _random = SystemRandomSource.Default;
+            _m = m;
+            _v = v;
+            _k = k;
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MatrixNormal"/> class. 
+        /// Initializes a new instance of the <see cref="MatrixNormal"/> class.
         /// </summary>
         /// <param name="m">The mean of the matrix normal.</param>
         /// <param name="v">The covariance matrix for the rows.</param>
@@ -89,8 +91,15 @@ namespace MathNet.Numerics.Distributions
         /// <exception cref="ArgumentOutOfRangeException">If the dimensions of the mean and two covariance matrices don't match.</exception>
         public MatrixNormal(Matrix<double> m, Matrix<double> v, Matrix<double> k, System.Random randomSource)
         {
-            _random = randomSource ?? MersenneTwister.Default;
-            SetParameters(m, v, k);
+            if (Control.CheckDistributionParameters && !IsValidParameterSet(m, v, k))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            _random = randomSource ?? SystemRandomSource.Default;
+            _m = m;
+            _v = v;
+            _k = k;
         }
 
         /// <summary>
@@ -105,13 +114,12 @@ namespace MathNet.Numerics.Distributions
         }
 
         /// <summary>
-        /// Checks whether the parameters of the distribution are valid. 
+        /// Tests whether the provided values are valid parameters for this distribution.
         /// </summary>
         /// <param name="m">The mean of the matrix normal.</param>
         /// <param name="v">The covariance matrix for the rows.</param>
         /// <param name="k">The covariance matrix for the columns.</param>
-        /// <returns><c>true</c> when the parameters are valid, <c>false</c> otherwise.</returns>
-        static bool IsValidParameterSet(Matrix<double> m, Matrix<double> v, Matrix<double> k)
+        public static bool IsValidParameterSet(Matrix<double> m, Matrix<double> v, Matrix<double> k)
         {
             var n = m.RowCount;
             var p = m.ColumnCount;
@@ -145,32 +153,12 @@ namespace MathNet.Numerics.Distributions
         }
 
         /// <summary>
-        /// Sets the parameters of the distribution after checking their validity.
-        /// </summary>
-        /// <param name="m">The mean of the matrix normal.</param>
-        /// <param name="v">The covariance matrix for the rows.</param>
-        /// <param name="k">The covariance matrix for the columns.</param>
-        /// <exception cref="ArgumentOutOfRangeException">When the parameters are out of range.</exception>
-        void SetParameters(Matrix<double> m, Matrix<double> v, Matrix<double> k)
-        {
-            if (Control.CheckDistributionParameters && !IsValidParameterSet(m, v, k))
-            {
-                throw new ArgumentOutOfRangeException(Resources.InvalidDistributionParameters);
-            }
-
-            _m = m;
-            _v = v;
-            _k = k;
-        }
-
-        /// <summary>
         /// Gets or sets the mean. (M)
         /// </summary>
         /// <value>The mean of the distribution.</value>
         public Matrix<double> Mean
         {
             get { return _m; }
-            set { SetParameters(value, _v, _k); }
         }
 
         /// <summary>
@@ -180,7 +168,6 @@ namespace MathNet.Numerics.Distributions
         public Matrix<double> RowCovariance
         {
             get { return _v; }
-            set { SetParameters(_m, value, _k); }
         }
 
         /// <summary>
@@ -190,7 +177,6 @@ namespace MathNet.Numerics.Distributions
         public Matrix<double> ColumnCovariance
         {
             get { return _k; }
-            set { SetParameters(_m, _v, value); }
         }
 
         /// <summary>
@@ -199,7 +185,7 @@ namespace MathNet.Numerics.Distributions
         public System.Random RandomSource
         {
             get { return _random; }
-            set { _random = value ?? MersenneTwister.Default; }
+            set { _random = value ?? SystemRandomSource.Default; }
         }
 
         /// <summary>
@@ -219,10 +205,10 @@ namespace MathNet.Numerics.Distributions
             var cholV = _v.Cholesky();
             var cholK = _k.Cholesky();
 
-            return Math.Exp(-0.5*cholV.Solve(a.Transpose()*cholK.Solve(a)).Trace())
+            return Math.Exp(-0.5*cholK.Solve(a.Transpose()*cholV.Solve(a)).Trace())
                    /Math.Pow(2.0*Constants.Pi, x.RowCount*x.ColumnCount/2.0)
-                   /Math.Pow(cholV.Determinant, x.RowCount/2.0)
-                   /Math.Pow(cholK.Determinant, x.ColumnCount/2.0);
+                   /Math.Pow(cholK.Determinant, x.RowCount/2.0)
+                   /Math.Pow(cholV.Determinant, x.ColumnCount/2.0);
         }
 
         /// <summary>
@@ -247,7 +233,7 @@ namespace MathNet.Numerics.Distributions
         {
             if (Control.CheckDistributionParameters && !IsValidParameterSet(m, v, k))
             {
-                throw new ArgumentOutOfRangeException(Resources.InvalidDistributionParameters);
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
             }
 
             var n = m.RowCount;

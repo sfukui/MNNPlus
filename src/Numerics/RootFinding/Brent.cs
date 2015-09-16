@@ -3,9 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// 
-// Copyright (c) 2009-2013 Math.NET
-// 
+//
+// Copyright (c) 2009-2014 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -14,10 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -41,6 +41,22 @@ namespace MathNet.Numerics.RootFinding
     {
         /// <summary>Find a solution of the equation f(x)=0.</summary>
         /// <param name="f">The function to find roots from.</param>
+        /// <param name="guessLowerBound">Guess for the low value of the range where the root is supposed to be. Will be expanded if needed.</param>
+        /// <param name="guessUpperBound">Guess for the  high value of the range where the root is supposed to be. Will be expanded if needed.</param>
+        /// <param name="accuracy">Desired accuracy. The root will be refined until the accuracy or the maximum number of iterations is reached. Default 1e-8.</param>
+        /// <param name="maxIterations">Maximum number of iterations. Default 100.</param>
+        /// <param name="expandFactor">Factor at which to expand the bounds, if needed. Default 1.6.</param>
+        /// <param name="maxExpandIteratons">Maximum number of expand iterations. Default 100.</param>
+        /// <returns>Returns the root with the specified accuracy.</returns>
+        /// <exception cref="NonConvergenceException"></exception>
+        public static double FindRootExpand(Func<double, double> f, double guessLowerBound, double guessUpperBound, double accuracy = 1e-8, int maxIterations = 100, double expandFactor = 1.6, int maxExpandIteratons = 100)
+        {
+            ZeroCrossingBracketing.Expand(f, ref guessLowerBound, ref guessUpperBound, expandFactor, maxExpandIteratons);
+            return FindRoot(f, guessLowerBound, guessUpperBound, accuracy, maxIterations);
+        }
+
+        /// <summary>Find a solution of the equation f(x)=0.</summary>
+        /// <param name="f">The function to find roots from.</param>
         /// <param name="lowerBound">The low value of the range where the root is supposed to be.</param>
         /// <param name="upperBound">The high value of the range where the root is supposed to be.</param>
         /// <param name="accuracy">Desired accuracy. The root will be refined until the accuracy or the maximum number of iterations is reached. Default 1e-8.</param>
@@ -54,6 +70,7 @@ namespace MathNet.Numerics.RootFinding
             {
                 return root;
             }
+
             throw new NonConvergenceException(Resources.RootFindingFailed);
         }
 
@@ -74,6 +91,12 @@ namespace MathNet.Numerics.RootFinding
 
             root = upperBound;
             double xMid = double.NaN;
+
+            // Root must be bracketed.
+            if (Math.Sign(fmin) == Math.Sign(fmax))
+            {
+                return false;
+            }
 
             for (int i = 0; i <= maxIterations; i++)
             {
@@ -96,11 +119,11 @@ namespace MathNet.Numerics.RootFinding
                 }
 
                 // convergence check
-                double xAcc1 = 2.0*Precision.DoublePrecision*Math.Abs(root) + 0.5*accuracy;
+                double xAcc1 = Precision.PositiveDoublePrecision*Math.Abs(root) + 0.5*accuracy;
                 double xMidOld = xMid;
                 xMid = (upperBound - root)/2.0;
 
-                if (Math.Abs(xMid) <= xAcc1 && froot.AlmostEqualNormRelative(0, froot, accuracy))
+                if (Math.Abs(xMid) <= xAcc1 || froot.AlmostEqualNormRelative(0, froot, accuracy))
                 {
                     return true;
                 }
@@ -135,6 +158,7 @@ namespace MathNet.Numerics.RootFinding
                         // Check whether in bounds
                         q = -q;
                     }
+
                     p = Math.Abs(p);
                     if (2.0*p < Math.Min(3.0*xMid*q - Math.Abs(xAcc1*q), Math.Abs(e*q)))
                     {
@@ -155,6 +179,7 @@ namespace MathNet.Numerics.RootFinding
                     d = xMid;
                     e = d;
                 }
+
                 lowerBound = root;
                 fmin = froot;
                 if (Math.Abs(d) > xAcc1)
@@ -165,6 +190,7 @@ namespace MathNet.Numerics.RootFinding
                 {
                     root += Sign(xAcc1, xMid);
                 }
+
                 froot = f(root);
             }
 

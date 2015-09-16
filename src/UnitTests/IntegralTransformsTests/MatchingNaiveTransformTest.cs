@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2014 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -27,7 +31,6 @@
 using System;
 using MathNet.Numerics.Distributions;
 using MathNet.Numerics.IntegralTransforms;
-using MathNet.Numerics.IntegralTransforms.Algorithms;
 using NUnit.Framework;
 
 namespace MathNet.Numerics.UnitTests.IntegralTransformsTests
@@ -51,22 +54,20 @@ namespace MathNet.Numerics.UnitTests.IntegralTransformsTests
             return new ContinuousUniform(-1, 1, new System.Random(seed));
         }
 
-        /// <summary>
-        /// Verify matches naive complex.
-        /// </summary>
-        static void VerifyMatchesNaiveComplex(
+        static void Verify(
             Complex[] samples,
             int maximumErrorDecimalPlaces,
-            Func<Complex[], Complex[]> naive,
-            Action<Complex[]> fast)
+            FourierOptions options,
+            Func<Complex[], FourierOptions, Complex[]> naive,
+            Action<Complex[], FourierOptions> fast)
         {
-            var spectrumNaive = naive(samples);
+            var spectrumNaive = naive(samples, options);
 
             var spectrumFast = new Complex[samples.Length];
             samples.CopyTo(spectrumFast, 0);
-            fast(spectrumFast);
+            fast(spectrumFast, options);
 
-            AssertHelpers.ListAlmostEqual(spectrumNaive, spectrumFast, maximumErrorDecimalPlaces);
+            AssertHelpers.AlmostEqual(spectrumNaive, spectrumFast, maximumErrorDecimalPlaces);
         }
 
         /// <summary>
@@ -76,22 +77,12 @@ namespace MathNet.Numerics.UnitTests.IntegralTransformsTests
         [TestCase(FourierOptions.Default)]
         [TestCase(FourierOptions.Matlab)]
         [TestCase(FourierOptions.NumericalRecipes)]
-        public void FourierRadix2MatchesNaiveOnRealSine(FourierOptions options)
+        public void FourierRadix2MatchesNaive_RealSine(FourierOptions options)
         {
-            var dft = new DiscreteFourierTransform();
             var samples = Generate.PeriodicMap(16, w => new Complex(Math.Sin(w), 0), 16, 1.0, Constants.Pi2);
 
-            VerifyMatchesNaiveComplex(
-                samples,
-                12,
-                s => dft.NaiveForward(s, options),
-                s => dft.Radix2Forward(s, options));
-
-            VerifyMatchesNaiveComplex(
-                samples,
-                12,
-                s => dft.NaiveInverse(s, options),
-                s => dft.Radix2Inverse(s, options));
+            Verify(samples, 12, options, Fourier.NaiveForward, Fourier.Radix2Forward);
+            Verify(samples, 12, options, Fourier.NaiveInverse, Fourier.Radix2Inverse);
         }
 
         /// <summary>
@@ -101,22 +92,12 @@ namespace MathNet.Numerics.UnitTests.IntegralTransformsTests
         [TestCase(FourierOptions.Default)]
         [TestCase(FourierOptions.Matlab)]
         [TestCase(FourierOptions.NumericalRecipes)]
-        public void FourierRadix2MatchesNaiveOnRandom(FourierOptions options)
+        public void FourierRadix2MatchesNaive_Random(FourierOptions options)
         {
-            var dft = new DiscreteFourierTransform();
             var samples = Generate.RandomComplex(0x80, GetUniform(1));
 
-            VerifyMatchesNaiveComplex(
-                samples,
-                10,
-                s => dft.NaiveForward(s, options),
-                s => dft.Radix2Forward(s, options));
-
-            VerifyMatchesNaiveComplex(
-                samples,
-                10,
-                s => dft.NaiveInverse(s, options),
-                s => dft.Radix2Inverse(s, options));
+            Verify(samples, 10, options, Fourier.NaiveForward, Fourier.Radix2Forward);
+            Verify(samples, 10, options, Fourier.NaiveInverse, Fourier.Radix2Inverse);
         }
 
         /// <summary>
@@ -126,22 +107,12 @@ namespace MathNet.Numerics.UnitTests.IntegralTransformsTests
         [TestCase(FourierOptions.Default)]
         [TestCase(FourierOptions.Matlab)]
         [TestCase(FourierOptions.NumericalRecipes)]
-        public void FourierBluesteinMatchesNaiveOnRealSineNonPowerOfTwo(FourierOptions options)
+        public void FourierBluesteinMatchesNaive_RealSine_Arbitrary(FourierOptions options)
         {
-            var dft = new DiscreteFourierTransform();
             var samples = Generate.PeriodicMap(14, w => new Complex(Math.Sin(w), 0), 14, 1.0, Constants.Pi2);
 
-            VerifyMatchesNaiveComplex(
-                samples,
-                12,
-                s => dft.NaiveForward(s, options),
-                s => dft.BluesteinForward(s, options));
-
-            VerifyMatchesNaiveComplex(
-                samples,
-                12,
-                s => dft.NaiveInverse(s, options),
-                s => dft.BluesteinInverse(s, options));
+            Verify(samples, 12, options, Fourier.NaiveForward, Fourier.BluesteinForward);
+            Verify(samples, 12, options, Fourier.NaiveInverse, Fourier.BluesteinInverse);
         }
 
         /// <summary>
@@ -151,22 +122,12 @@ namespace MathNet.Numerics.UnitTests.IntegralTransformsTests
         [TestCase(FourierOptions.Default)]
         [TestCase(FourierOptions.Matlab)]
         [TestCase(FourierOptions.NumericalRecipes)]
-        public void FourierBluesteinMatchesNaiveOnRandomPowerOfTwo(FourierOptions options)
+        public void FourierBluesteinMatchesNaive_Random_PowerOfTwo(FourierOptions options)
         {
-            var dft = new DiscreteFourierTransform();
             var samples = Generate.RandomComplex(0x80, GetUniform(1));
 
-            VerifyMatchesNaiveComplex(
-                samples,
-                10,
-                s => dft.NaiveForward(s, options),
-                s => dft.BluesteinForward(s, options));
-
-            VerifyMatchesNaiveComplex(
-                samples,
-                10,
-                s => dft.NaiveInverse(s, options),
-                s => dft.BluesteinInverse(s, options));
+            Verify(samples, 10, options, Fourier.NaiveForward, Fourier.BluesteinForward);
+            Verify(samples, 10, options, Fourier.NaiveInverse, Fourier.BluesteinInverse);
         }
 
         /// <summary>
@@ -176,21 +137,45 @@ namespace MathNet.Numerics.UnitTests.IntegralTransformsTests
         [TestCase(FourierOptions.Default)]
         [TestCase(FourierOptions.Matlab)]
         [TestCase(FourierOptions.NumericalRecipes)]
-        public void FourierBluesteinMatchesNaiveOnRandomNonPowerOfTwo(FourierOptions options)
+        public void FourierBluesteinMatchesNaive_Random_Arbitrary(FourierOptions options)
         {
-            var dft = new DiscreteFourierTransform();
             var samples = Generate.RandomComplex(0x7F, GetUniform(1));
 
-            VerifyMatchesNaiveComplex(
-                samples,
-                10,
-                s => dft.NaiveForward(s, options),
-                s => dft.BluesteinForward(s, options));
-            VerifyMatchesNaiveComplex(
-                samples,
-                10,
-                s => dft.NaiveInverse(s, options),
-                s => dft.BluesteinInverse(s, options));
+            Verify(samples, 10, options, Fourier.NaiveForward, Fourier.BluesteinForward);
+            Verify(samples, 10, options, Fourier.NaiveInverse, Fourier.BluesteinInverse);
+        }
+
+        [Test, Explicit("Long-Running")]
+        public void AlgorithmsMatchNaive_PowerOfTwo_Large()
+        {
+            // 65536 = 2^16
+            const FourierOptions options = FourierOptions.NoScaling;
+            var samples = Generate.RandomComplex(65536, GetUniform(1));
+            var naive = Fourier.NaiveForward(samples, options);
+
+            Verify(samples, 10, options, (a, b) => naive, Fourier.Radix2Forward);
+            Verify(samples, 10, options, (a, b) => naive, Fourier.BluesteinForward);
+        }
+
+        [Test, Explicit("Long-Running")]
+        public void AlgorithmsMatchNaive_Arbitrary_Large()
+        {
+            // 30870 = 2*3*3*5*7*7*7
+            const FourierOptions options = FourierOptions.NoScaling;
+            var samples = Generate.RandomComplex(30870, GetUniform(1));
+            var naive = Fourier.NaiveForward(samples, options);
+
+            Verify(samples, 10, options, (a, b) => naive, Fourier.BluesteinForward);
+        }
+
+        [Test, Explicit("Long-Running")]
+        public void AlgorithmsMatchNaive_Arbitrary_Large_GH286()
+        {
+            const FourierOptions options = FourierOptions.NoScaling;
+            var samples = Generate.RandomComplex(46500, GetUniform(1));
+            var naive = Fourier.NaiveForward(samples, options);
+
+            Verify(samples, 10, options, (a, b) => naive, Fourier.BluesteinForward);
         }
     }
 }

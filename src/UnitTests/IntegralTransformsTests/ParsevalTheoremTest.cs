@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2014 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -27,7 +31,6 @@
 using System.Linq;
 using MathNet.Numerics.Distributions;
 using MathNet.Numerics.IntegralTransforms;
-using MathNet.Numerics.IntegralTransforms.Algorithms;
 using MathNet.Numerics.Statistics;
 using NUnit.Framework;
 
@@ -39,7 +42,7 @@ namespace MathNet.Numerics.UnitTests.IntegralTransformsTests
 #endif
 
     /// <summary>
-    /// Parseval theorem verification tests.
+    /// Parseval's theorem verification tests.
     /// </summary>
     [TestFixture, Category("FFT")]
     public class ParsevalTheoremTest
@@ -53,7 +56,7 @@ namespace MathNet.Numerics.UnitTests.IntegralTransformsTests
         }
 
         /// <summary>
-        /// Fourier default transform satisfies parsevals theorem.
+        /// Fourier default transform satisfies Parseval's theorem.
         /// </summary>
         /// <param name="count">Samples count.</param>
         [TestCase(0x1000)]
@@ -68,7 +71,7 @@ namespace MathNet.Numerics.UnitTests.IntegralTransformsTests
             samples.CopyTo(work, 0);
 
             // Default -> Symmetric Scaling
-            Transform.FourierForward(work);
+            Fourier.Forward(work);
 
             var frequencySpaceEnergy = (from s in work select s.MagnitudeSquared()).Mean();
 
@@ -76,7 +79,7 @@ namespace MathNet.Numerics.UnitTests.IntegralTransformsTests
         }
 
         /// <summary>
-        /// Hartley default naive satisfies parsevals theorem.
+        /// Hartley default naive satisfies Parseval's theorem.
         /// </summary>
         /// <param name="count">Samples count.</param>
         [TestCase(0x40)]
@@ -91,12 +94,10 @@ namespace MathNet.Numerics.UnitTests.IntegralTransformsTests
             samples.CopyTo(work, 0);
 
             // Default -> Symmetric Scaling
-            var dht = new DiscreteHartleyTransform();
-            work = dht.NaiveForward(work, HartleyOptions.Default);
+            work = Hartley.NaiveForward(work, HartleyOptions.Default);
 
             var frequencySpaceEnergy = (from s in work select s*s).Mean();
             Assert.AreEqual(timeSpaceEnergy, frequencySpaceEnergy, 1e-12);
         }
     }
 }
-

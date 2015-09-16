@@ -24,7 +24,6 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
-using System;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Complex;
 using NUnit.Framework;
@@ -75,7 +74,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
         {
             var matrixI = DenseMatrix.CreateIdentity(8);
             matrixI[3, 3] = -4.0;
-            Assert.Throws<ArgumentException>(() => matrixI.Cholesky());
+            Assert.That(() => matrixI.Cholesky(), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -85,7 +84,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
         public void CholeskyFailsWithNonSquareMatrix()
         {
             var matrix = new DenseMatrix(3, 2);
-            Assert.Throws<ArgumentException>(() => matrix.Cholesky());
+            Assert.That(() => matrix.Cholesky(), Throws.ArgumentException);
         }
 
         /// <summary>

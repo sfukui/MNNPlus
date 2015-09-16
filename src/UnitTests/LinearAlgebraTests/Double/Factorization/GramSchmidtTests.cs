@@ -24,7 +24,6 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
-using System;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 using MathNet.Numerics.LinearAlgebra.Double.Factorization;
@@ -44,7 +43,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Factorization
         [Test]
         public void ConstructorWideMatrixThrowsInvalidMatrixOperationException()
         {
-            Assert.Throws<ArgumentException>(() => DenseGramSchmidt.Create(new DenseMatrix(3, 4)));
+            Assert.That(() => DenseGramSchmidt.Create(Matrix<double>.Build.Dense(3, 4)), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -68,14 +67,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Factorization
             {
                 for (var j = 0; j < r.ColumnCount; j++)
                 {
-                    if (i == j)
-                    {
-                        Assert.AreEqual(1.0, r[i, j]);
-                    }
-                    else
-                    {
-                        Assert.AreEqual(0.0, r[i, j]);
-                    }
+                    Assert.AreEqual(i == j ? 1.0 : 0.0, r[i, j]);
                 }
             }
 
@@ -83,14 +75,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Factorization
             {
                 for (var j = 0; j < q.ColumnCount; j++)
                 {
-                    if (i == j)
-                    {
-                        Assert.AreEqual(1.0, q[i, j]);
-                    }
-                    else
-                    {
-                        Assert.AreEqual(0.0, q[i, j]);
-                    }
+                    Assert.AreEqual(i == j ? 1.0 : 0.0, q[i, j]);
                 }
             }
         }
@@ -308,7 +293,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Factorization
             var matrixB = Matrix<double>.Build.Random(order, order, 1);
             var matrixBCopy = matrixB.Clone();
 
-            var matrixX = new DenseMatrix(order, order);
+            var matrixX = Matrix<double>.Build.Dense(order, order);
             factorGramSchmidt.Solve(matrixB, matrixX);
 
             // The solution X row dimension is equal to the column dimension of A

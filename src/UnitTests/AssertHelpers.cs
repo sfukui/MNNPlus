@@ -25,6 +25,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using MathNet.Numerics.LinearAlgebra;
 using NUnit.Framework;
 
 namespace MathNet.Numerics.UnitTests
@@ -38,7 +39,7 @@ namespace MathNet.Numerics.UnitTests
     /// <summary>
     /// A class which includes some assertion helper methods particularly for numerical code.
     /// </summary>
-    internal class AssertHelpers
+    internal static class AssertHelpers
     {
         public static void AlmostEqual(Complex expected, Complex actual)
         {
@@ -182,7 +183,7 @@ namespace MathNet.Numerics.UnitTests
         }
 
 
-        public static void ListAlmostEqual(IList<double> expected, IList<double> actual, int decimalPlaces)
+        public static void AlmostEqual(IList<double> expected, IList<double> actual, int decimalPlaces)
         {
             for (var i = 0; i < expected.Count; i++)
             {
@@ -193,7 +194,7 @@ namespace MathNet.Numerics.UnitTests
             }
         }
 
-        public static void ListAlmostEqual(IList<float> expected, IList<float> actual, int decimalPlaces)
+        public static void AlmostEqual(IList<float> expected, IList<float> actual, int decimalPlaces)
         {
             for (var i = 0; i < expected.Count; i++)
             {
@@ -204,7 +205,7 @@ namespace MathNet.Numerics.UnitTests
             }
         }
 
-        public static void ListAlmostEqual(IList<Complex> expected, IList<Complex> actual, int decimalPlaces)
+        public static void AlmostEqual(IList<Complex> expected, IList<Complex> actual, int decimalPlaces)
         {
             for (var i = 0; i < expected.Count; i++)
             {
@@ -215,7 +216,7 @@ namespace MathNet.Numerics.UnitTests
             }
         }
 
-        public static void ListAlmostEqual(IList<Complex32> expected, IList<Complex32> actual, int decimalPlaces)
+        public static void AlmostEqual(IList<Complex32> expected, IList<Complex32> actual, int decimalPlaces)
         {
             for (var i = 0; i < expected.Count; i++)
             {
@@ -226,7 +227,7 @@ namespace MathNet.Numerics.UnitTests
             }
         }
 
-        public static void ListAlmostEqualRelative(IList<double> expected, IList<double> actual, int decimalPlaces)
+        public static void AlmostEqualRelative(IList<double> expected, IList<double> actual, int decimalPlaces)
         {
             for (var i = 0; i < expected.Count; i++)
             {
@@ -237,7 +238,7 @@ namespace MathNet.Numerics.UnitTests
             }
         }
 
-        public static void ListAlmostEqualRelative(IList<float> expected, IList<float> actual, int decimalPlaces)
+        public static void AlmostEqualRelative(IList<float> expected, IList<float> actual, int decimalPlaces)
         {
             for (var i = 0; i < expected.Count; i++)
             {
@@ -248,7 +249,7 @@ namespace MathNet.Numerics.UnitTests
             }
         }
 
-        public static void ListAlmostEqualRelative(IList<Complex> expected, IList<Complex> actual, int decimalPlaces)
+        public static void AlmostEqualRelative(IList<Complex> expected, IList<Complex> actual, int decimalPlaces)
         {
             for (var i = 0; i < expected.Count; i++)
             {
@@ -259,13 +260,165 @@ namespace MathNet.Numerics.UnitTests
             }
         }
 
-        public static void ListAlmostEqualRelative(IList<Complex32> expected, IList<Complex32> actual, int decimalPlaces)
+        public static void AlmostEqualRelative(IList<Complex32> expected, IList<Complex32> actual, int decimalPlaces)
         {
             for (var i = 0; i < expected.Count; i++)
             {
                 if (!actual[i].AlmostEqualRelative(expected[i], decimalPlaces))
                 {
                     Assert.Fail("Not equal within {0} places. Expected:{1}; Actual:{2}", decimalPlaces, expected[i], actual[i]);
+                }
+            }
+        }
+
+        public static void AlmostEqual(Matrix<double> expected, Matrix<double> actual, int decimalPlaces)
+        {
+            if (expected.ColumnCount != actual.ColumnCount || expected.RowCount != actual.RowCount)
+            {
+                Assert.Fail("Matrix dimensions mismatch. Expected: {0}; Actual: {1}", expected.ToTypeString(), actual.ToTypeString());
+            }
+
+            for (var i = 0; i < expected.RowCount; i++)
+            {
+                for (var j = 0; j < expected.ColumnCount; j++)
+                {
+                    if (!actual.At(i, j).AlmostEqual(expected.At(i, j), decimalPlaces))
+                    {
+                        Assert.Fail("Not equal within {0} places. Expected:{1}; Actual:{2}", decimalPlaces, expected.At(i, j), actual.At(i, j));
+                    }
+                }
+            }
+        }
+
+        public static void AlmostEqual(Matrix<float> expected, Matrix<float> actual, int decimalPlaces)
+        {
+            if (expected.ColumnCount != actual.ColumnCount || expected.RowCount != actual.RowCount)
+            {
+                Assert.Fail("Matrix dimensions mismatch. Expected: {0}; Actual: {1}", expected.ToTypeString(), actual.ToTypeString());
+            }
+
+            for (var i = 0; i < expected.RowCount; i++)
+            {
+                for (var j = 0; j < expected.ColumnCount; j++)
+                {
+                    if (!actual.At(i, j).AlmostEqual(expected.At(i, j), decimalPlaces))
+                    {
+                        Assert.Fail("Not equal within {0} places. Expected:{1}; Actual:{2}", decimalPlaces, expected.At(i, j), actual.At(i, j));
+                    }
+                }
+            }
+        }
+
+        public static void AlmostEqual(Matrix<Complex> expected, Matrix<Complex> actual, int decimalPlaces)
+        {
+            if (expected.ColumnCount != actual.ColumnCount || expected.RowCount != actual.RowCount)
+            {
+                Assert.Fail("Matrix dimensions mismatch. Expected: {0}; Actual: {1}", expected.ToTypeString(), actual.ToTypeString());
+            }
+
+            for (var i = 0; i < expected.RowCount; i++)
+            {
+                for (var j = 0; j < expected.ColumnCount; j++)
+                {
+                    if (!actual.At(i, j).AlmostEqual(expected.At(i, j), decimalPlaces))
+                    {
+                        Assert.Fail("Not equal within {0} places. Expected:{1}; Actual:{2}", decimalPlaces, expected.At(i, j), actual.At(i, j));
+                    }
+                }
+            }
+        }
+
+        public static void AlmostEqual(Matrix<Complex32> expected, Matrix<Complex32> actual, int decimalPlaces)
+        {
+            if (expected.ColumnCount != actual.ColumnCount || expected.RowCount != actual.RowCount)
+            {
+                Assert.Fail("Matrix dimensions mismatch. Expected: {0}; Actual: {1}", expected.ToTypeString(), actual.ToTypeString());
+            }
+
+            for (var i = 0; i < expected.RowCount; i++)
+            {
+                for (var j = 0; j < expected.ColumnCount; j++)
+                {
+                    if (!actual.At(i, j).AlmostEqual(expected.At(i, j), decimalPlaces))
+                    {
+                        Assert.Fail("Not equal within {0} places. Expected:{1}; Actual:{2}", decimalPlaces, expected.At(i, j), actual.At(i, j));
+                    }
+                }
+            }
+        }
+
+        public static void AlmostEqualRelative(Matrix<double> expected, Matrix<double> actual, int decimalPlaces)
+        {
+            if (expected.ColumnCount != actual.ColumnCount || expected.RowCount != actual.RowCount)
+            {
+                Assert.Fail("Matrix dimensions mismatch. Expected: {0}; Actual: {1}", expected.ToTypeString(), actual.ToTypeString());
+            }
+
+            for (var i = 0; i < expected.RowCount; i++)
+            {
+                for (var j = 0; j < expected.ColumnCount; j++)
+                {
+                    if (!actual.At(i, j).AlmostEqualRelative(expected.At(i, j), decimalPlaces))
+                    {
+                        Assert.Fail("Not equal within {0} relative places. Expected:{1}; Actual:{2}", decimalPlaces, expected.At(i, j), actual.At(i, j));
+                    }
+                }
+            }
+        }
+
+        public static void AlmostEqualRelative(Matrix<float> expected, Matrix<float> actual, int decimalPlaces)
+        {
+            if (expected.ColumnCount != actual.ColumnCount || expected.RowCount != actual.RowCount)
+            {
+                Assert.Fail("Matrix dimensions mismatch. Expected: {0}; Actual: {1}", expected.ToTypeString(), actual.ToTypeString());
+            }
+
+            for (var i = 0; i < expected.RowCount; i++)
+            {
+                for (var j = 0; j < expected.ColumnCount; j++)
+                {
+                    if (!actual.At(i, j).AlmostEqualRelative(expected.At(i, j), decimalPlaces))
+                    {
+                        Assert.Fail("Not equal within {0} relative places. Expected:{1}; Actual:{2}", decimalPlaces, expected.At(i, j), actual.At(i, j));
+                    }
+                }
+            }
+        }
+
+        public static void AlmostEqualRelative(Matrix<Complex> expected, Matrix<Complex> actual, int decimalPlaces)
+        {
+            if (expected.ColumnCount != actual.ColumnCount || expected.RowCount != actual.RowCount)
+            {
+                Assert.Fail("Matrix dimensions mismatch. Expected: {0}; Actual: {1}", expected.ToTypeString(), actual.ToTypeString());
+            }
+
+            for (var i = 0; i < expected.RowCount; i++)
+            {
+                for (var j = 0; j < expected.ColumnCount; j++)
+                {
+                    if (!actual.At(i, j).AlmostEqualRelative(expected.At(i, j), decimalPlaces))
+                    {
+                        Assert.Fail("Not equal within {0} relative places. Expected:{1}; Actual:{2}", decimalPlaces, expected.At(i, j), actual.At(i, j));
+                    }
+                }
+            }
+        }
+
+        public static void AlmostEqualRelative(Matrix<Complex32> expected, Matrix<Complex32> actual, int decimalPlaces)
+        {
+            if (expected.ColumnCount != actual.ColumnCount || expected.RowCount != actual.RowCount)
+            {
+                Assert.Fail("Matrix dimensions mismatch. Expected: {0}; Actual: {1}", expected.ToTypeString(), actual.ToTypeString());
+            }
+
+            for (var i = 0; i < expected.RowCount; i++)
+            {
+                for (var j = 0; j < expected.ColumnCount; j++)
+                {
+                    if (!actual.At(i, j).AlmostEqualRelative(expected.At(i, j), decimalPlaces))
+                    {
+                        Assert.Fail("Not equal within {0} relative places. Expected:{1}; Actual:{2}", decimalPlaces, expected.At(i, j), actual.At(i, j));
+                    }
                 }
             }
         }

@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2013 Math.NET
+// Copyright (c) 2009-2015 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -49,6 +49,37 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         }
 
         /// <summary>
+        /// Set all values whose absolute value is smaller than the threshold to zero.
+        /// </summary>
+        public override void CoerceZero(double threshold)
+        {
+            MapInplace(x => Math.Abs(x) < threshold ? 0f : x, Zeros.AllowSkip);
+        }
+
+        /// <summary>
+        /// Conjugates vector and save result to <paramref name="result"/>
+        /// </summary>
+        /// <param name="result">Target vector</param>
+        protected override sealed void DoConjugate(Vector<float> result)
+        {
+            if (ReferenceEquals(this, result))
+            {
+                return;
+            }
+
+            CopyTo(result);
+        }
+
+        /// <summary>
+        /// Negates vector and saves result to <paramref name="result"/>
+        /// </summary>
+        /// <param name="result">Target vector</param>
+        protected override void DoNegate(Vector<float> result)
+        {
+            Map(x => -x, result, Zeros.AllowSkip);
+        }
+
+        /// <summary>
         /// Adds a scalar to each element of the vector and stores the result in the result vector.
         /// </summary>
         /// <param name="scalar">
@@ -59,10 +90,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         /// </param>
         protected override void DoAdd(float scalar, Vector<float> result)
         {
-            for (var index = 0; index < Count; index++)
-            {
-                result.At(index, At(index) + scalar);
-            }
+            Map(x => x + scalar, result, Zeros.Include);
         }
 
         /// <summary>
@@ -76,10 +104,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         /// </param>
         protected override void DoAdd(Vector<float> other, Vector<float> result)
         {
-            for (var index = 0; index < Count; index++)
-            {
-                result.At(index, At(index) + other.At(index));
-            }
+            Map2((x, y) => x + y, other, result, Zeros.AllowSkip);
         }
 
         /// <summary>
@@ -93,7 +118,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         /// </param>
         protected override void DoSubtract(float scalar, Vector<float> result)
         {
-            DoAdd(-scalar, result);
+            Map(x => x - scalar, result, Zeros.Include);
         }
 
         /// <summary>
@@ -107,10 +132,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         /// </param>
         protected override void DoSubtract(Vector<float> other, Vector<float> result)
         {
-            for (var index = 0; index < Count; index++)
-            {
-                result.At(index, At(index) - other.At(index));
-            }
+            Map2((x, y) => x - y, other, result, Zeros.AllowSkip);
         }
 
         /// <summary>
@@ -124,10 +146,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         /// </param>
         protected override void DoMultiply(float scalar, Vector<float> result)
         {
-            for (var index = 0; index < Count; index++)
-            {
-                result.At(index, At(index) * scalar);
-            }
+            Map(x => x*scalar, result, Zeros.AllowSkip);
         }
 
         /// <summary>
@@ -141,7 +160,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         /// </param>
         protected override void DoDivide(float divisor, Vector<float> result)
         {
-            DoMultiply(1 / divisor, result);
+            Map(x => x/divisor, result, divisor == 0.0f ? Zeros.Include : Zeros.AllowSkip);
         }
 
         /// <summary>
@@ -151,10 +170,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         /// <param name="result">The vector to store the result of the division.</param>
         protected override void DoDivideByThis(float dividend, Vector<float> result)
         {
-            for (var index = 0; index < Count; index++)
-            {
-                result.At(index, dividend / At(index));
-            }
+            Map(x => dividend/x, result, Zeros.Include);
         }
 
         /// <summary>
@@ -164,10 +180,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         /// <param name="result">The vector to store the result of the pointwise multiplication.</param>
         protected override void DoPointwiseMultiply(Vector<float> other, Vector<float> result)
         {
-            for (var index = 0; index < Count; index++)
-            {
-                result.At(index, At(index) * other.At(index));
-            }
+            Map2((x, y) => x*y, other, result, Zeros.AllowSkip);
         }
 
         /// <summary>
@@ -177,23 +190,57 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         /// <param name="result">The vector to store the result of the pointwise division.</param>
         protected override void DoPointwiseDivide(Vector<float> divisor, Vector<float> result)
         {
-            for (var index = 0; index < Count; index++)
-            {
-                result.At(index, At(index) / divisor.At(index));
-            }
+            Map2((x, y) => x/y, divisor, result, Zeros.Include);
         }
 
         /// <summary>
-        /// Pointwise modulus this vector with another vector and stores the result into the result vector.
+        /// Pointwise raise this vector to an exponent and store the result into the result vector.
         /// </summary>
-        /// <param name="divisor">The vector to pointwise modulus this one by.</param>
+        /// <param name="exponent">The exponent to raise this vector values to.</param>
+        /// <param name="result">The vector to store the result of the pointwise power.</param>
+        protected override void DoPointwisePower(float exponent, Vector<float> result)
+        {
+            Map(x => (float)Math.Pow(x, exponent), result, exponent > 0.0f ? Zeros.AllowSkip : Zeros.Include);
+        }
+
+        /// <summary>
+        /// Pointwise canonical modulus, where the result has the sign of the divisor,
+        /// of this vector with another vector and stores the result into the result vector.
+        /// </summary>
+        /// <param name="divisor">The pointwise denominator vector to use.</param>
         /// <param name="result">The result of the modulus.</param>
         protected override void DoPointwiseModulus(Vector<float> divisor, Vector<float> result)
         {
-            for (var index = 0; index < Count; index++)
-            {
-                result.At(index, At(index) % divisor.At(index));
-            }
+            Map2(Euclid.Modulus, divisor, result, Zeros.Include);
+        }
+
+        /// <summary>
+        /// Pointwise remainder (% operator), where the result has the sign of the dividend,
+        /// of this vector with another vector and stores the result into the result vector.
+        /// </summary>
+        /// <param name="divisor">The pointwise denominator vector to use.</param>
+        /// <param name="result">The result of the modulus.</param>
+        protected override void DoPointwiseRemainder(Vector<float> divisor, Vector<float> result)
+        {
+            Map2(Euclid.Remainder, divisor, result, Zeros.Include);
+        }
+
+        /// <summary>
+        /// Pointwise applies the exponential function to each value and stores the result into the result vector.
+        /// </summary>
+        /// <param name="result">The vector to store the result.</param>
+        protected override void DoPointwiseExp(Vector<float> result)
+        {
+            Map(x => (float)Math.Exp(x), result, Zeros.Include);
+        }
+
+        /// <summary>
+        /// Pointwise applies the natural logarithm function to each value and stores the result into the result vector.
+        /// </summary>
+        /// <param name="result">The vector to store the result.</param>
+        protected override void DoPointwiseLog(Vector<float> result)
+        {
+            Map(x => (float)Math.Log(x), result, Zeros.Include);
         }
 
         /// <summary>
@@ -222,29 +269,47 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         }
 
         /// <summary>
-        /// Computes the modulus for each element of the vector for the given divisor.
+        /// Computes the canonical modulus, where the result has the sign of the divisor,
+        /// for each element of the vector for the given divisor.
         /// </summary>
         /// <param name="divisor">The scalar denominator to use.</param>
         /// <param name="result">A vector to store the results in.</param>
         protected override void DoModulus(float divisor, Vector<float> result)
         {
-            for (int i = 0; i < Count; i++)
-            {
-                result.At(i, At(i)%divisor);
-            }
+            Map(x => Euclid.Modulus(x, divisor), result, Zeros.Include);
         }
 
         /// <summary>
-        /// Computes the modulus for the given dividend for each element of the vector.
+        /// Computes the canonical modulus, where the result has the sign of the divisor,
+        /// for the given dividend for each element of the vector.
         /// </summary>
         /// <param name="dividend">The scalar numerator to use.</param>
         /// <param name="result">A vector to store the results in.</param>
         protected override void DoModulusByThis(float dividend, Vector<float> result)
         {
-            for (var index = 0; index < Count; index++)
-            {
-                result.At(index, dividend%At(index));
-            }
+            Map(x => Euclid.Modulus(dividend, x), result, Zeros.Include);
+        }
+
+        /// <summary>
+        /// Computes the remainder (% operator), where the result has the sign of the dividend,
+        /// for each element of the vector for the given divisor.
+        /// </summary>
+        /// <param name="divisor">The scalar denominator to use.</param>
+        /// <param name="result">A vector to store the results in.</param>
+        protected override void DoRemainder(float divisor, Vector<float> result)
+        {
+            Map(x => Euclid.Remainder(x, divisor), result, Zeros.Include);
+        }
+
+        /// <summary>
+        /// Computes the remainder (% operator), where the result has the sign of the dividend,
+        /// for the given dividend for each element of the vector.
+        /// </summary>
+        /// <param name="dividend">The scalar numerator to use.</param>
+        /// <param name="result">A vector to store the results in.</param>
+        protected override void DoRemainderByThis(float dividend, Vector<float> result)
+        {
+            Map(x => Euclid.Remainder(dividend, x), result, Zeros.Include);
         }
 
         /// <summary>
@@ -347,7 +412,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         /// <summary>
         /// Calculates the infinity norm of the vector.
         /// </summary>
-        /// <returns>The square root of the sum of the squared values.</returns>
+        /// <returns>The maximum absolute value.</returns>
         public override double InfinityNorm()
         {
             return CommonParallel.Aggregate(0, Count, i => Math.Abs(At(i)), Math.Max, 0f);
@@ -376,32 +441,6 @@ namespace MathNet.Numerics.LinearAlgebra.Single
                 sum += Math.Pow(Math.Abs(At(index)), p);
             }
             return Math.Pow(sum, 1.0/p);
-        }
-
-        /// <summary>
-        /// Conjugates vector and save result to <paramref name="result"/>
-        /// </summary>
-        /// <param name="result">Target vector</param>
-        protected override void DoConjugate(Vector<float> result)
-        {
-            if (ReferenceEquals(this, result))
-            {
-                return;
-            }
-
-            CopyTo(result);
-        }
-
-        /// <summary>
-        /// Negates vector and saves result to <paramref name="result"/>
-        /// </summary>
-        /// <param name="result">Target vector</param>
-        protected override void DoNegate(Vector<float> result)
-        {
-            for (var index = 0; index < Count; index++)
-            {
-                result.At(index, -At(index));
-            }
         }
 
         /// <summary>

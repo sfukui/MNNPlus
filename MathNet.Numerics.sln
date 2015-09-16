@@ -1,26 +1,20 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{4D50FB34-10BC-495A-8B2F-482E34B4D771}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{49EE74BD-301F-4C3B-B76A-07F90CC88CE7}"
-	ProjectSection(SolutionItems) = preProject
-		build\FSharp.Formatting\build.fsx = build\FSharp.Formatting\build.fsx
-	EndProjectSection
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Readme", "Readme", "{C2F37492-38AE-4186-8A7F-17B0B080942C}"
 	ProjectSection(SolutionItems) = preProject
 		CONTRIBUTING.md = CONTRIBUTING.md
 		CONTRIBUTORS.md = CONTRIBUTORS.md
 		LICENSE.md = LICENSE.md
-		MAINTAINING.md = MAINTAINING.md
 		README.md = README.md
+		RELEASENOTES-CUDA.md = RELEASENOTES-CUDA.md
+		RELEASENOTES-Data.md = RELEASENOTES-Data.md
+		RELEASENOTES-MKL.md = RELEASENOTES-MKL.md
+		RELEASENOTES-OpenBLAS.md = RELEASENOTES-OpenBLAS.md
 		RELEASENOTES.md = RELEASENOTES.md
 	EndProjectSection
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Examples", "src\Examples\Examples.csproj", "{8239A6FF-1EF3-4DA4-A860-95C392DD6899}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Numerics", "src\Numerics\Numerics.csproj", "{B7CAE5F4-A23F-4438-B5BE-41226618B695}"
 EndProject
@@ -37,6 +31,51 @@ EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "AppendixSimpleTest", "src\AppendixSimpleTest\AppendixSimpleTest.fsproj", "{F310DA11-1A77-4C6F-ABEB-E5BE2903E6BD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AppendixUnitTest", "src\AppendixUnitTest\AppendixUnitTest.csproj", "{184C39F1-DF72-4A35-BC36-D01291315B04}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharpUnitTests", "src\FSharpUnitTests\FSharpUnitTests.fsproj", "{F2F8032B-A31D-4E33-A05E-F2CDCBFAA75D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTests", "src\UnitTests\UnitTests.csproj", "{DAF07AA8-C5C9-4963-98F7-2C3285064DAD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{A4A66FA9-C00C-4D5C-A776-27516EA0C536}"
+	ProjectSection(SolutionItems) = preProject
+		docs\tools\build-docs.fsx = docs\tools\build-docs.fsx
+		build.fsx = build.fsx
+		build\MathNet.Numerics.Extension.nuspec = build\MathNet.Numerics.Extension.nuspec
+		build\MathNet.Numerics.nuspec = build\MathNet.Numerics.nuspec
+		build\NativeProvider.targets = build\NativeProvider.targets
+		paket.dependencies = paket.dependencies
+		paket.lock = paket.lock
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{039229DA-AFDA-48DB-B7FC-B064691DEE96}"
+	ProjectSection(SolutionItems) = preProject
+		docs\content\Build.md = docs\content\Build.md
+		docs\content\Compatibility.md = docs\content\Compatibility.md
+		docs\content\Constants.md = docs\content\Constants.md
+		docs\content\CSV.md = docs\content\CSV.md
+		docs\content\DescriptiveStatistics.md = docs\content\DescriptiveStatistics.md
+		docs\content\Distance.md = docs\content\Distance.md
+		docs\content\Euclid.md = docs\content\Euclid.md
+		docs\content\Functions.md = docs\content\Functions.md
+		docs\content\Generate.md = docs\content\Generate.md
+		docs\content\IFsharpNotebook.md = docs\content\IFsharpNotebook.md
+		docs\content\index.md = docs\content\index.md
+		docs\content\IntegralTransforms.md = docs\content\IntegralTransforms.md
+		docs\content\Integration.md = docs\content\Integration.md
+		docs\content\Interpolation.md = docs\content\Interpolation.md
+		docs\content\LinearEquations.md = docs\content\LinearEquations.md
+		docs\content\MatlabFiles.md = docs\content\MatlabFiles.md
+		docs\content\Matrix.md = docs\content\Matrix.md
+		docs\content\MatrixMarket.md = docs\content\MatrixMarket.md
+		docs\content\MKL.md = docs\content\MKL.md
+		docs\content\Packages.md = docs\content\Packages.md
+		docs\content\Probability.md = docs\content\Probability.md
+		docs\content\Random.md = docs\content\Random.md
+		docs\content\Regression.md = docs\content\Regression.md
+		docs\tools\templates\template.cshtml = docs\tools\templates\template.cshtml
+		docs\content\Users.md = docs\content\Users.md
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestData", "src\TestData\TestData.csproj", "{AF3253C9-4DB5-45A0-98CF-C105FDA9DA47}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -99,6 +138,12 @@ Global
 		{BC81EA37-8EE6-4BF9-B8A9-B30497AEF8B1}.Release-Signed|Any CPU.Build.0 = Release-Signed|Any CPU
 		{BC81EA37-8EE6-4BF9-B8A9-B30497AEF8B1}.Release-Signed|x64.ActiveCfg = Release-Signed|Any CPU
 		{BC81EA37-8EE6-4BF9-B8A9-B30497AEF8B1}.Release-Signed|x86.ActiveCfg = Release-Signed|Any CPU
+		{F2F8032B-A31D-4E33-A05E-F2CDCBFAA75D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F2F8032B-A31D-4E33-A05E-F2CDCBFAA75D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F2F8032B-A31D-4E33-A05E-F2CDCBFAA75D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F2F8032B-A31D-4E33-A05E-F2CDCBFAA75D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F2F8032B-A31D-4E33-A05E-F2CDCBFAA75D}.Release-Signed|Any CPU.ActiveCfg = Release-Signed|Any CPU
+		{F2F8032B-A31D-4E33-A05E-F2CDCBFAA75D}.Release-Signed|Any CPU.Build.0 = Release-Signed|Any CPU
 		{DAF07AA8-C5C9-4963-98F7-2C3285064DAD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DAF07AA8-C5C9-4963-98F7-2C3285064DAD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DAF07AA8-C5C9-4963-98F7-2C3285064DAD}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -168,6 +213,12 @@ Global
 		{184C39F1-DF72-4A35-BC36-D01291315B04}.Release-Signed|Any CPU.Build.0 = Release|Any CPU
 		{184C39F1-DF72-4A35-BC36-D01291315B04}.Release-Signed|x64.ActiveCfg = Release|Any CPU
 		{184C39F1-DF72-4A35-BC36-D01291315B04}.Release-Signed|x86.ActiveCfg = Release|Any CPU
+		{AF3253C9-4DB5-45A0-98CF-C105FDA9DA47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF3253C9-4DB5-45A0-98CF-C105FDA9DA47}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AF3253C9-4DB5-45A0-98CF-C105FDA9DA47}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AF3253C9-4DB5-45A0-98CF-C105FDA9DA47}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AF3253C9-4DB5-45A0-98CF-C105FDA9DA47}.Release-Signed|Any CPU.ActiveCfg = Release-Signed|Any CPU
+		{AF3253C9-4DB5-45A0-98CF-C105FDA9DA47}.Release-Signed|Any CPU.Build.0 = Release-Signed|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -178,5 +229,7 @@ Global
 		{184C39F1-DF72-4A35-BC36-D01291315B04} = {4D50FB34-10BC-495A-8B2F-482E34B4D771}
 		{8239A6FF-1EF3-4DA4-A860-95C392DD6899} = {49EE74BD-301F-4C3B-B76A-07F90CC88CE7}
 		{BC81EA37-8EE6-4BF9-B8A9-B30497AEF8B1} = {49EE74BD-301F-4C3B-B76A-07F90CC88CE7}
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = src\Numerics\Numerics.csproj
 	EndGlobalSection
 EndGlobal

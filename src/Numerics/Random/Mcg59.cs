@@ -30,6 +30,10 @@
 
 using System.Collections.Generic;
 
+#if !PORTABLE
+using System.Runtime;
+#endif
+
 namespace MathNet.Numerics.Random
 {
     /// <summary>
@@ -57,7 +61,6 @@ namespace MathNet.Numerics.Random
         /// <param name="threadSafe">if set to <c>true</c> , the class is thread safe.</param>
         public Mcg59(bool threadSafe) : this(RandomSeed.Robust(), threadSafe)
         {
-
         }
 
         /// <summary>
@@ -73,6 +76,7 @@ namespace MathNet.Numerics.Random
             {
                 seed = 1;
             }
+
             _xn = (uint)seed%Modulus;
         }
 
@@ -88,6 +92,7 @@ namespace MathNet.Numerics.Random
             {
                 seed = 1;
             }
+
             _xn = (uint)seed%Modulus;
         }
 
@@ -105,23 +110,34 @@ namespace MathNet.Numerics.Random
         }
 
         /// <summary>
-        /// Returns an array of random numbers greater than or equal to 0.0 and less than 1.0.
+        /// Fills an array with random numbers greater than or equal to 0.0 and less than 1.0.
         /// </summary>
         /// <remarks>Supports being called in parallel from multiple threads.</remarks>
-        public static double[] Doubles(int length, int seed)
+        public static void Doubles(double[] values, int seed)
         {
             if (seed == 0)
             {
                 seed = 1;
             }
+
             ulong xn = (uint)seed%Modulus;
 
-            var data = new double[length];
-            for (int i = 0; i < data.Length; i++)
+            for (int i = 0; i < values.Length; i++)
             {
-                data[i] = xn*Reciprocal;
+                values[i] = xn*Reciprocal;
                 xn = (xn*Multiplier)%Modulus;
             }
+        }
+
+        /// <summary>
+        /// Returns an array of random numbers greater than or equal to 0.0 and less than 1.0.
+        /// </summary>
+        /// <remarks>Supports being called in parallel from multiple threads.</remarks>
+        [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
+        public static double[] Doubles(int length, int seed)
+        {
+            var data = new double[length];
+            Doubles(data, seed);
             return data;
         }
 
@@ -135,6 +151,7 @@ namespace MathNet.Numerics.Random
             {
                 seed = 1;
             }
+
             ulong xn = (uint)seed%Modulus;
 
             while (true)

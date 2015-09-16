@@ -24,7 +24,6 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
-using System;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double.Factorization;
 using NUnit.Framework;
@@ -43,7 +42,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Factorization
         [Test]
         public void ConstructorWideMatrixThrowsInvalidMatrixOperationException()
         {
-            Assert.Throws<ArgumentException>(() => UserGramSchmidt.Create(new UserDefinedMatrix(3, 4)));
+            Assert.That(() => UserGramSchmidt.Create(new UserDefinedMatrix(3, 4)), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -67,14 +66,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Factorization
             {
                 for (var j = 0; j < r.ColumnCount; j++)
                 {
-                    if (i == j)
-                    {
-                        Assert.AreEqual(1.0, r[i, j]);
-                    }
-                    else
-                    {
-                        Assert.AreEqual(0.0, r[i, j]);
-                    }
+                    Assert.AreEqual(i == j ? 1.0 : 0.0, r[i, j]);
                 }
             }
 
@@ -82,14 +74,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Factorization
             {
                 for (var j = 0; j < q.ColumnCount; j++)
                 {
-                    if (i == j)
-                    {
-                        Assert.AreEqual(1.0, q[i, j]);
-                    }
-                    else
-                    {
-                        Assert.AreEqual(0.0, q[i, j]);
-                    }
+                    Assert.AreEqual(i == j ? 1.0 : 0.0, q[i, j]);
                 }
             }
         }

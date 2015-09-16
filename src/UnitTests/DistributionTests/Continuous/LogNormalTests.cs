@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2014 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -39,15 +43,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
     [TestFixture, Category("Distributions")]
     public class LogNormalTests
     {
-        /// <summary>
-        /// Set-up parameters.
-        /// </summary>
-        [SetUp]
-        public void SetUp()
-        {
-            Control.CheckDistributionParameters = true;
-        }
-
         /// <summary>
         /// Can create <c>LogNormal</c>.
         /// </summary>
@@ -77,7 +72,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [TestCase(1.0, -1.0)]
         public void LogNormalCreateFailsWithBadParameters(double mu, double sigma)
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new LogNormal(mu, sigma));
+            Assert.That(() => new LogNormal(mu, sigma), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -88,54 +83,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         {
             var n = new LogNormal(1d, 2d);
             Assert.AreEqual("LogNormal(μ = 1, σ = 2)", n.ToString());
-        }
-
-        /// <summary>
-        /// Can set sigma.
-        /// </summary>
-        /// <param name="sigma">Sigma value.</param>
-        [TestCase(-0.0)]
-        [TestCase(0.0)]
-        [TestCase(0.1)]
-        [TestCase(1.0)]
-        [TestCase(10.0)]
-        [TestCase(Double.PositiveInfinity)]
-        public void CanSetSigma(double sigma)
-        {
-            new LogNormal(1.0, 2.0)
-            {
-                Sigma = sigma
-            };
-        }
-
-        /// <summary>
-        /// Set sigma fails with negative value.
-        /// </summary>
-        [Test]
-        public void SetSigmaFailsWithNegativeSigma()
-        {
-            var n = new LogNormal(1.0, 2.0);
-            Assert.Throws<ArgumentOutOfRangeException>(() => n.Sigma = -1.0);
-        }
-
-        /// <summary>
-        /// Can set mu.
-        /// </summary>
-        /// <param name="mu">Mu parameter.</param>
-        [TestCase(Double.NegativeInfinity)]
-        [TestCase(-1.0)]
-        [TestCase(-0.0)]
-        [TestCase(0.0)]
-        [TestCase(0.1)]
-        [TestCase(1.0)]
-        [TestCase(10.0)]
-        [TestCase(Double.PositiveInfinity)]
-        public void CanSetMu(double mu)
-        {
-            new LogNormal(1.0, 2.0)
-            {
-                Mu = mu
-            };
         }
 
         /// <summary>
@@ -439,7 +386,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void CanSampleSequenceStatic()
         {
             var ied = LogNormal.Samples(new Random(0), 0.0, 1.0);
-            ied.Take(5).ToArray();
+            GC.KeepAlive(ied.Take(5).ToArray());
         }
 
         /// <summary>
@@ -448,7 +395,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [Test]
         public void FailSampleStatic()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => { var d = LogNormal.Sample(new Random(0), 0.0, -1.0); });
+            Assert.That(() => { var d = LogNormal.Sample(new Random(0), 0.0, -1.0); }, Throws.ArgumentException);
         }
 
         /// <summary>
@@ -457,7 +404,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [Test]
         public void FailSampleSequenceStatic()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => { var ied = LogNormal.Samples(new Random(0), 0.0, -1.0).First(); });
+            Assert.That(() => { var ied = LogNormal.Samples(new Random(0), 0.0, -1.0).First(); }, Throws.ArgumentException);
         }
 
         /// <summary>
@@ -478,7 +425,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         {
             var n = new LogNormal(1.0, 2.0);
             var ied = n.Samples();
-            ied.Take(5).ToArray();
+            GC.KeepAlive(ied.Take(5).ToArray());
         }
 
         /// <summary>

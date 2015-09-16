@@ -116,8 +116,7 @@ namespace MathNet.Numerics.LinearAlgebra.Double
         /// </summary>
         public static SparseVector Create(int length, double value)
         {
-            if (value == 0d) return new SparseVector(new SparseVectorStorage<double>(length));
-            return new SparseVector(SparseVectorStorage<double>.OfInit(length, i => value));
+            return new SparseVector(SparseVectorStorage<double>.OfValue(length, value));
         }
 
         /// <summary>
@@ -153,7 +152,7 @@ namespace MathNet.Numerics.LinearAlgebra.Double
 
             if (ReferenceEquals(this, result))
             {
-                //populate a new vector with the scalar
+                // populate a new vector with the scalar
                 var vnonZeroValues = new double[Count];
                 var vnonZeroIndices = new int[Count];
                 for (int index = 0; index < Count; index++)
@@ -162,7 +161,7 @@ namespace MathNet.Numerics.LinearAlgebra.Double
                     vnonZeroValues[index] = scalar;
                 }
 
-                //populate the non zero values from this
+                // populate the non zero values from this
                 var indices = _storage.Indices;
                 var values = _storage.Values;
                 for (int j = 0; j < _storage.ValueCount; j++)
@@ -170,7 +169,7 @@ namespace MathNet.Numerics.LinearAlgebra.Double
                     vnonZeroValues[indices[j]] = values[j] + scalar;
                 }
 
-                //assign this vectors arrary to the new arrays.
+                // assign this vectors array to the new arrays.
                 _storage.Values = vnonZeroValues;
                 _storage.Indices = vnonZeroIndices;
                 _storage.ValueCount = Count;
@@ -460,11 +459,37 @@ namespace MathNet.Numerics.LinearAlgebra.Double
         }
 
         /// <summary>
-        /// Computes the modulus for each element of the vector for the given divisor.
+        /// Computes the canonical modulus, where the result has the sign of the divisor,
+        /// for each element of the vector for the given divisor.
         /// </summary>
-        /// <param name="divisor">The divisor to use.</param>
+        /// <param name="divisor">The scalar denominator to use.</param>
         /// <param name="result">A vector to store the results in.</param>
         protected override void DoModulus(double divisor, Vector<double> result)
+        {
+            if (ReferenceEquals(this, result))
+            {
+                for (var index = 0; index < _storage.ValueCount; index++)
+                {
+                    _storage.Values[index] = Euclid.Modulus(_storage.Values[index], divisor);
+                }
+            }
+            else
+            {
+                result.Clear();
+                for (var index = 0; index < _storage.ValueCount; index++)
+                {
+                    result.At(_storage.Indices[index], Euclid.Modulus(_storage.Values[index], divisor));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Computes the remainder (% operator), where the result has the sign of the dividend,
+        /// for each element of the vector for the given divisor.
+        /// </summary>
+        /// <param name="divisor">The scalar denominator to use.</param>
+        /// <param name="result">A vector to store the results in.</param>
+        protected override void DoRemainder(double divisor, Vector<double> result)
         {
             if (ReferenceEquals(this, result))
             {
@@ -478,7 +503,7 @@ namespace MathNet.Numerics.LinearAlgebra.Double
                 result.Clear();
                 for (var index = 0; index < _storage.ValueCount; index++)
                 {
-                    result.At(_storage.Indices[index], _storage.Values[index] % divisor);
+                    result.At(_storage.Indices[index], _storage.Values[index]%divisor);
                 }
             }
         }
@@ -605,7 +630,8 @@ namespace MathNet.Numerics.LinearAlgebra.Double
         }
 
         /// <summary>
-        /// Computes the modulus of each element of the vector of the given divisor.
+        /// Computes the remainder (% operator), where the result has the sign of the dividend,
+        /// of each element of the vector of the given divisor.
         /// </summary>
         /// <param name="leftSide">The vector whose elements we want to compute the modulus of.</param>
         /// <param name="rightSide">The divisor to use,</param>
@@ -618,7 +644,7 @@ namespace MathNet.Numerics.LinearAlgebra.Double
                 throw new ArgumentNullException("leftSide");
             }
 
-            return (SparseVector)leftSide.Modulus(rightSide);
+            return (SparseVector)leftSide.Remainder(rightSide);
         }
 
         /// <summary>
@@ -652,6 +678,33 @@ namespace MathNet.Numerics.LinearAlgebra.Double
         /// Returns the index of the absolute maximum element.
         /// </summary>
         /// <returns>The index of absolute maximum element.</returns>
+        public override int AbsoluteMaximumIndex()
+        {
+            if (_storage.ValueCount == 0)
+            {
+                // No non-zero elements. Return 0
+                return 0;
+            }
+
+            var index = 0;
+            var max = Math.Abs(_storage.Values[index]);
+            for (var i = 1; i < _storage.ValueCount; i++)
+            {
+                var test = Math.Abs(_storage.Values[i]);
+                if (test > max)
+                {
+                    index = i;
+                    max = test;
+                }
+            }
+
+            return _storage.Indices[index];
+        }
+
+        /// <summary>
+        /// Returns the index of the maximum element.
+        /// </summary>
+        /// <returns>The index of maximum element.</returns>
         public override int MaximumIndex()
         {
             if (_storage.ValueCount == 0)
@@ -729,7 +782,7 @@ namespace MathNet.Numerics.LinearAlgebra.Double
         /// <summary>
         /// Calculates the infinity norm of the vector.
         /// </summary>
-        /// <returns>The square root of the sum of the squared values.</returns>
+        /// <returns>The maximum absolute value.</returns>
         public override double InfinityNorm()
         {
             return CommonParallel.Aggregate(0, _storage.ValueCount, i => Math.Abs(_storage.Values[i]), Math.Max, 0d);
@@ -807,50 +860,6 @@ namespace MathNet.Numerics.LinearAlgebra.Double
                     result.At(index, _storage.Values[i] / divisor.At(index));
                 }
             }
-        }
-
-        /// <summary>
-        /// Outer product of two vectors
-        /// </summary>
-        /// <param name="u">First vector</param>
-        /// <param name="v">Second vector</param>
-        /// <returns>Matrix M[i,j] = u[i]*v[j] </returns>
-        /// <exception cref="ArgumentNullException">If the u vector is <see langword="null" />.</exception>
-        /// <exception cref="ArgumentNullException">If the v vector is <see langword="null" />.</exception>
-        public static Matrix<double> OuterProduct(SparseVector u, SparseVector v)
-        {
-            if (u == null)
-            {
-                throw new ArgumentNullException("u");
-            }
-
-            if (v == null)
-            {
-                throw new ArgumentNullException("v");
-            }
-
-            var matrix = new SparseMatrix(u.Count, v.Count);
-            for (var i = 0; i < u._storage.ValueCount; i++)
-            {
-                for (var j = 0; j < v._storage.ValueCount; j++)
-                {
-                    matrix.At(i, j, u._storage.Values[i] * v._storage.Values[j]);
-                }
-            }
-
-            return matrix;
-        }
-
-        /// <summary>
-        /// Outer product of this and another vector.
-        /// </summary>
-        /// <param name="v">The vector to operate on.</param>
-        /// <returns>
-        /// Matrix M[i,j] = this[i] * v[j].
-        /// </returns>
-        public Matrix<double> OuterProduct(SparseVector v)
-        {
-            return OuterProduct(this, v);
         }
 
         #region Parse Functions

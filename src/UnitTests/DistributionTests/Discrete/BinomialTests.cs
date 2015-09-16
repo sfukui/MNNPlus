@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2014 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -37,15 +41,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
     [TestFixture, Category("Distributions")]
     public class BinomialTests
     {
-        /// <summary>
-        /// Set-up parameters.
-        /// </summary>
-        [SetUp]
-        public void SetUp()
-        {
-            Control.CheckDistributionParameters = true;
-        }
-
         /// <summary>
         /// Can create binomial.
         /// </summary>
@@ -71,7 +66,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         [TestCase(0.3, -2)]
         public void BinomialCreateFailsWithBadParameters(double p, int n)
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new Binomial(p, n));
+            Assert.That(() => new Binomial(p, n), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -82,35 +77,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         {
             var b = new Binomial(0.3, 2);
             Assert.AreEqual("Binomial(p = 0.3, n = 2)", b.ToString());
-        }
-
-        /// <summary>
-        /// Can set success probability.
-        /// </summary>
-        /// <param name="p">Success probability.</param>
-        /// <param name="n">Number of trials.</param>
-        [TestCase(0.0, 4)]
-        [TestCase(0.3, 3)]
-        [TestCase(1.0, 2)]
-        public void CanSetSuccessProbability(double p, int n)
-        {
-            new Binomial(0.3, n)
-            {
-                P = p
-            };
-        }
-
-        /// <summary>
-        /// Set success probability fails with bad values.
-        /// </summary>
-        /// <param name="p">Success probability.</param>
-        [TestCase(Double.NaN)]
-        [TestCase(-1.0)]
-        [TestCase(2.0)]
-        public void SetProbabilityOfOneFails(double p)
-        {
-            var b = new Binomial(0.3, 1);
-            Assert.Throws<ArgumentOutOfRangeException>(() => b.P = p);
         }
 
         /// <summary>
@@ -267,7 +233,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         public void CanSampleSequenceStatic()
         {
             var ied = Binomial.Samples(new Random(0), 0.3, 5);
-            ied.Take(5).ToArray();
+            GC.KeepAlive(ied.Take(5).ToArray());
         }
 
         /// <summary>
@@ -276,7 +242,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         [Test]
         public void FailSampleStatic()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => Binomial.Sample(new Random(0), -1.0, 5));
+            Assert.That(() => Binomial.Sample(new Random(0), -1.0, 5), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -285,7 +251,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         [Test]
         public void FailSampleSequenceStatic()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => Binomial.Samples(new Random(0), -1.0, 5).First());
+            Assert.That(() => Binomial.Samples(new Random(0), -1.0, 5).First(), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -306,7 +272,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         {
             var n = new Binomial(0.3, 5);
             var ied = n.Samples();
-            ied.Take(5).ToArray();
+            GC.KeepAlive(ied.Take(5).ToArray());
         }
     }
 }

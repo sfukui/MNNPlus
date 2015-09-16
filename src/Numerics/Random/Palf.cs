@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2013 Math.NET
+// Copyright (c) 2009-2014 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -31,6 +31,10 @@
 using System;
 using System.Collections.Generic;
 using MathNet.Numerics.Properties;
+
+#if !PORTABLE
+using System.Runtime;
+#endif
 
 namespace MathNet.Numerics.Random
 {
@@ -116,7 +120,7 @@ namespace MathNet.Numerics.Random
 
             if (longLag <= shortLag)
             {
-                throw new ArgumentException("longLag");
+                throw new ArgumentException(Resources.ArgumentUpperBoundMustBeLargerThanLowerBound, "longLag");
             }
 
             if (seed == 0)
@@ -124,7 +128,7 @@ namespace MathNet.Numerics.Random
                 seed = 1;
             }
 
-            _threads = Control.NumberOfParallelWorkerThreads;
+            _threads = Control.MaxDegreeOfParallelism;
             ShortLag = shortLag;
 
             // Align LongLag to number of worker threads.
@@ -224,17 +228,17 @@ namespace MathNet.Numerics.Random
         }
 
         /// <summary>
-        /// Returns an array of random numbers greater than or equal to 0.0 and less than 1.0.
+        /// Fills an array with random numbers greater than or equal to 0.0 and less than 1.0.
         /// </summary>
         /// <remarks>Supports being called in parallel from multiple threads.</remarks>
-        public static double[] Doubles(int length, int seed)
+        public static void Doubles(double[] values, int seed)
         {
             if (seed == 0)
             {
                 seed = 1;
             }
 
-            int threads = Control.NumberOfParallelWorkerThreads;
+            int threads = Control.MaxDegreeOfParallelism;
             const int shortLag = DefaultShortLag;
             var longLag = DefaultLongLag;
 
@@ -247,8 +251,7 @@ namespace MathNet.Numerics.Random
             var x = Generate.Map(MersenneTwister.Doubles(longLag, seed), uniform => (uint)(uniform*uint.MaxValue));
             var k = longLag;
 
-            var data = new double[length];
-            for (int i = 0; i < data.Length; i++)
+            for (int i = 0; i < values.Length; i++)
             {
                 if (k >= longLag)
                 {
@@ -265,11 +268,23 @@ namespace MathNet.Numerics.Random
                             x[j] += x[j - shortLag - index];
                         }
                     }
+
                     k = 0;
                 }
 
-                data[i] = (int)(x[k++] >> 1)*IntToDoubleMultiplier;
+                values[i] = (int)(x[k++] >> 1)*IntToDoubleMultiplier;
             }
+        }
+
+        /// <summary>
+        /// Returns an array of random numbers greater than or equal to 0.0 and less than 1.0.
+        /// </summary>
+        /// <remarks>Supports being called in parallel from multiple threads.</remarks>
+        [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
+        public static double[] Doubles(int length, int seed)
+        {
+            var data = new double[length];
+            Doubles(data, seed);
             return data;
         }
 
@@ -284,7 +299,7 @@ namespace MathNet.Numerics.Random
                 seed = 1;
             }
 
-            int threads = Control.NumberOfParallelWorkerThreads;
+            int threads = Control.MaxDegreeOfParallelism;
             const int shortLag = DefaultShortLag;
             var longLag = DefaultLongLag;
 
@@ -314,6 +329,7 @@ namespace MathNet.Numerics.Random
                             x[j] += x[j - shortLag - index];
                         }
                     }
+
                     k = 0;
                 }
 

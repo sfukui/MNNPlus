@@ -24,7 +24,6 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
-using System;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 using NUnit.Framework;
@@ -69,7 +68,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Factorization
         {
             var matrixI = Matrix<double>.Build.DenseIdentity(10);
             matrixI[3, 3] = -4.0;
-            Assert.Throws<ArgumentException>(() => matrixI.Cholesky());
+            Assert.That(() => matrixI.Cholesky(), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -78,8 +77,8 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Factorization
         [Test]
         public void CholeskyFailsWithNonSquareMatrix()
         {
-            var matrix = new DenseMatrix(3, 2);
-            Assert.Throws<ArgumentException>(() => matrix.Cholesky());
+            var matrix = Matrix<double>.Build.Dense(3, 2);
+            Assert.That(() => matrix.Cholesky(), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -162,7 +161,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Factorization
             // Check the reconstruction.
             for (var i = 0; i < order; i++)
             {
-                Assert.AreEqual(matrixB[i], matrixBReconstruct[i], 1.0e-11);
+                Assert.AreEqual(matrixB[i], matrixBReconstruct[i], 1e-9);
             }
 
             // Make sure A didn't change.
@@ -204,7 +203,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Factorization
             {
                 for (var j = 0; j < matrixB.ColumnCount; j++)
                 {
-                    Assert.AreEqual(matrixB[i, j], matrixBReconstruct[i, j], 1.0e-11);
+                    Assert.AreEqual(matrixB[i, j], matrixBReconstruct[i, j], 1e-8);
                 }
             }
 
@@ -245,7 +244,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Factorization
             // Check the reconstruction.
             for (var i = 0; i < order; i++)
             {
-                Assert.AreEqual(matrixB[i], matrixBReconstruct[i], 1.0e-11);
+                Assert.AreEqual(matrixB[i], matrixBReconstruct[i], 1e-9);
             }
 
             // Make sure A didn't change.
@@ -282,7 +281,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Factorization
             var chol = matrixA.Cholesky();
             var matrixB = Matrix<double>.Build.Random(row, col, 1);
             var matrixBCopy = matrixB.Clone();
-            var matrixX = new DenseMatrix(row, col);
+            var matrixX = Matrix<double>.Build.Dense(row, col);
             chol.Solve(matrixB, matrixX);
 
             Assert.AreEqual(matrixB.RowCount, matrixX.RowCount);
@@ -295,7 +294,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Factorization
             {
                 for (var j = 0; j < matrixB.ColumnCount; j++)
                 {
-                    Assert.AreEqual(matrixB[i, j], matrixBReconstruct[i, j], 1.0e-11);
+                    Assert.AreEqual(matrixB[i, j], matrixBReconstruct[i, j], 1e-8);
                 }
             }
 

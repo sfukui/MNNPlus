@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2014 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -39,15 +43,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
     [TestFixture, Category("Distributions")]
     public class StudentTTests
     {
-        /// <summary>
-        /// Set-up parameters.
-        /// </summary>
-        [SetUp]
-        public void SetUp()
-        {
-            Control.CheckDistributionParameters = true;
-        }
-
         /// <summary>
         /// Can create standard <c>StudentT</c>.
         /// </summary>
@@ -90,7 +85,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [TestCase(0.0, 10.0, -1.0)]
         public void StudentTCreateFailsWithBadParameters(double location, double scale, double dof)
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new StudentT(location, scale, dof));
+            Assert.That(() => new StudentT(location, scale, dof), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -101,84 +96,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         {
             var n = new StudentT(1.0, 2.0, 1.0);
             Assert.AreEqual("StudentT(μ = 1, σ = 2, ν = 1)", n.ToString());
-        }
-
-        /// <summary>
-        /// Can set location.
-        /// </summary>
-        /// <param name="loc">Location value.</param>
-        [TestCase(Double.NegativeInfinity)]
-        [TestCase(-5.0)]
-        [TestCase(-0.0)]
-        [TestCase(0.0)]
-        [TestCase(0.1)]
-        [TestCase(1.0)]
-        [TestCase(10.0)]
-        [TestCase(Double.PositiveInfinity)]
-        public void CanSetLocation(double loc)
-        {
-            new StudentT
-            {
-                Location = loc
-            };
-        }
-
-        /// <summary>
-        /// Can set scale.
-        /// </summary>
-        /// <param name="scale">Scale value.</param>
-        [TestCase(0.1)]
-        [TestCase(1.0)]
-        [TestCase(10.0)]
-        [TestCase(Double.PositiveInfinity)]
-        public void CanSetScale(double scale)
-        {
-            new StudentT
-            {
-                Scale = scale
-            };
-        }
-
-        /// <summary>
-        /// Set scale fails with non-positive scale.
-        /// </summary>
-        /// <param name="scale">Scale value.</param>
-        [TestCase(-1.0)]
-        [TestCase(-0.0)]
-        [TestCase(0.0)]
-        public void SetScaleFailsWithNonPositiveScale(double scale)
-        {
-            var n = new StudentT();
-            Assert.Throws<ArgumentOutOfRangeException>(() => n.Scale = scale);
-        }
-
-        /// <summary>
-        /// Can set degrees of freedom.
-        /// </summary>
-        /// <param name="dof">Degrees of freedom.</param>
-        [TestCase(0.1)]
-        [TestCase(1.0)]
-        [TestCase(10.0)]
-        [TestCase(Double.PositiveInfinity)]
-        public void CanSetDoF(double dof)
-        {
-            new StudentT
-            {
-                DegreesOfFreedom = dof
-            };
-        }
-
-        /// <summary>
-        /// Set degrees of freedom fails with non-positive value.
-        /// </summary>
-        /// <param name="dof">Degrees of freedom.</param>
-        [TestCase(-1.0)]
-        [TestCase(-0.0)]
-        [TestCase(0.0)]
-        public void SetDofFailsWithNonPositiveDoF(double dof)
-        {
-            var n = new StudentT();
-            Assert.Throws<ArgumentOutOfRangeException>(() => n.DegreesOfFreedom = dof);
         }
 
         /// <summary>
@@ -387,26 +304,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void CanSampleSequenceStatic()
         {
             var ied = StudentT.Samples(new Random(0), 0.0, 1.0, 3.0);
-            ied.Take(5).ToArray();
-        }
-
-        /// <summary>
-        /// Fail sample static with bad parameters.
-        /// </summary>
-        [Test]
-        public void FailSampleStatic()
-        {
-            Assert.Throws<ArgumentOutOfRangeException>(() => StudentT.Sample(new Random(0), Double.NaN, 1.0, Double.NaN));
-        }
-
-        /// <summary>
-        /// Fail sample sequence static with bad parameters.
-        /// </summary>
-        [Test]
-        public void FailSampleSequenceStatic()
-        {
-            var ied = StudentT.Samples(new Random(0), 0.0, 1.0, Double.NaN);
-            Assert.Throws<ArgumentOutOfRangeException>(() => ied.Take(5).ToArray());
+            GC.KeepAlive(ied.Take(5).ToArray());
         }
 
         /// <summary>
@@ -427,17 +325,9 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         {
             var n = new StudentT();
             var ied = n.Samples();
-            ied.Take(5).ToArray();
+            GC.KeepAlive(ied.Take(5).ToArray());
         }
 
-        /// <summary>
-        /// Validate cumulative distribution.
-        /// </summary>
-        /// <param name="location">Location value.</param>
-        /// <param name="scale">Scale value.</param>
-        /// <param name="dof">Degrees of freedom.</param>
-        /// <param name="x">Input X value.</param>
-        /// <param name="c">Expected value.</param>
         [TestCase(0.0, 1.0, 1.0, 0.0, 0.5)]
         [TestCase(0.0, 1.0, 1.0, 1.0, 0.75)]
         [TestCase(0.0, 1.0, 1.0, -1.0, 0.25)]
@@ -451,10 +341,31 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [TestCase(0.0, 1.0, Double.PositiveInfinity, 0.0, 0.5)]
         [TestCase(0.0, 1.0, Double.PositiveInfinity, 1.0, 0.841344746068543)]
         [TestCase(0.0, 1.0, Double.PositiveInfinity, 2.0, 0.977249868051821)]
-        public void ValidateCumulativeDistribution(double location, double scale, double dof, double x, double c)
+        public void ValidateCumulativeDistribution(double location, double scale, double dof, double x, double p)
         {
-            var n = new StudentT(location, scale, dof);
-            AssertHelpers.AlmostEqualRelative(c, n.CumulativeDistribution(x), 13);
+            var dist = new StudentT(location, scale, dof);
+            Assert.That(dist.CumulativeDistribution(x), Is.EqualTo(p).Within(1e-13));
+            Assert.That(StudentT.CDF(location, scale, dof, x), Is.EqualTo(p).Within(1e-13));
+        }
+
+        [TestCase(0.0, 1.0, 1.0, 0.0, 0.5)]
+        [TestCase(0.0, 1.0, 1.0, 1.0, 0.75)]
+        [TestCase(0.0, 1.0, 1.0, -1.0, 0.25)]
+        [TestCase(0.0, 1.0, 1.0, 2.0, 0.852416382349567)]
+        [TestCase(0.0, 1.0, 1.0, -2.0, 0.147583617650433)]
+        [TestCase(0.0, 1.0, 2.0, 0.0, 0.5)]
+        [TestCase(0.0, 1.0, 2.0, 1.0, 0.788675134594813)]
+        [TestCase(0.0, 1.0, 2.0, -1.0, 0.211324865405187)]
+        [TestCase(0.0, 1.0, 2.0, 2.0, 0.908248290463863)]
+        [TestCase(0.0, 1.0, 2.0, -2.0, 0.091751709536137)]
+        [TestCase(0.0, 1.0, Double.PositiveInfinity, 0.0, 0.5)]
+        [TestCase(0.0, 1.0, Double.PositiveInfinity, 1.0, 0.841344746068543)]
+        [TestCase(0.0, 1.0, Double.PositiveInfinity, 2.0, 0.977249868051821)]
+        public void ValidateInverseCumulativeDistribution(double location, double scale, double dof, double x, double p)
+        {
+            var dist = new StudentT(location, scale, dof);
+            Assert.That(dist.InverseCumulativeDistribution(p), Is.EqualTo(x).Within(1e-6));
+            Assert.That(StudentT.InvCDF(location, scale, dof, p), Is.EqualTo(x).Within(1e-6));
         }
     }
 }

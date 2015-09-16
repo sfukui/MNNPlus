@@ -24,7 +24,6 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
-using System;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Single.Factorization;
 using NUnit.Framework;
@@ -43,7 +42,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Factorization
         [Test]
         public void ConstructorWideMatrixThrowsInvalidMatrixOperationException()
         {
-            Assert.Throws<ArgumentException>(() => UserGramSchmidt.Create(new UserDefinedMatrix(3, 4)));
+            Assert.That(() => UserGramSchmidt.Create(new UserDefinedMatrix(3, 4)), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -67,14 +66,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Factorization
             {
                 for (var j = 0; j < r.ColumnCount; j++)
                 {
-                    if (i == j)
-                    {
-                        Assert.AreEqual(1.0, r[i, j]);
-                    }
-                    else
-                    {
-                        Assert.AreEqual(0.0, r[i, j]);
-                    }
+                    Assert.AreEqual(i == j ? 1.0 : 0.0, r[i, j]);
                 }
             }
 
@@ -82,14 +74,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Factorization
             {
                 for (var j = 0; j < q.ColumnCount; j++)
                 {
-                    if (i == j)
-                    {
-                        Assert.AreEqual(1.0, q[i, j]);
-                    }
-                    else
-                    {
-                        Assert.AreEqual(0.0, q[i, j]);
-                    }
+                    Assert.AreEqual(i == j ? 1.0 : 0.0, q[i, j]);
                 }
             }
         }
@@ -183,7 +168,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Factorization
             // Check the reconstruction.
             for (var i = 0; i < order; i++)
             {
-                Assert.AreEqual(vectorb[i], matrixBReconstruct[i], 1e-4);
+                Assert.AreEqual(vectorb[i], matrixBReconstruct[i], 1e-3);
             }
 
             // Make sure A didn't change.
@@ -228,7 +213,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Factorization
             {
                 for (var j = 0; j < matrixB.ColumnCount; j++)
                 {
-                    Assert.AreEqual(matrixB[i, j], matrixBReconstruct[i, j], 1e-4);
+                    Assert.AreEqual(matrixB[i, j], matrixBReconstruct[i, j], 1e-3);
                 }
             }
 
@@ -269,7 +254,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Factorization
             // Check the reconstruction.
             for (var i = 0; i < vectorb.Count; i++)
             {
-                Assert.AreEqual(vectorb[i], matrixBReconstruct[i], 1e-4);
+                Assert.AreEqual(vectorb[i], matrixBReconstruct[i], 1e-3);
             }
 
             // Make sure A didn't change.
@@ -323,7 +308,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Factorization
             {
                 for (var j = 0; j < matrixB.ColumnCount; j++)
                 {
-                    Assert.AreEqual(matrixB[i, j], matrixBReconstruct[i, j], 1e-4);
+                    Assert.AreEqual(matrixB[i, j], matrixBReconstruct[i, j], 1e-3);
                 }
             }
 

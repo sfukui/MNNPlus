@@ -27,7 +27,6 @@
 using System;
 using MathNet.Numerics.Distributions;
 using MathNet.Numerics.LinearAlgebra;
-using MathNet.Numerics.LinearAlgebra.Double;
 using NUnit.Framework;
 
 namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
@@ -54,7 +53,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             {
                 for (var j = 0; j < matrix.ColumnCount; j++)
                 {
-                    Assert.AreEqual(matrix[i, j] * scalar, clone[i, j]);
+                    Assert.AreEqual(matrix[i, j]*scalar, clone[i, j]);
                 }
             }
         }
@@ -66,15 +65,15 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         public void CanMultiplyWithVector()
         {
             var matrix = TestMatrices["Singular3x3"];
-            var x = new DenseVector(new[] { 1.0, 2.0, 3.0 });
-            var y = matrix * x;
+            var x = Vector<double>.Build.Dense(new[] { 1.0, 2.0, 3.0 });
+            var y = matrix*x;
 
             Assert.AreEqual(matrix.RowCount, y.Count);
 
             for (var i = 0; i < matrix.RowCount; i++)
             {
                 var ar = matrix.Row(i);
-                var dot = ar * x;
+                var dot = ar*x;
                 Assert.AreEqual(dot, y[i]);
             }
         }
@@ -86,14 +85,14 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         public void CanMultiplyWithVectorIntoResult()
         {
             var matrix = TestMatrices["Singular3x3"];
-            var x = new DenseVector(new[] { 1.0, 2.0, 3.0 });
-            var y = new DenseVector(3);
+            var x = Vector<double>.Build.Dense(new[] { 1.0, 2.0, 3.0 });
+            var y = Vector<double>.Build.Dense(3);
             matrix.Multiply(x, y);
 
             for (var i = 0; i < matrix.RowCount; i++)
             {
                 var ar = matrix.Row(i);
-                var dot = ar * x;
+                var dot = ar*x;
                 Assert.AreEqual(dot, y[i]);
             }
         }
@@ -105,17 +104,17 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         public void CanMultiplyWithVectorIntoResultWhenUpdatingInputArgument()
         {
             var matrix = TestMatrices["Singular3x3"];
-            var x = new DenseVector(new[] { 1.0, 2.0, 3.0 });
+            var x = Vector<double>.Build.Dense(new[] { 1.0, 2.0, 3.0 });
             var y = x;
             matrix.Multiply(x, x);
 
             Assert.AreSame(y, x);
 
-            y = new DenseVector(new[] { 1.0, 2.0, 3.0 });
+            y = Vector<double>.Build.Dense(new[] { 1.0, 2.0, 3.0 });
             for (var i = 0; i < matrix.RowCount; i++)
             {
                 var ar = matrix.Row(i);
-                var dot = ar * y;
+                var dot = ar*y;
                 Assert.AreEqual(dot, x[i]);
             }
         }
@@ -127,9 +126,9 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         public void MultiplyWithVectorIntoLargerResultThrowsArgumentException()
         {
             var matrix = TestMatrices["Singular3x3"];
-            var x = new DenseVector(new[] { 1.0, 2.0, 3.0 });
-            Vector<double> y = new DenseVector(4);
-            Assert.Throws<ArgumentException>(() => matrix.Multiply(x, y));
+            var x = Vector<double>.Build.Dense(new[] { 1.0, 2.0, 3.0 });
+            Vector<double> y = Vector<double>.Build.Dense(4);
+            Assert.That(() => matrix.Multiply(x, y), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -142,13 +141,13 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         public void CanOperatorLeftMultiplyWithScalar(double scalar)
         {
             var matrix = TestMatrices["Singular3x3"];
-            var clone = scalar * matrix;
+            var clone = scalar*matrix;
 
             for (var i = 0; i < matrix.RowCount; i++)
             {
                 for (var j = 0; j < matrix.ColumnCount; j++)
                 {
-                    Assert.AreEqual(scalar * matrix[i, j], clone[i, j]);
+                    Assert.AreEqual(scalar*matrix[i, j], clone[i, j]);
                 }
             }
         }
@@ -163,13 +162,13 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         public void CanOperatorRightMultiplyWithScalar(double scalar)
         {
             var matrix = TestMatrices["Singular3x3"];
-            var clone = matrix * scalar;
+            var clone = matrix*scalar;
 
             for (var i = 0; i < matrix.RowCount; i++)
             {
                 for (var j = 0; j < matrix.ColumnCount; j++)
                 {
-                    Assert.AreEqual(matrix[i, j] * scalar, clone[i, j]);
+                    Assert.AreEqual(matrix[i, j]*scalar, clone[i, j]);
                 }
             }
         }
@@ -191,7 +190,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             {
                 for (var j = 0; j < matrix.ColumnCount; j++)
                 {
-                    Assert.AreEqual(matrix[i, j] * scalar, result[i, j]);
+                    Assert.AreEqual(matrix[i, j]*scalar, result[i, j]);
                 }
             }
         }
@@ -204,7 +203,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         {
             var matrix = TestMatrices["Singular3x3"];
             var result = CreateMatrix(matrix.RowCount + 1, matrix.ColumnCount);
-            Assert.Throws<ArgumentException>(() => matrix.Multiply(2.3, result));
+            Assert.That(() => matrix.Multiply(2.3, result), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -215,7 +214,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         {
             var matrix = TestMatrices["Singular3x3"];
             var result = CreateMatrix(matrix.RowCount, matrix.ColumnCount + 1);
-            Assert.Throws<ArgumentException>(() => matrix.Multiply(2.3, result));
+            Assert.That(() => matrix.Multiply(2.3, result), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -242,6 +241,46 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         }
 
         /// <summary>
+        /// Can add a matrix.
+        /// </summary>
+        /// <param name="mtx">Matrix name.</param>
+        [TestCase("Square3x3")]
+        [TestCase("Tall3x2")]
+        public void CanAddMatrixToSelf(string mtx)
+        {
+            var matrix = TestMatrices[mtx].Clone();
+
+            var result = matrix.Add(matrix);
+            for (var i = 0; i < matrix.RowCount; i++)
+            {
+                for (var j = 0; j < matrix.ColumnCount; j++)
+                {
+                    Assert.AreEqual(result[i, j], 2*matrix[i, j]);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Can subtract a matrix.
+        /// </summary>
+        /// <param name="mtx">Matrix name.</param>
+        [TestCase("Square3x3")]
+        [TestCase("Tall3x2")]
+        public void CanSubtractMatrixFromSelf(string mtx)
+        {
+            var matrix = TestMatrices[mtx].Clone();
+
+            var result = matrix.Subtract(matrix);
+            for (var i = 0; i < matrix.RowCount; i++)
+            {
+                for (var j = 0; j < matrix.ColumnCount; j++)
+                {
+                    Assert.AreEqual(result[i, j], 0d);
+                }
+            }
+        }
+
+        /// <summary>
         /// Adding a matrix with fewer columns throws <c>ArgumentOutOfRangeException</c>.
         /// </summary>
         [Test]
@@ -249,7 +288,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         {
             var matrix = TestMatrices["Singular3x3"];
             var other = TestMatrices["Tall3x2"];
-            Assert.Throws<ArgumentOutOfRangeException>(() => matrix.Add(other));
+            Assert.That(() => matrix.Add(other), Throws.TypeOf<ArgumentOutOfRangeException>());
         }
 
         /// <summary>
@@ -260,7 +299,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         {
             var matrix = TestMatrices["Singular3x3"];
             var other = TestMatrices["Wide2x3"];
-            Assert.Throws<ArgumentOutOfRangeException>(() => matrix.Add(other));
+            Assert.That(() => matrix.Add(other), Throws.TypeOf<ArgumentOutOfRangeException>());
         }
 
         /// <summary>
@@ -338,7 +377,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         {
             var matrix = TestMatrices["Singular3x3"];
             var other = TestMatrices["Tall3x2"];
-            Assert.Throws<ArgumentOutOfRangeException>(() => matrix.Subtract(other));
+            Assert.That(() => matrix.Subtract(other), Throws.TypeOf<ArgumentOutOfRangeException>());
         }
 
         /// <summary>
@@ -349,7 +388,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         {
             var matrix = TestMatrices["Singular3x3"];
             var other = TestMatrices["Wide2x3"];
-            Assert.Throws<ArgumentOutOfRangeException>(() => matrix.Subtract(other));
+            Assert.That(() => matrix.Subtract(other), Throws.TypeOf<ArgumentOutOfRangeException>());
         }
 
         /// <summary>
@@ -410,7 +449,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         {
             var matrixA = TestMatrices[nameA];
             var matrixB = TestMatrices[nameB];
-            var matrixC = matrixA * matrixB;
+            var matrixC = matrixA*matrixB;
 
             Assert.AreEqual(matrixC.RowCount, matrixA.RowCount);
             Assert.AreEqual(matrixC.ColumnCount, matrixB.ColumnCount);
@@ -419,7 +458,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             {
                 for (var j = 0; j < matrixC.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrixA.Row(i) * matrixB.Column(j), matrixC[i, j], 15);
+                    AssertHelpers.AlmostEqual(matrixA.Row(i)*matrixB.Column(j), matrixC[i, j], 12);
                 }
             }
         }
@@ -445,7 +484,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             {
                 for (var j = 0; j < matrixC.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrixA.Row(i) * matrixB.Row(j), matrixC[i, j], 15);
+                    AssertHelpers.AlmostEqual(matrixA.Row(i)*matrixB.Row(j), matrixC[i, j], 12);
                 }
             }
         }
@@ -479,7 +518,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             {
                 for (var j = 0; j < matrixC.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrixA.Row(i) * matrixB.Row(j), matrixC[i, j], 15);
+                    AssertHelpers.AlmostEqual(matrixA.Row(i)*matrixB.Row(j), matrixC[i, j], 15);
                 }
             }
         }
@@ -492,7 +531,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         {
             var matrix = TestMatrices["Singular3x3"];
             var other = TestMatrices["Tall3x2"];
-            Assert.Throws<ArgumentException>(() => matrix.TransposeAndMultiply(other));
+            Assert.That(() => matrix.TransposeAndMultiply(other), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -517,7 +556,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             {
                 for (var j = 0; j < matrixC.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrixA.Row(i) * matrixB.Row(j), matrixC[i, j], 15);
+                    AssertHelpers.AlmostEqual(matrixA.Row(i)*matrixB.Row(j), matrixC[i, j], 12);
                 }
             }
         }
@@ -530,7 +569,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         {
             var matrix = TestMatrices["Singular3x3"];
             var other = TestMatrices["Wide2x3"];
-            Assert.Throws<ArgumentException>(() => { var result = matrix * other; });
+            Assert.Throws<ArgumentException>(() => { var result = matrix*other; });
         }
 
         /// <summary>
@@ -557,7 +596,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             {
                 for (var j = 0; j < matrixC.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrixA.Row(i) * matrixB.Column(j), matrixC[i, j], 15);
+                    AssertHelpers.AlmostEqual(matrixA.Row(i)*matrixB.Column(j), matrixC[i, j], 12);
                 }
             }
         }
@@ -569,7 +608,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         public void CanTransposeThisAndMultiplyWithVector()
         {
             var matrix = TestMatrices["Singular3x3"];
-            var x = new DenseVector(new[] { 1.0, 2.0, 3.0 });
+            var x = Vector<double>.Build.Dense(new[] { 1.0, 2.0, 3.0 });
             var y = matrix.TransposeThisAndMultiply(x);
 
             Assert.AreEqual(matrix.ColumnCount, y.Count);
@@ -577,7 +616,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             for (var j = 0; j < matrix.ColumnCount; j++)
             {
                 var ar = matrix.Column(j);
-                var dot = ar * x;
+                var dot = ar*x;
                 Assert.AreEqual(dot, y[j]);
             }
         }
@@ -589,14 +628,14 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         public void CanTransposeThisAndMultiplyWithVectorIntoResult()
         {
             var matrix = TestMatrices["Singular3x3"];
-            var x = new DenseVector(new[] { 1.0, 2.0, 3.0 });
-            var y = new DenseVector(3);
+            var x = Vector<double>.Build.Dense(new[] { 1.0, 2.0, 3.0 });
+            var y = Vector<double>.Build.Dense(3);
             matrix.TransposeThisAndMultiply(x, y);
 
             for (var j = 0; j < matrix.ColumnCount; j++)
             {
                 var ar = matrix.Column(j);
-                var dot = ar * x;
+                var dot = ar*x;
                 Assert.AreEqual(dot, y[j]);
             }
         }
@@ -608,17 +647,17 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         public void CanTransposeThisAndMultiplyWithVectorIntoResultWhenUpdatingInputArgument()
         {
             var matrix = TestMatrices["Singular3x3"];
-            var x = new DenseVector(new[] { 1.0, 2.0, 3.0 });
+            var x = Vector<double>.Build.Dense(new[] { 1.0, 2.0, 3.0 });
             var y = x;
             matrix.TransposeThisAndMultiply(x, x);
 
             Assert.AreSame(y, x);
 
-            y = new DenseVector(new[] { 1.0, 2.0, 3.0 });
+            y = Vector<double>.Build.Dense(new[] { 1.0, 2.0, 3.0 });
             for (var j = 0; j < matrix.ColumnCount; j++)
             {
                 var ar = matrix.Column(j);
-                var dot = ar * y;
+                var dot = ar*y;
                 Assert.AreEqual(dot, x[j]);
             }
         }
@@ -630,9 +669,9 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         public void TransposeThisAndMultiplyWithVectorIntoLargerResultThrowsArgumentException()
         {
             var matrix = TestMatrices["Singular3x3"];
-            var x = new DenseVector(new[] { 1.0, 2.0, 3.0 });
-            Vector<double> y = new DenseVector(4);
-            Assert.Throws<ArgumentException>(() => matrix.TransposeThisAndMultiply(x, y));
+            var x = Vector<double>.Build.Dense(new[] { 1.0, 2.0, 3.0 });
+            Vector<double> y = Vector<double>.Build.Dense(4);
+            Assert.That(() => matrix.TransposeThisAndMultiply(x, y), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -656,7 +695,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             {
                 for (var j = 0; j < matrixC.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrixA.Column(i) * matrixB.Column(j), matrixC[i, j], 15);
+                    AssertHelpers.AlmostEqual(matrixA.Column(i)*matrixB.Column(j), matrixC[i, j], 15);
                 }
             }
         }
@@ -669,7 +708,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         {
             var matrix = TestMatrices["Wide2x3"];
             var other = TestMatrices["Singular3x3"];
-            Assert.Throws<ArgumentException>(() => matrix.TransposeThisAndMultiply(other));
+            Assert.That(() => matrix.TransposeThisAndMultiply(other), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -694,7 +733,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             {
                 for (var j = 0; j < matrixC.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(matrixA.Column(i) * matrixB.Column(j), matrixC[i, j], 15);
+                    AssertHelpers.AlmostEqual(matrixA.Column(i)*matrixB.Column(j), matrixC[i, j], 15);
                 }
             }
         }
@@ -757,7 +796,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         {
             var matrix = TestMatrices["Singular3x3"];
             var target = CreateMatrix(matrix.RowCount + 1, matrix.ColumnCount);
-            Assert.Throws<ArgumentException>(() => matrix.Negate(target));
+            Assert.That(() => matrix.Negate(target), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -768,7 +807,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         {
             var matrix = TestMatrices["Singular3x3"];
             var target = CreateMatrix(matrix.RowCount + 1, matrix.ColumnCount);
-            Assert.Throws<ArgumentException>(() => matrix.Negate(target));
+            Assert.That(() => matrix.Negate(target), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -779,7 +818,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         {
             var matrixA = TestMatrices["Wide2x3"];
             var matrixB = TestMatrices["Square3x3"];
-            var result = CreateMatrix(matrixA.RowCount * matrixB.RowCount, matrixA.ColumnCount * matrixB.ColumnCount);
+            var result = CreateMatrix(matrixA.RowCount*matrixB.RowCount, matrixA.ColumnCount*matrixB.ColumnCount);
             matrixA.KroneckerProduct(matrixB, result);
             for (var i = 0; i < matrixA.RowCount; i++)
             {
@@ -789,7 +828,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
                     {
                         for (var jj = 0; jj < matrixB.ColumnCount; jj++)
                         {
-                            Assert.AreEqual(result[(i * matrixB.RowCount) + ii, (j * matrixB.ColumnCount) + jj], matrixA[i, j] * matrixB[ii, jj]);
+                            Assert.AreEqual(result[(i*matrixB.RowCount) + ii, (j*matrixB.ColumnCount) + jj], matrixA[i, j]*matrixB[ii, jj]);
                         }
                     }
                 }
@@ -813,7 +852,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
                     {
                         for (var jj = 0; jj < matrixB.ColumnCount; jj++)
                         {
-                            Assert.AreEqual(result[(i * matrixB.RowCount) + ii, (j * matrixB.ColumnCount) + jj], matrixA[i, j] * matrixB[ii, jj]);
+                            Assert.AreEqual(result[(i*matrixB.RowCount) + ii, (j*matrixB.ColumnCount) + jj], matrixA[i, j]*matrixB[ii, jj]);
                         }
                     }
                 }
@@ -843,7 +882,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         [Test]
         public void NormalizeColumnsWithWrongParameterThrowsArgumentOutOfRangeException()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => TestMatrices["Square4x4"].NormalizeColumns(-4));
+            Assert.That(() => TestMatrices["Square4x4"].NormalizeColumns(-4), Throws.TypeOf<ArgumentOutOfRangeException>());
         }
 
         /// <summary>
@@ -868,7 +907,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         [Test]
         public void NormalizeRowsWithWrongParameterThrowsArgumentOutOfRangeException()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => TestMatrices["Square4x4"].NormalizeRows(-4));
+            Assert.That(() => TestMatrices["Square4x4"].NormalizeRows(-4), Throws.TypeOf<ArgumentOutOfRangeException>());
         }
 
         /// <summary>
@@ -886,7 +925,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
                 {
                     for (var j = 0; j < data.ColumnCount; j++)
                     {
-                        Assert.AreEqual(data[i, j] * other[i, j], result[i, j]);
+                        Assert.AreEqual(data[i, j]*other[i, j], result[i, j]);
                     }
                 }
 
@@ -895,7 +934,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
                 {
                     for (var j = 0; j < data.ColumnCount; j++)
                     {
-                        Assert.AreEqual(data[i, j] * other[i, j], result[i, j]);
+                        Assert.AreEqual(data[i, j]*other[i, j], result[i, j]);
                     }
                 }
             }
@@ -910,7 +949,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             var matrix = TestMatrices["Wide2x3"];
             var other = CreateMatrix(matrix.RowCount + 1, matrix.ColumnCount);
             var result = matrix.Clone();
-            Assert.Throws<ArgumentException>(() => matrix.PointwiseMultiply(other, result));
+            Assert.That(() => matrix.PointwiseMultiply(other, result), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -922,7 +961,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             var matrix = TestMatrices["Wide2x3"];
             var other = matrix.Clone();
             var result = CreateMatrix(matrix.RowCount + 1, matrix.ColumnCount);
-            Assert.Throws<ArgumentException>(() => matrix.PointwiseMultiply(other, result));
+            Assert.That(() => matrix.PointwiseMultiply(other, result), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -939,7 +978,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             {
                 for (var j = 0; j < data.ColumnCount; j++)
                 {
-                    Assert.AreEqual(data[i, j] / other[i, j], result[i, j]);
+                    Assert.AreEqual(data[i, j]/other[i, j], result[i, j]);
                 }
             }
 
@@ -948,7 +987,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             {
                 for (var j = 0; j < data.ColumnCount; j++)
                 {
-                    Assert.AreEqual(data[i, j] / other[i, j], result[i, j]);
+                    Assert.AreEqual(data[i, j]/other[i, j], result[i, j]);
                 }
             }
         }
@@ -962,7 +1001,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             var matrix = TestMatrices["Wide2x3"];
             var other = CreateMatrix(matrix.RowCount + 1, matrix.ColumnCount);
             var result = matrix.Clone();
-            Assert.Throws<ArgumentException>(() => matrix.PointwiseDivide(other, result));
+            Assert.That(() => matrix.PointwiseDivide(other, result), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -974,7 +1013,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             var matrix = TestMatrices["Wide2x3"];
             var other = matrix.Clone();
             var result = CreateMatrix(matrix.RowCount + 1, matrix.ColumnCount);
-            Assert.Throws<ArgumentException>(() => matrix.PointwiseDivide(other, result));
+            Assert.That(() => matrix.PointwiseDivide(other, result), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -985,7 +1024,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         [TestCase(-2)]
         public void RandomWithNonPositiveNumberOfRowsThrowsArgumentException(int numberOfRows)
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => Matrix<double>.Build.Random(numberOfRows, 4, new ContinuousUniform()));
+            Assert.That(() => Matrix<double>.Build.Random(numberOfRows, 4, new ContinuousUniform()), Throws.TypeOf<ArgumentOutOfRangeException>());
         }
 
         /// <summary>
@@ -1006,77 +1045,107 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         public void TraceOfNonSquareMatrixThrowsArgumentException()
         {
             var matrix = TestMatrices["Wide2x3"];
-            Assert.Throws<ArgumentException>(() => matrix.Trace());
+            Assert.That(() => matrix.Trace(), Throws.ArgumentException);
         }
 
-        /// <summary>
-        /// Can compute the modules of each element of vector.
-        /// </summary>
         [Test]
-        public void CanComputeModulus()
+        public void CanComputeRemainderUsingOperator()
         {
             var matrix = TestMatrices["Square3x3"];
-            var mod = matrix.Modulus(3.2);
+            var mod = matrix%(-3.2);
             for (var row = 0; row < matrix.RowCount; row++)
             {
                 for (var column = 0; column < matrix.ColumnCount; column++)
                 {
-                    AssertHelpers.AlmostEqual(matrix[row, column] % 3.2, mod[row, column], 14);
+                    AssertHelpers.AlmostEqual(Euclid.Remainder(matrix[row, column], -3.2), mod[row, column], 14);
                 }
             }
         }
 
-        /// <summary>
-        /// Can compute the modules of each element of vector using a result vector.
-        /// </summary>
+        [Test]
+        public void CanComputeRemainder()
+        {
+            var matrix = TestMatrices["Square3x3"];
+            var mod = matrix.Remainder(-3.2);
+            for (var row = 0; row < matrix.RowCount; row++)
+            {
+                for (var column = 0; column < matrix.ColumnCount; column++)
+                {
+                    AssertHelpers.AlmostEqual(Euclid.Remainder(matrix[row, column], -3.2), mod[row, column], 14);
+                }
+            }
+        }
+
+        [Test]
+        public void CanComputeRemainderUsingResultVector()
+        {
+            var matrix = TestMatrices["Square3x3"];
+            var mod = CreateMatrix(matrix.RowCount, matrix.ColumnCount);
+            matrix.Remainder(-3.2, mod);
+            for (var row = 0; row < matrix.RowCount; row++)
+            {
+                for (var column = 0; column < matrix.ColumnCount; column++)
+                {
+                    AssertHelpers.AlmostEqual(Euclid.Remainder(matrix[row, column], -3.2), mod[row, column], 14);
+                }
+            }
+        }
+
+        [Test]
+        public void CanComputeRemainderUsingSameResultVector()
+        {
+            var matrix = TestMatrices["Square3x3"].Clone();
+            matrix.Remainder(-3.2, matrix);
+            var data = TestMatrices["Square3x3"];
+            for (var row = 0; row < matrix.RowCount; row++)
+            {
+                for (var column = 0; column < matrix.ColumnCount; column++)
+                {
+                    AssertHelpers.AlmostEqual(Euclid.Remainder(data[row, column], -3.2), matrix[row, column], 14);
+                }
+            }
+        }
+
+        [Test]
+        public void CanComputeModulus()
+        {
+            var matrix = TestMatrices["Square3x3"];
+            var mod = matrix.Modulus(-3.2);
+            for (var row = 0; row < matrix.RowCount; row++)
+            {
+                for (var column = 0; column < matrix.ColumnCount; column++)
+                {
+                    AssertHelpers.AlmostEqual(Euclid.Modulus(matrix[row, column], -3.2), mod[row, column], 14);
+                }
+            }
+        }
+
         [Test]
         public void CanComputeModulusUsingResultVector()
         {
             var matrix = TestMatrices["Square3x3"];
             var mod = CreateMatrix(matrix.RowCount, matrix.ColumnCount);
-            matrix.Modulus(3.2, mod);
-
+            matrix.Modulus(-3.2, mod);
             for (var row = 0; row < matrix.RowCount; row++)
             {
                 for (var column = 0; column < matrix.ColumnCount; column++)
                 {
-                    AssertHelpers.AlmostEqual(matrix[row, column] % 3.2, mod[row, column], 14);
+                    AssertHelpers.AlmostEqual(Euclid.Modulus(matrix[row, column], -3.2), mod[row, column], 14);
                 }
             }
         }
 
-        /// <summary>
-        /// Can compute the modules of each element of vector using a result vector.
-        /// </summary>
         [Test]
         public void CanComputeModulusUsingSameResultVector()
         {
             var matrix = TestMatrices["Square3x3"].Clone();
-            matrix.Modulus(3.2, matrix);
+            matrix.Modulus(-3.2, matrix);
             var data = TestMatrices["Square3x3"];
-
             for (var row = 0; row < matrix.RowCount; row++)
             {
                 for (var column = 0; column < matrix.ColumnCount; column++)
                 {
-                    AssertHelpers.AlmostEqual(data[row, column] % 3.2, matrix[row, column], 14);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Can compute the modules of each element of vector using the operator %.
-        /// </summary>
-        [Test]
-        public void CanComputeModulusUsingOperator()
-        {
-            var matrix = TestMatrices["Square3x3"];
-            var mod = matrix % 3.2;
-            for (var row = 0; row < matrix.RowCount; row++)
-            {
-                for (var column = 0; column < matrix.ColumnCount; column++)
-                {
-                    AssertHelpers.AlmostEqual(matrix[row, column] % 3.2, mod[row, column], 14);
+                    AssertHelpers.AlmostEqual(Euclid.Modulus(data[row, column], -3.2), matrix[row, column], 14);
                 }
             }
         }

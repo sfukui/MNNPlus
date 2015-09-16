@@ -3,9 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// 
+//
 // Copyright (c) 2009-2013 Math.NET
-// 
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -14,10 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -39,7 +39,6 @@ namespace MathNet.Numerics.RootFinding
         public static IEnumerable<Tuple<double, double>> FindIntervalsWithin(Func<double, double> f, double lowerBound, double upperBound, int parts)
         {
             // TODO: Consider binary-style search instead of linear scan
-
             double fmin = f(lowerBound);
             double fmax = f(upperBound);
 
@@ -63,11 +62,13 @@ namespace MathNet.Numerics.RootFinding
                     smin = smax;
                     continue;
                 }
+
                 if (Math.Sign(sfmax) != sign)
                 {
                     yield return new Tuple<double, double>(smin, smax);
                     sign = Math.Sign(sfmax);
                 }
+
                 smin = smax;
             }
         }
@@ -99,12 +100,12 @@ namespace MathNet.Numerics.RootFinding
 
                 if (Math.Abs(fmin) < Math.Abs(fmax))
                 {
-                    lowerBound += factor * (lowerBound - upperBound);
+                    lowerBound += factor*(lowerBound - upperBound);
                     fmin = f(lowerBound);
                 }
                 else
                 {
-                    upperBound += factor * (upperBound - lowerBound);
+                    upperBound += factor*(upperBound - lowerBound);
                     fmax = f(upperBound);
                 }
             }

@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2014 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -76,7 +80,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         [Test]
         public void CanCreateCategorical()
         {
-            new Categorical(_largeP);
+            GC.KeepAlive(new Categorical(_largeP));
         }
 
         /// <summary>
@@ -102,7 +106,9 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         public void CategoricalCreateFailsWithNullHistogram()
         {
             Histogram h = null;
-            Assert.Throws<ArgumentNullException>(() => new Categorical(h));
+// ReSharper disable ExpressionIsAlwaysNull
+            Assert.That(() => new Categorical(h), Throws.TypeOf<ArgumentNullException>());
+// ReSharper restore ExpressionIsAlwaysNull
         }
 
         /// <summary>
@@ -111,7 +117,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         [Test]
         public void CategoricalCreateFailsWithNegativeRatios()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new Categorical(_badP));
+            Assert.That(() => new Categorical(_badP), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -120,7 +126,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         [Test]
         public void CategoricalCreateFailsWithAllZeroRatios()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new Categorical(_badP2));
+            Assert.That(() => new Categorical(_badP2), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -134,25 +140,68 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         }
 
         /// <summary>
-        /// Can set probability.
+        /// Validate mean.
         /// </summary>
-        [Test]
-        public void CanSetProbability()
+        /// <param name="p">An array of nonnegative ratios.</param>
+        /// <param name="mean">Expected value.</param>
+        [TestCase(new[] { 0.0, 0.25, 0.5, 0.25 }, 2)]
+        [TestCase(new[] { 0.0, 1, 2, 1 }, 2)]
+        [TestCase(new[] { 0.0, 0.5, 0.5 }, 1.5)]
+        [TestCase(new[] { 0.75, 0.25 }, 0.25)]
+        [TestCase(new double[] { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, 5)]
+        public void ValidateMean(double[] p, double mean)
         {
-            new Categorical(_largeP)
-            {
-                P = _smallP
-            };
+            Assert.That(new Categorical(p).Mean, Is.EqualTo(mean).Within(1e-14));
         }
 
         /// <summary>
-        /// Set probability with a bad array fails.
+        /// Validate standard deviation.
         /// </summary>
-        [Test]
-        public void SetProbabilityFails()
+        /// <param name="p">An array of nonnegative ratios.</param>
+        /// <param name="stdDev">Standard deviation.</param>
+        [TestCase(new[] { 0.0, 0.25, 0.5, 0.25 }, 0.70710678118654752440084436210485)]
+        [TestCase(new[] { 0.0, 1, 2, 1 }, 0.70710678118654752440084436210485)]
+        [TestCase(new[] { 0.0, 0.5, 0.5 }, 0.5)]
+        [TestCase(new[] { 0.75, 0.25 }, 0.43301270189221932338186158537647)]  //Sqrt((0.25*0.25)*.75+(.75*.75)*.25)
+        [TestCase(new double[] { 1, 0, 1 }, 1)]
+        public void ValidateStdDev(double[] p, double stdDev)
         {
-            var b = new Categorical(_largeP);
-            Assert.Throws<ArgumentOutOfRangeException>(() => b.P = _badP);
+            Assert.That(new Categorical(p).StdDev, Is.EqualTo(stdDev).Within(1e-14));
+        }
+
+        /// <summary>
+        /// Validate variance.
+        /// </summary>
+        /// <param name="p">An array of nonnegative ratios.</param>
+        /// <param name="variance">Variance.</param>
+        [TestCase(new[] { 0.0, 0.25, 0.5, 0.25 }, 0.5)]
+        [TestCase(new[] { 0.0, 1, 2, 1 }, 0.5)]
+        [TestCase(new[] { 0.0, 0.5, 0.5 }, 0.25)]
+        [TestCase(new[] { 0.75, 0.25 }, 0.1875)]  //(0.25*0.25)*.75+(.75*.75)*.25)
+        [TestCase(new[] { 1.0, 0, 1 }, 1)]
+        public void ValidateVariance(double[] p, double variance)
+        {
+            Assert.That(new Categorical(p).Variance, Is.EqualTo(variance).Within(1e-14));
+        }
+
+        /// <summary>
+        /// Validate median.
+        /// </summary>
+        /// <param name="p">An array of nonnegative ratios.</param>
+        /// <param name="median">Median.</param>
+        [TestCase(new[] { 0.0, 0.25, 0.5, 0.25 }, 2)]
+        [TestCase(new[] { 0.0, 1, 2, 1 }, 2)]
+        [TestCase(new[] { 0.75, 0.25 }, 0)]
+        // The following test case has median of 5, because:
+        // P(X < 5) = (1+2+6+3+2)/29 = 14/29 < 0.5.
+        // P(X <= 5) = 19/29 > 0.5.
+        [TestCase(new[] { 1.0, 2, 6, 3, 2, 5, 1, 1, 0, 1, 7 }, 5)]
+        // TODO: Find out the expected behavior of Median in ambiguous cases like the following:
+        //[TestCase(new double[] { 0, 0.5, 0.5 }, ???)]
+        //[TestCase(new double[] { 1, 0, 1 }, ???)]
+        public void ValidateMedian(double[] p, int median)
+        {
+            Assert.That(new Categorical(p).Median, Is.EqualTo(median).Within(1e-14));
         }
 
         /// <summary>
@@ -161,7 +210,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         [Test]
         public void CanSampleStatic()
         {
-            Categorical.SampleWithProbabilityMass(new Random(0), _largeP);
+            Categorical.Sample(new Random(0), _largeP);
         }
 
         /// <summary>
@@ -170,7 +219,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         [Test]
         public void FailSampleStatic()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => Categorical.SampleWithProbabilityMass(new Random(0), _badP));
+            Assert.That(() => Categorical.Sample(new Random(0), _badP), Throws.ArgumentException);
         }
 
         /// <summary>

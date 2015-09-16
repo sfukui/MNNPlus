@@ -28,13 +28,14 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
 using System.Globalization;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace MathNet.Numerics.UnitTests.StatisticsTests
 {
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
 
     /// <summary>
     /// Statistics data.
@@ -67,7 +68,7 @@ namespace MathNet.Numerics.UnitTests.StatisticsTests
         /// <param name="file">Path to the file.</param>
         public StatTestData(string file)
         {
-            using (var reader = new StreamReader(file))
+            using (var reader = TestData.Data.ReadText(file))
             {
                 var line = reader.ReadLine().Trim();
 
@@ -116,7 +117,7 @@ namespace MathNet.Numerics.UnitTests.StatisticsTests
         /// <returns>Parameter value.</returns>
         static double GetValue(string str)
         {
-            var start = str.IndexOf(":");
+            var start = str.IndexOf(":", StringComparison.Ordinal);
             var value = str.Substring(start + 1).Trim();
             if (value.Equals("NaN"))
             {

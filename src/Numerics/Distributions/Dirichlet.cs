@@ -36,19 +36,14 @@ using MathNet.Numerics.Random;
 namespace MathNet.Numerics.Distributions
 {
     /// <summary>
-    /// Multivariate Dirichlet distribution. For details about this distribution, see 
+    /// Multivariate Dirichlet distribution. For details about this distribution, see
     /// <a href="http://en.wikipedia.org/wiki/Dirichlet_distribution">Wikipedia - Dirichlet distribution</a>.
     /// </summary>
-    /// <remarks><para>The distribution will use the <see cref="System.Random"/> by default. 
-    /// Users can get/set the random number generator by using the <see cref="RandomSource"/> property.</para>
-    /// <para>The statistics classes will check all the incoming parameters whether they are in the allowed
-    /// range. This might involve heavy computation. Optionally, by setting Control.CheckDistributionParameters
-    /// to <c>false</c>, all parameter checks can be turned off.</para></remarks>
     public class Dirichlet : IDistribution
     {
         System.Random _random;
 
-        double[] _alpha;
+        readonly double[] _alpha;
 
         /// <summary>
         /// Initializes a new instance of the Dirichlet class. The distribution will
@@ -57,8 +52,13 @@ namespace MathNet.Numerics.Distributions
         /// <param name="alpha">An array with the Dirichlet parameters.</param>
         public Dirichlet(double[] alpha)
         {
-            _random = MersenneTwister.Default;
-            SetParameters(alpha);
+            if (Control.CheckDistributionParameters && !IsValidParameterSet(alpha))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            _random = SystemRandomSource.Default;
+            _alpha = (double[])alpha.Clone();
         }
 
         /// <summary>
@@ -69,12 +69,17 @@ namespace MathNet.Numerics.Distributions
         /// <param name="randomSource">The random number generator which is used to draw random samples.</param>
         public Dirichlet(double[] alpha, System.Random randomSource)
         {
-            _random = randomSource ?? MersenneTwister.Default;
-            SetParameters(alpha);
+            if (Control.CheckDistributionParameters && !IsValidParameterSet(alpha))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            _random = randomSource ?? SystemRandomSource.Default;
+            _alpha = (double[])alpha.Clone();
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Dirichlet"/> class. 
+        /// Initializes a new instance of the <see cref="Dirichlet"/> class.
         /// <seealso cref="System.Random"/>random number generator.</summary>
         /// <param name="alpha">The value of each parameter of the Dirichlet distribution.</param>
         /// <param name="k">The dimension of the Dirichlet distribution.</param>
@@ -87,12 +92,17 @@ namespace MathNet.Numerics.Distributions
                 parm[i] = alpha;
             }
 
-            _random = MersenneTwister.Default;
-            SetParameters(parm);
+            _random = SystemRandomSource.Default;
+            if (Control.CheckDistributionParameters && !IsValidParameterSet(parm))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            _alpha = (double[])parm.Clone();
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Dirichlet"/> class. 
+        /// Initializes a new instance of the <see cref="Dirichlet"/> class.
         /// <seealso cref="System.Random"/>random number generator.</summary>
         /// <param name="alpha">The value of each parameter of the Dirichlet distribution.</param>
         /// <param name="k">The dimension of the Dirichlet distribution.</param>
@@ -106,8 +116,13 @@ namespace MathNet.Numerics.Distributions
                 parm[i] = alpha;
             }
 
-            _random = randomSource ?? MersenneTwister.Default;
-            SetParameters(parm);
+            _random = randomSource ?? SystemRandomSource.Default;
+            if (Control.CheckDistributionParameters && !IsValidParameterSet(parm))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            _alpha = (double[])parm.Clone();
         }
 
         /// <summary>
@@ -122,20 +137,17 @@ namespace MathNet.Numerics.Distributions
         }
 
         /// <summary>
-        /// Checks whether the parameters of the distribution are valid: no
-        /// parameter can be less than zero and at least one parameter should be
-        /// larger than zero.
+        /// Tests whether the provided values are valid parameters for this distribution.
+        /// No parameter can be less than zero and at least one parameter should be larger than zero.
         /// </summary>
-        /// <param name="alpha">The parameters of the Dirichlet distribution.
-        /// </param>
-        /// <returns><c>true</c> when the parameters are valid, <c>false</c>
-        /// otherwise.</returns>
-        static bool IsValidParameterSet(double[] alpha)
+        /// <param name="alpha">The parameters of the Dirichlet distribution.</param>
+        public static bool IsValidParameterSet(double[] alpha)
         {
             var allzero = true;
 
-            foreach (var t in alpha)
+            for (int i = 0; i < alpha.Length; i++)
             {
+                var t = alpha[i];
                 if (t < 0.0)
                 {
                     return false;
@@ -151,27 +163,11 @@ namespace MathNet.Numerics.Distributions
         }
 
         /// <summary>
-        /// Sets the parameters of the distribution after checking their validity.
-        /// </summary>
-        /// <param name="alpha">The parameters of the Dirichlet distribution.</param>
-        /// <exception cref="ArgumentOutOfRangeException">When the parameters are out of range.</exception>
-        void SetParameters(double[] alpha)
-        {
-            if (Control.CheckDistributionParameters && !IsValidParameterSet(alpha))
-            {
-                throw new ArgumentOutOfRangeException(Resources.InvalidDistributionParameters);
-            }
-
-            _alpha = (double[]) alpha.Clone();
-        }
-
-        /// <summary>
         /// Gets or sets the parameters of the Dirichlet distribution.
         /// </summary>
         public double[] Alpha
         {
             get { return _alpha; }
-            set { SetParameters(value); }
         }
 
         /// <summary>
@@ -180,7 +176,7 @@ namespace MathNet.Numerics.Distributions
         public System.Random RandomSource
         {
             get { return _random; }
-            set { _random = value ?? MersenneTwister.Default; }
+            set { _random = value ?? SystemRandomSource.Default; }
         }
 
         /// <summary>
@@ -252,7 +248,7 @@ namespace MathNet.Numerics.Distributions
         /// </summary>
         /// <param name="x">The locations at which to compute the density.</param>
         /// <returns>the density at <paramref name="x"/>.</returns>
-        /// <remarks>The Dirichlet distribution requires that the sum of the components of x equals 1. 
+        /// <remarks>The Dirichlet distribution requires that the sum of the components of x equals 1.
         /// You can also leave out the last <paramref name="x"/> component, and it will be computed from the others. </remarks>
         public double Density(double[] x)
         {
@@ -331,7 +327,7 @@ namespace MathNet.Numerics.Distributions
         {
             if (Control.CheckDistributionParameters && !IsValidParameterSet(alpha))
             {
-                throw new ArgumentOutOfRangeException(Resources.InvalidDistributionParameters);
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
             }
 
             var n = alpha.Length;

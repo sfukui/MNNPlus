@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2013 Math.NET
+// Copyright (c) 2009-2014 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -30,6 +30,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using MathNet.Numerics.Properties;
 
 namespace MathNet.Numerics.Interpolation
 {
@@ -43,31 +45,57 @@ namespace MathNet.Numerics.Interpolation
     /// </remarks>
     public class BulirschStoerRationalInterpolation : IInterpolation
     {
-        /// <summary>
-        /// Sample Points t.
-        /// </summary>
-        IList<double> _points;
+        readonly double[] _x;
+        readonly double[] _y;
 
-        /// <summary>
-        /// Spline Values x(t).
-        /// </summary>
-        IList<double> _values;
-
-        /// <summary>
-        /// Initializes a new instance of the BulirschStoerRationalInterpolation class.
-        /// </summary>
-        public BulirschStoerRationalInterpolation()
+        /// <param name="x">Sample Points t, sorted ascendingly.</param>
+        /// <param name="y">Sample Values x(t), sorted ascendingly by x.</param>
+        public BulirschStoerRationalInterpolation(double[] x, double[] y)
         {
+            if (x.Length != y.Length)
+            {
+                throw new ArgumentException(Resources.ArgumentVectorsSameLength);
+            }
+
+            if (x.Length < 1)
+            {
+                throw new ArgumentException(string.Format(Resources.ArrayTooSmall, 1), "x");
+            }
+
+            _x = x;
+            _y = y;
         }
 
         /// <summary>
-        /// Initializes a new instance of the BulirschStoerRationalInterpolation class.
+        /// Create a Bulirsch-Stoer rational interpolation from a set of (x,y) value pairs, sorted ascendingly by x.
         /// </summary>
-        /// <param name="samplePoints">Sample Points t</param>
-        /// <param name="sampleValues">Sample Values x(t)</param>
-        public BulirschStoerRationalInterpolation(IList<double> samplePoints, IList<double> sampleValues)
+        public static BulirschStoerRationalInterpolation InterpolateSorted(double[] x, double[] y)
         {
-            Initialize(samplePoints, sampleValues);
+            return new BulirschStoerRationalInterpolation(x, y);
+        }
+
+        /// <summary>
+        /// Create a Bulirsch-Stoer rational interpolation from an unsorted set of (x,y) value pairs.
+        /// WARNING: Works in-place and can thus causes the data array to be reordered.
+        /// </summary>
+        public static BulirschStoerRationalInterpolation InterpolateInplace(double[] x, double[] y)
+        {
+            if (x.Length != y.Length)
+            {
+                throw new ArgumentException(Resources.ArgumentVectorsSameLength);
+            }
+
+            Sorting.Sort(x, y);
+            return InterpolateSorted(x, y);
+        }
+
+        /// <summary>
+        /// Create a Bulirsch-Stoer rational interpolation from an unsorted set of (x,y) value pairs.
+        /// </summary>
+        public static BulirschStoerRationalInterpolation Interpolate(IEnumerable<double> x, IEnumerable<double> y)
+        {
+            // note: we must make a copy, even if the input was arrays already
+            return InterpolateInplace(x.ToArray(), y.ToArray());
         }
 
         /// <summary>
@@ -87,37 +115,6 @@ namespace MathNet.Numerics.Interpolation
         }
 
         /// <summary>
-        /// Initialize the interpolation method with the given sample pairs.
-        /// </summary>
-        /// <param name="samplePoints">Sample Points t</param>
-        /// <param name="sampleValues">Sample Values x(t)</param>
-        public void Initialize(IList<double> samplePoints, IList<double> sampleValues)
-        {
-            if (null == samplePoints)
-            {
-                throw new ArgumentNullException("samplePoints");
-            }
-
-            if (null == sampleValues)
-            {
-                throw new ArgumentNullException("sampleValues");
-            }
-
-            if (samplePoints.Count < 1)
-            {
-                throw new ArgumentOutOfRangeException("samplePoints");
-            }
-
-            if (samplePoints.Count != sampleValues.Count)
-            {
-                throw new ArgumentException(Properties.Resources.ArgumentVectorsSameLength);
-            }
-
-            _points = samplePoints;
-            _values = sampleValues;
-        }
-
-        /// <summary>
         /// Interpolate at point t.
         /// </summary>
         /// <param name="t">Point t to interpolate at.</param>
@@ -125,20 +122,20 @@ namespace MathNet.Numerics.Interpolation
         public double Interpolate(double t)
         {
             const double tiny = 1.0e-25;
-            int n = _points.Count;
+            int n = _x.Length;
 
             var c = new double[n];
             var d = new double[n];
 
             int nearestIndex = 0;
-            double nearestDistance = Math.Abs(t - _points[0]);
+            double nearestDistance = Math.Abs(t - _x[0]);
 
             for (int i = 0; i < n; i++)
             {
-                double distance = Math.Abs(t - _points[i]);
+                double distance = Math.Abs(t - _x[i]);
                 if (distance.AlmostEqual(0.0))
                 {
-                    return _values[i];
+                    return _y[i];
                 }
 
                 if (distance < nearestDistance)
@@ -147,18 +144,18 @@ namespace MathNet.Numerics.Interpolation
                     nearestDistance = distance;
                 }
 
-                c[i] = _values[i];
-                d[i] = _values[i] + tiny;
+                c[i] = _y[i];
+                d[i] = _y[i] + tiny;
             }
 
-            double x = _values[nearestIndex];
+            double x = _y[nearestIndex];
 
             for (int level = 1; level < n; level++)
             {
                 for (int i = 0; i < n - level; i++)
                 {
-                    double hp = _points[i + level] - t;
-                    double ho = (_points[i] - t)*d[i]/hp;
+                    double hp = _x[i + level] - t;
+                    double ho = (_x[i] - t)*d[i]/hp;
 
                     double den = ho - c[i + 1];
                     if (den.AlmostEqual(0.0))

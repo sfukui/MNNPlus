@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2014 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -37,15 +41,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
     [TestFixture, Category("Distributions")]
     public class ErlangTests
     {
-        /// <summary>
-        /// Set-up parameters.
-        /// </summary>
-        [SetUp]
-        public void SetUp()
-        {
-            Control.CheckDistributionParameters = true;
-        }
-
         /// <summary>
         /// Can create Erlang.
         /// </summary>
@@ -76,7 +71,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [TestCase(-1, Double.NaN)]
         public void ErlangCreateFailsWithBadParameters(int shape, double invScale)
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new Erlang(shape, invScale));
+            Assert.That(() => new Erlang(shape, invScale), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -123,88 +118,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         {
             var n = new Erlang(1, 2d);
             Assert.AreEqual("Erlang(k = 1, λ = 2)", n.ToString());
-        }
-
-        /// <summary>
-        /// Can set shape.
-        /// </summary>
-        /// <param name="shape">New shape value.</param>
-        [TestCase(-0)]
-        [TestCase(0)]
-        [TestCase(1)]
-        [TestCase(10)]
-        public void CanSetShape(int shape)
-        {
-            new Erlang(1, 1.0)
-            {
-                Shape = shape
-            };
-        }
-
-        /// <summary>
-        /// Set shape fails with negative shape.
-        /// </summary>
-        [Test]
-        public void SetShapeFailsWithNegativeShape()
-        {
-            var n = new Erlang(1, 1.0);
-            Assert.Throws<ArgumentOutOfRangeException>(() => n.Shape = -1);
-        }
-
-        /// <summary>
-        /// Can set scale
-        /// </summary>
-        /// <param name="scale">New scale value.</param>
-        [TestCase(-0.0)]
-        [TestCase(0.0)]
-        [TestCase(0.1)]
-        [TestCase(1.0)]
-        [TestCase(10.0)]
-        [TestCase(Double.PositiveInfinity)]
-        public void CanSetScale(double scale)
-        {
-            new Erlang(1, 1.0)
-            {
-                Scale = scale
-            };
-        }
-
-        /// <summary>
-        /// Set scale fails with negative scale.
-        /// </summary>
-        [Test]
-        public void SetScaleFailsWithNegativeScale()
-        {
-            var n = new Erlang(1, 1.0);
-            Assert.Throws<ArgumentOutOfRangeException>(() => n.Scale = -1.0);
-        }
-
-        /// <summary>
-        /// Can set inverse scale.
-        /// </summary>
-        /// <param name="invScale">Inverse scale value.</param>
-        [TestCase(-0.0)]
-        [TestCase(0.0)]
-        [TestCase(0.1)]
-        [TestCase(1.0)]
-        [TestCase(10.0)]
-        [TestCase(Double.PositiveInfinity)]
-        public void CanSetInvScale(double invScale)
-        {
-            new Erlang(1, 1.0)
-            {
-                Rate = invScale
-            };
-        }
-
-        /// <summary>
-        /// Set inverse scale fails with negative inverse scale.
-        /// </summary>
-        [Test]
-        public void SetInvScaleFailsWithNegativeInvScale()
-        {
-            var n = new Erlang(1, 1.0);
-            Assert.Throws<ArgumentOutOfRangeException>(() => n.Rate = -1.0);
         }
 
         /// <summary>
@@ -426,7 +339,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         {
             var n = new Erlang(1, 2.0);
             var ied = n.Samples();
-            ied.Take(5).ToArray();
+            GC.KeepAlive(ied.Take(5).ToArray());
         }
 
         /// <summary>

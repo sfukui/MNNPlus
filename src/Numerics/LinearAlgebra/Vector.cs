@@ -66,7 +66,7 @@ namespace MathNet.Numerics.LinearAlgebra
         public VectorStorage<T> Storage { get; private set; }
 
         /// <summary>
-        /// Gets the number of items.
+        /// Gets the length or number of dimensions of this vector.
         /// </summary>
         public int Count { get; private set; }
 
@@ -133,13 +133,26 @@ namespace MathNet.Numerics.LinearAlgebra
         }
 
         /// <summary>
+        /// Set all values whose absolute value is smaller than the threshold to zero, in-place.
+        /// </summary>
+        public abstract void CoerceZero(double threshold);
+
+        /// <summary>
+        /// Set all values that meet the predicate to zero, in-place.
+        /// </summary>
+        public void CoerceZero(Func<T, bool> zeroPredicate)
+        {
+            MapInplace(x => zeroPredicate(x) ? Zero : x, Zeros.AllowSkip);
+        }
+
+        /// <summary>
         /// Returns a deep-copy clone of the vector.
         /// </summary>
         /// <returns>A deep-copy clone of the vector.</returns>
         public Vector<T> Clone()
         {
             var result = Build.SameAs(this);
-            Storage.CopyToUnchecked(result.Storage, skipClearing: true);
+            Storage.CopyToUnchecked(result.Storage, ExistingData.AssumeZeros);
             return result;
         }
 
@@ -185,7 +198,7 @@ namespace MathNet.Numerics.LinearAlgebra
         public Vector<T> SubVector(int index, int count)
         {
             var target = Build.SameAs(this, count);
-            Storage.CopySubVectorTo(target.Storage, index, 0, count, skipClearing: true);
+            Storage.CopySubVectorTo(target.Storage, index, 0, count, ExistingData.AssumeZeros);
             return target;
         }
 
@@ -233,7 +246,7 @@ namespace MathNet.Numerics.LinearAlgebra
         public T[] ToArray()
         {
             var result = new DenseVectorStorage<T>(Count);
-            Storage.CopyToUnchecked(result, skipClearing: true);
+            Storage.CopyToUnchecked(result, ExistingData.AssumeZeros);
             return result.Data;
         }
 
@@ -246,7 +259,7 @@ namespace MathNet.Numerics.LinearAlgebra
         public Matrix<T> ToColumnMatrix()
         {
             var result = Matrix<T>.Build.SameAs(this, Count, 1);
-            Storage.CopyToColumnUnchecked(result.Storage, 0, skipClearing: true);
+            Storage.CopyToColumnUnchecked(result.Storage, 0, ExistingData.AssumeZeros);
             return result;
         }
 
@@ -259,7 +272,7 @@ namespace MathNet.Numerics.LinearAlgebra
         public Matrix<T> ToRowMatrix()
         {
             var result = Matrix<T>.Build.SameAs(this, 1, Count);
-            Storage.CopyToRowUnchecked(result.Storage, 0, skipClearing: true);
+            Storage.CopyToRowUnchecked(result.Storage, 0, ExistingData.AssumeZeros);
             return result;
         }
 
@@ -272,6 +285,23 @@ namespace MathNet.Numerics.LinearAlgebra
         public IEnumerable<T> Enumerate()
         {
             return Storage.Enumerate();
+        }
+
+        /// <summary>
+        /// Returns an IEnumerable that can be used to iterate through all values of the vector.
+        /// </summary>
+        /// <remarks>
+        /// The enumerator will include all values, even if they are zero.
+        /// </remarks>
+        public IEnumerable<T> Enumerate(Zeros zeros = Zeros.Include)
+        {
+            switch (zeros)
+            {
+                case Zeros.AllowSkip:
+                    return Storage.EnumerateNonZero();
+                default:
+                    return Storage.Enumerate();
+            }
         }
 
         /// <summary>
@@ -288,11 +318,31 @@ namespace MathNet.Numerics.LinearAlgebra
         }
 
         /// <summary>
+        /// Returns an IEnumerable that can be used to iterate through all values of the vector and their index.
+        /// </summary>
+        /// <remarks>
+        /// The enumerator returns a Tuple with the first value being the element index
+        /// and the second value being the value of the element at that index.
+        /// The enumerator will include all values, even if they are zero.
+        /// </remarks>
+        public IEnumerable<Tuple<int, T>> EnumerateIndexed(Zeros zeros = Zeros.Include)
+        {
+            switch (zeros)
+            {
+                case Zeros.AllowSkip:
+                    return Storage.EnumerateNonZeroIndexed();
+                default:
+                    return Storage.EnumerateIndexed();
+            }
+        }
+
+        /// <summary>
         /// Returns an IEnumerable that can be used to iterate through all non-zero values of the vector.
         /// </summary>
         /// <remarks>
         /// The enumerator will skip all elements with a zero value.
         /// </remarks>
+        [Obsolete("Use Enumerate(Zeros.AllowSkip) instead. Will be removed in v4.")]
         public IEnumerable<T> EnumerateNonZero()
         {
             return Storage.EnumerateNonZero();
@@ -306,6 +356,7 @@ namespace MathNet.Numerics.LinearAlgebra
         /// and the second value being the value of the element at that index.
         /// The enumerator will skip all elements with a zero value.
         /// </remarks>
+        [Obsolete("Use EnumerateIndexed(Zeros.AllowSkip) instead. Will be removed in v4.")]
         public IEnumerable<Tuple<int, T>> EnumerateNonZeroIndexed()
         {
             return Storage.EnumerateNonZeroIndexed();
@@ -316,9 +367,10 @@ namespace MathNet.Numerics.LinearAlgebra
         /// If forceMapZero is not set to true, zero values may or may not be skipped depending
         /// on the actual data storage implementation (relevant mostly for sparse vectors).
         /// </summary>
-        public void MapInplace(Func<T, T> f, bool forceMapZeros = false)
+        public void MapInplace(Func<T, T> f, Zeros zeros = Zeros.AllowSkip)
         {
-            Storage.MapInplace(f, forceMapZeros);
+            // TODO: actual in-place
+            Storage.MapToUnchecked(Storage, f, zeros, ExistingData.AssumeZeros);
         }
 
         /// <summary>
@@ -327,9 +379,171 @@ namespace MathNet.Numerics.LinearAlgebra
         /// If forceMapZero is not set to true, zero values may or may not be skipped depending
         /// on the actual data storage implementation (relevant mostly for sparse vectors).
         /// </summary>
-        public void MapIndexedInplace(Func<int, T, T> f, bool forceMapZeros = false)
+        public void MapIndexedInplace(Func<int, T, T> f, Zeros zeros = Zeros.AllowSkip)
         {
-            Storage.MapIndexedInplace(f, forceMapZeros);
+            // TODO: actual in-place
+            Storage.MapIndexedToUnchecked(Storage, f, zeros, ExistingData.AssumeZeros);
+        }
+
+        /// <summary>
+        /// Applies a function to each value of this vector and replaces the value in the result vector.
+        /// If forceMapZero is not set to true, zero values may or may not be skipped depending
+        /// on the actual data storage implementation (relevant mostly for sparse vectors).
+        /// </summary>
+        public void Map<TU>(Func<T, TU> f, Vector<TU> result, Zeros zeros = Zeros.AllowSkip)
+            where TU : struct, IEquatable<TU>, IFormattable
+        {
+            // TODO: in v4 update this method to replace TU with T (consistent with Matrix, see MapConvert)
+            //       then automatically do in-place if possible.
+            Storage.MapTo(result.Storage, f, zeros, zeros == Zeros.Include ? ExistingData.AssumeZeros : ExistingData.Clear);
+        }
+
+        /// <summary>
+        /// Applies a function to each value of this vector and replaces the value in the result vector.
+        /// The index of each value (zero-based) is passed as first argument to the function.
+        /// If forceMapZero is not set to true, zero values may or may not be skipped depending
+        /// on the actual data storage implementation (relevant mostly for sparse vectors).
+        /// </summary>
+        public void MapIndexed<TU>(Func<int, T, TU> f, Vector<TU> result, Zeros zeros = Zeros.AllowSkip)
+            where TU : struct, IEquatable<TU>, IFormattable
+        {
+            // TODO: in v4 update this method to replace TU with T (consistent with Matrix, see MapIndexedConvert)
+            //       then automatically do in-place if possible.
+            Storage.MapIndexedTo(result.Storage, f, zeros, zeros == Zeros.Include ? ExistingData.AssumeZeros : ExistingData.Clear);
+        }
+
+        /// <summary>
+        /// Applies a function to each value of this vector and replaces the value in the result vector.
+        /// If forceMapZero is not set to true, zero values may or may not be skipped depending
+        /// on the actual data storage implementation (relevant mostly for sparse vectors).
+        /// </summary>
+        public void MapConvert<TU>(Func<T, TU> f, Vector<TU> result, Zeros zeros = Zeros.AllowSkip)
+            where TU : struct, IEquatable<TU>, IFormattable
+        {
+            Storage.MapTo(result.Storage, f, zeros, zeros == Zeros.Include ? ExistingData.AssumeZeros : ExistingData.Clear);
+        }
+
+        /// <summary>
+        /// Applies a function to each value of this vector and replaces the value in the result vector.
+        /// The index of each value (zero-based) is passed as first argument to the function.
+        /// If forceMapZero is not set to true, zero values may or may not be skipped depending
+        /// on the actual data storage implementation (relevant mostly for sparse vectors).
+        /// </summary>
+        public void MapIndexedConvert<TU>(Func<int, T, TU> f, Vector<TU> result, Zeros zeros = Zeros.AllowSkip)
+            where TU : struct, IEquatable<TU>, IFormattable
+        {
+            Storage.MapIndexedTo(result.Storage, f, zeros, zeros == Zeros.Include ? ExistingData.AssumeZeros : ExistingData.Clear);
+        }
+
+        /// <summary>
+        /// Applies a function to each value of this vector and returns the results as a new vector.
+        /// If forceMapZero is not set to true, zero values may or may not be skipped depending
+        /// on the actual data storage implementation (relevant mostly for sparse vectors).
+        /// </summary>
+        public Vector<TU> Map<TU>(Func<T, TU> f, Zeros zeros = Zeros.AllowSkip)
+            where TU : struct, IEquatable<TU>, IFormattable
+        {
+            var result = Vector<TU>.Build.SameAs(this);
+            Storage.MapToUnchecked(result.Storage, f, zeros, ExistingData.AssumeZeros);
+            return result;
+        }
+
+        /// <summary>
+        /// Applies a function to each value of this vector and returns the results as a new vector.
+        /// The index of each value (zero-based) is passed as first argument to the function.
+        /// If forceMapZero is not set to true, zero values may or may not be skipped depending
+        /// on the actual data storage implementation (relevant mostly for sparse vectors).
+        /// </summary>
+        public Vector<TU> MapIndexed<TU>(Func<int, T, TU> f, Zeros zeros = Zeros.AllowSkip)
+            where TU : struct, IEquatable<TU>, IFormattable
+        {
+            var result = Vector<TU>.Build.SameAs(this);
+            Storage.MapIndexedToUnchecked(result.Storage, f, zeros, ExistingData.AssumeZeros);
+            return result;
+        }
+
+        /// <summary>
+        /// Applies a function to each value pair of two vectors and replaces the value in the result vector.
+        /// </summary>
+        public void Map2(Func<T, T, T> f, Vector<T> other, Vector<T> result, Zeros zeros = Zeros.AllowSkip)
+        {
+            Storage.Map2To(result.Storage, other.Storage, f, zeros, ExistingData.Clear);
+        }
+
+        /// <summary>
+        /// Applies a function to each value pair of two vectors and returns the results as a new vector.
+        /// </summary>
+        public Vector<T> Map2(Func<T, T, T> f, Vector<T> other, Zeros zeros = Zeros.AllowSkip)
+        {
+            var result = Build.SameAs(this);
+            Storage.Map2To(result.Storage, other.Storage, f, zeros, ExistingData.AssumeZeros);
+            return result;
+        }
+
+        /// <summary>
+        /// Applies a function to update the status with each value pair of two vectors and returns the resulting status.
+        /// </summary>
+        public TState Fold2<TOther, TState>(Func<TState, T, TOther, TState> f, TState state, Vector<TOther> other, Zeros zeros = Zeros.AllowSkip)
+            where TOther : struct, IEquatable<TOther>, IFormattable
+        {
+            return Storage.Fold2(other.Storage, f, state, zeros);
+        }
+
+        /// <summary>
+        /// Returns a tuple with the index and value of the first element satisfying a predicate, or null if none is found.
+        /// Zero elements may be skipped on sparse data structures if allowed (default).
+        /// </summary>
+        public Tuple<int, T> Find(Func<T, bool> predicate, Zeros zeros = Zeros.AllowSkip)
+        {
+            return Storage.Find(predicate, zeros);
+        }
+
+        /// <summary>
+        /// Returns a tuple with the index and values of the first element pair of two vectors of the same size satisfying a predicate, or null if none is found.
+        /// Zero elements may be skipped on sparse data structures if allowed (default).
+        /// </summary>
+        public Tuple<int, T, TOther> Find2<TOther>(Func<T, TOther, bool> predicate, Vector<TOther> other, Zeros zeros = Zeros.AllowSkip)
+            where TOther : struct, IEquatable<TOther>, IFormattable
+        {
+            return Storage.Find2(other.Storage, predicate, zeros);
+        }
+
+        /// <summary>
+        /// Returns true if at least one element satisfies a predicate.
+        /// Zero elements may be skipped on sparse data structures if allowed (default).
+        /// </summary>
+        public bool Exists(Func<T, bool> predicate, Zeros zeros = Zeros.AllowSkip)
+        {
+            return Storage.Find(predicate, zeros) != null;
+        }
+
+        /// <summary>
+        /// Returns true if at least one element pairs of two vectors of the same size satisfies a predicate.
+        /// Zero elements may be skipped on sparse data structures if allowed (default).
+        /// </summary>
+        public bool Exists2<TOther>(Func<T, TOther, bool> predicate, Vector<TOther> other, Zeros zeros = Zeros.AllowSkip)
+            where TOther : struct, IEquatable<TOther>, IFormattable
+        {
+            return Storage.Find2(other.Storage, predicate, zeros) != null;
+        }
+
+        /// <summary>
+        /// Returns true if all elements satisfy a predicate.
+        /// Zero elements may be skipped on sparse data structures if allowed (default).
+        /// </summary>
+        public bool ForAll(Func<T, bool> predicate, Zeros zeros = Zeros.AllowSkip)
+        {
+            return Storage.Find(x => !predicate(x), zeros) == null;
+        }
+
+        /// <summary>
+        /// Returns true if all element pairs of two vectors of the same size satisfy a predicate.
+        /// Zero elements may be skipped on sparse data structures if allowed (default).
+        /// </summary>
+        public bool ForAll2<TOther>(Func<T, TOther, bool> predicate, Vector<TOther> other, Zeros zeros = Zeros.AllowSkip)
+            where TOther : struct, IEquatable<TOther>, IFormattable
+        {
+            return Storage.Find2(other.Storage, (x, y) => !predicate(x, y), zeros) == null;
         }
     }
 }

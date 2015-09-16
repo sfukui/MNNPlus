@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2014 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -38,15 +42,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
     public class ConwayMaxwellPoissonTests
     {
         /// <summary>
-        /// Set-up test parameters.
-        /// </summary>
-        [SetUp]
-        public void SetUp()
-        {
-            Control.CheckDistributionParameters = true;
-        }
-
-        /// <summary>
         /// Can create <c>ConwayMaxwellPoisson</c>.
         /// </summary>
         /// <param name="lambda">Lambda value.</param>
@@ -69,7 +64,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         [Test]
         public void ConwayMaxwellPoissonCreateFailsWithBadParameters()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new ConwayMaxwellPoisson(-1.0, -2.0));
+            Assert.That(() => new ConwayMaxwellPoisson(-1.0, -2.0), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -80,66 +75,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         {
             var d = new ConwayMaxwellPoisson(1d, 2d);
             Assert.AreEqual("ConwayMaxwellPoisson(λ = 1, ν = 2)", d.ToString());
-        }
-
-        /// <summary>
-        /// Can set lambda.
-        /// </summary>
-        /// <param name="lambda">Lambda value.</param>
-        [TestCase(0.1)]
-        [TestCase(3.0)]
-        [TestCase(10.0)]
-        [TestCase(Double.PositiveInfinity)]
-        public void CanSetLambda(double lambda)
-        {
-            new ConwayMaxwellPoisson(1.0, 2.0)
-            {
-                Lambda = lambda
-            };
-        }
-
-        /// <summary>
-        /// Can set DegreesOfFreedom.
-        /// </summary>
-        /// <param name="nu">DegreesOfFreedom parameter.</param>
-        [TestCase(0.0)]
-        [TestCase(3.0)]
-        [TestCase(10.0)]
-        [TestCase(Double.PositiveInfinity)]
-        public void CanSetNu(double nu)
-        {
-            new ConwayMaxwellPoisson(1.0, 2.0)
-            {
-                Nu = nu
-            };
-        }
-
-        /// <summary>
-        /// Set lambda with bad values fails.
-        /// </summary>
-        /// <param name="lambda">Lambda value.</param>
-        [TestCase(0.0)]
-        [TestCase(-0.0)]
-        [TestCase(-1.0)]
-        [TestCase(Double.NegativeInfinity)]
-        public void SetLambdaFails(double lambda)
-        {
-            var d = new ConwayMaxwellPoisson(1.0, 2.0);
-            Assert.Throws<ArgumentOutOfRangeException>(() => d.Lambda = lambda);
-        }
-
-        /// <summary>
-        /// Set DegreesOfFreedom with bad values fails.
-        /// </summary>
-        /// <param name="nu">DegreesOfFreedom parameter.</param>
-        [TestCase(-0.1)]
-        [TestCase(-1.0)]
-        [TestCase(-10.0)]
-        [TestCase(Double.NegativeInfinity)]
-        public void SetNuFails(double nu)
-        {
-            var d = new ConwayMaxwellPoisson(1.0, 2.0);
-            Assert.Throws<ArgumentOutOfRangeException>(() => d.Nu = nu);
         }
 
         /// <summary>
@@ -276,7 +211,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         {
             var d = new ConwayMaxwellPoisson(1.0, 2.0);
             var ied = d.Samples();
-            ied.Take(5).ToArray();
+            GC.KeepAlive(ied.Take(5).ToArray());
         }
 
         /// <summary>

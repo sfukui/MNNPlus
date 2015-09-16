@@ -132,7 +132,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
             var matrix = TestMatrices["Singular3x3"];
             var x = new DenseVector(new[] { new Complex32(1, 1), new Complex32(2, 1), new Complex32(3, 1) });
             Vector<Complex32> y = new DenseVector(4);
-            Assert.Throws<ArgumentException>(() => matrix.Multiply(x, y));
+            Assert.That(() => matrix.Multiply(x, y), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -210,7 +210,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         {
             var matrix = TestMatrices["Singular3x3"];
             var result = CreateMatrix(matrix.RowCount + 1, matrix.ColumnCount);
-            Assert.Throws<ArgumentException>(() => matrix.Multiply(2.3f, result));
+            Assert.That(() => matrix.Multiply(2.3f, result), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -221,7 +221,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         {
             var matrix = TestMatrices["Singular3x3"];
             var result = CreateMatrix(matrix.RowCount, matrix.ColumnCount + 1);
-            Assert.Throws<ArgumentException>(() => matrix.Multiply(2.3f, result));
+            Assert.That(() => matrix.Multiply(2.3f, result), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -248,6 +248,46 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         }
 
         /// <summary>
+        /// Can add a matrix.
+        /// </summary>
+        /// <param name="mtx">Matrix name.</param>
+        [TestCase("Square3x3")]
+        [TestCase("Tall3x2")]
+        public void CanAddMatrixToSelf(string mtx)
+        {
+            var matrix = TestMatrices[mtx].Clone();
+
+            var result = matrix.Add(matrix);
+            for (var i = 0; i < matrix.RowCount; i++)
+            {
+                for (var j = 0; j < matrix.ColumnCount; j++)
+                {
+                    Assert.AreEqual(result[i, j], 2*matrix[i, j]);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Can subtract a matrix.
+        /// </summary>
+        /// <param name="mtx">Matrix name.</param>
+        [TestCase("Square3x3")]
+        [TestCase("Tall3x2")]
+        public void CanSubtractMatrixFromSelf(string mtx)
+        {
+            var matrix = TestMatrices[mtx].Clone();
+
+            var result = matrix.Subtract(matrix);
+            for (var i = 0; i < matrix.RowCount; i++)
+            {
+                for (var j = 0; j < matrix.ColumnCount; j++)
+                {
+                    Assert.AreEqual(result[i, j], Complex32.Zero);
+                }
+            }
+        }
+
+        /// <summary>
         /// Adding a matrix with fewer columns throws <c>ArgumentOutOfRangeException</c>.
         /// </summary>
         [Test]
@@ -255,7 +295,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         {
             var matrix = TestMatrices["Singular3x3"];
             var other = TestMatrices["Tall3x2"];
-            Assert.Throws<ArgumentOutOfRangeException>(() => matrix.Add(other));
+            Assert.That(() => matrix.Add(other), Throws.TypeOf<ArgumentOutOfRangeException>());
         }
 
         /// <summary>
@@ -266,7 +306,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         {
             var matrix = TestMatrices["Singular3x3"];
             var other = TestMatrices["Wide2x3"];
-            Assert.Throws<ArgumentOutOfRangeException>(() => matrix.Add(other));
+            Assert.That(() => matrix.Add(other), Throws.TypeOf<ArgumentOutOfRangeException>());
         }
 
         /// <summary>
@@ -344,7 +384,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         {
             var matrix = TestMatrices["Singular3x3"];
             var other = TestMatrices["Tall3x2"];
-            Assert.Throws<ArgumentOutOfRangeException>(() => matrix.Subtract(other));
+            Assert.That(() => matrix.Subtract(other), Throws.TypeOf<ArgumentOutOfRangeException>());
         }
 
         /// <summary>
@@ -355,7 +395,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         {
             var matrix = TestMatrices["Singular3x3"];
             var other = TestMatrices["Wide2x3"];
-            Assert.Throws<ArgumentOutOfRangeException>(() => matrix.Subtract(other));
+            Assert.That(() => matrix.Subtract(other), Throws.TypeOf<ArgumentOutOfRangeException>());
         }
 
         /// <summary>
@@ -498,7 +538,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         {
             var matrix = TestMatrices["Singular3x3"];
             var other = TestMatrices["Tall3x2"];
-            Assert.Throws<ArgumentException>(() => matrix.TransposeAndMultiply(other));
+            Assert.That(() => matrix.TransposeAndMultiply(other), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -638,7 +678,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
             var matrix = TestMatrices["Singular3x3"];
             var x = new DenseVector(new[] { new Complex32(1, 1), new Complex32(2, 1), new Complex32(3, 1) });
             Vector<Complex32> y = new DenseVector(4);
-            Assert.Throws<ArgumentException>(() => matrix.TransposeThisAndMultiply(x, y));
+            Assert.That(() => matrix.TransposeThisAndMultiply(x, y), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -675,7 +715,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         {
             var matrix = TestMatrices["Wide2x3"];
             var other = TestMatrices["Singular3x3"];
-            Assert.Throws<ArgumentException>(() => matrix.TransposeThisAndMultiply(other));
+            Assert.That(() => matrix.TransposeThisAndMultiply(other), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -763,7 +803,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         {
             var matrix = TestMatrices["Singular3x3"];
             var target = CreateMatrix(matrix.RowCount + 1, matrix.ColumnCount);
-            Assert.Throws<ArgumentException>(() => matrix.Negate(target));
+            Assert.That(() => matrix.Negate(target), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -774,7 +814,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         {
             var matrix = TestMatrices["Singular3x3"];
             var target = CreateMatrix(matrix.RowCount + 1, matrix.ColumnCount);
-            Assert.Throws<ArgumentException>(() => matrix.Negate(target));
+            Assert.That(() => matrix.Negate(target), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -849,7 +889,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         [Test]
         public void NormalizeColumnsWithWrongParameterThrowsArgumentOutOfRangeException()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => TestMatrices["Square4x4"].NormalizeColumns(-4));
+            Assert.That(() => TestMatrices["Square4x4"].NormalizeColumns(-4), Throws.TypeOf<ArgumentOutOfRangeException>());
         }
 
         /// <summary>
@@ -874,7 +914,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         [Test]
         public void NormalizeRowsWithWrongParameterThrowsArgumentOutOfRangeException()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => TestMatrices["Square4x4"].NormalizeRows(-4));
+            Assert.That(() => TestMatrices["Square4x4"].NormalizeRows(-4), Throws.TypeOf<ArgumentOutOfRangeException>());
         }
 
         /// <summary>
@@ -916,7 +956,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
             var matrix = TestMatrices["Wide2x3"];
             var other = CreateMatrix(matrix.RowCount + 1, matrix.ColumnCount);
             var result = matrix.Clone();
-            Assert.Throws<ArgumentException>(() => matrix.PointwiseMultiply(other, result));
+            Assert.That(() => matrix.PointwiseMultiply(other, result), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -928,7 +968,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
             var matrix = TestMatrices["Wide2x3"];
             var other = matrix.Clone();
             var result = CreateMatrix(matrix.RowCount + 1, matrix.ColumnCount);
-            Assert.Throws<ArgumentException>(() => matrix.PointwiseMultiply(other, result));
+            Assert.That(() => matrix.PointwiseMultiply(other, result), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -968,7 +1008,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
             var matrix = TestMatrices["Wide2x3"];
             var other = CreateMatrix(matrix.RowCount + 1, matrix.ColumnCount);
             var result = matrix.Clone();
-            Assert.Throws<ArgumentException>(() => matrix.PointwiseDivide(other, result));
+            Assert.That(() => matrix.PointwiseDivide(other, result), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -980,7 +1020,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
             var matrix = TestMatrices["Wide2x3"];
             var other = matrix.Clone();
             var result = CreateMatrix(matrix.RowCount + 1, matrix.ColumnCount);
-            Assert.Throws<ArgumentException>(() => matrix.PointwiseDivide(other, result));
+            Assert.That(() => matrix.PointwiseDivide(other, result), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -991,7 +1031,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         [TestCase(-2)]
         public void RandomWithNonPositiveNumberOfRowsThrowsArgumentException(int numberOfRows)
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => DenseMatrix.CreateRandom(numberOfRows, 4, new ContinuousUniform()));
+            Assert.That(() => DenseMatrix.CreateRandom(numberOfRows, 4, new ContinuousUniform()), Throws.TypeOf<ArgumentOutOfRangeException>());
         }
 
         /// <summary>
@@ -1012,7 +1052,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         public void TraceOfNonSquareMatrixThrowsArgumentException()
         {
             var matrix = TestMatrices["Wide2x3"];
-            Assert.Throws<ArgumentException>(() => matrix.Trace());
+            Assert.That(() => matrix.Trace(), Throws.ArgumentException);
         }
     }
 }

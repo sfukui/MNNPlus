@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2014 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -38,15 +42,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
     public class GeometricTests
     {
         /// <summary>
-        /// Set-up parameters.
-        /// </summary>
-        [SetUp]
-        public void SetUp()
-        {
-            Control.CheckDistributionParameters = true;
-        }
-
-        /// <summary>
         /// Can create Geometric.
         /// </summary>
         /// <param name="p">Probability of generating a one.</param>
@@ -68,7 +63,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         [TestCase(2.0)]
         public void GeometricCreateFailsWithBadParameters(double p)
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new Geometric(p));
+            Assert.That(() => new Geometric(p), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -79,34 +74,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         {
             var d = new Geometric(0.3);
             Assert.AreEqual("Geometric(p = 0.3)", d.ToString());
-        }
-
-        /// <summary>
-        /// Can set probability of one.
-        /// </summary>
-        /// <param name="p">Probability of generating a one.</param>
-        [TestCase(0.0)]
-        [TestCase(0.3)]
-        [TestCase(1.0)]
-        public void CanSetProbabilityOfOne(double p)
-        {
-            new Geometric(0.3)
-            {
-                P = p
-            };
-        }
-
-        /// <summary>
-        /// Set probability of one with a bad value fails.
-        /// </summary>
-        /// <param name="p">Probability of generating a one.</param>
-        [TestCase(Double.NaN)]
-        [TestCase(-1.0)]
-        [TestCase(2.0)]
-        public void SetProbabilityOfOneFails(double p)
-        {
-            var d = new Geometric(0.3);
-            Assert.Throws<ArgumentOutOfRangeException>(() => d.P = p);
         }
 
         /// <summary>
@@ -148,17 +115,15 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
             Assert.AreEqual(1, d.Mode);
         }
 
-        /// <summary>
-        /// Validate median.
-        /// </summary>
-        /// <param name="p">Probability of generating a one.</param>
-        [TestCase(0.0)]
-        [TestCase(0.3)]
-        [TestCase(1.0)]
-        public void ValidateMedian(double p)
+        [TestCase(0.0, double.PositiveInfinity)]
+        [TestCase(0.0001, 6932.0)]
+        [TestCase(0.1, 7.0)]
+        [TestCase(0.3, 2.0)]
+        [TestCase(0.9, 1.0)]
+        [TestCase(1.0, 1.0)]
+        public void ValidateMedian(double p, double expected)
         {
-            var d = new Geometric(p);
-            Assert.AreEqual((int)Math.Ceiling(-Math.Log(2.0) / Math.Log(1 - p)), d.Median);
+            Assert.That(new Geometric(p).Median, Is.EqualTo(expected));
         }
 
         /// <summary>
@@ -252,7 +217,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         {
             var d = new Geometric(0.3);
             var ied = d.Samples();
-            ied.Take(5).ToArray();
+            GC.KeepAlive(ied.Take(5).ToArray());
         }
 
         /// <summary>

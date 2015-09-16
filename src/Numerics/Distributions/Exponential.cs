@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2013 Math.NET
+// Copyright (c) 2009-2014 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -30,8 +30,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using MathNet.Numerics.Properties;
 using MathNet.Numerics.Random;
+using MathNet.Numerics.Threading;
 
 namespace MathNet.Numerics.Distributions
 {
@@ -40,16 +42,11 @@ namespace MathNet.Numerics.Distributions
     /// The exponential distribution is a distribution over the real numbers parameterized by one non-negative parameter.
     /// <a href="http://en.wikipedia.org/wiki/Exponential_distribution">Wikipedia - exponential distribution</a>.
     /// </summary>
-    /// <remarks>The distribution will use the <see cref="System.Random"/> by default. 
-    /// <para>Users can set the random number generator by using the <see cref="RandomSource"/> property.</para>
-    /// <para>The statistics classes will check all the incoming parameters whether they are in the allowed
-    /// range. This might involve heavy computation. Optionally, by setting Control.CheckDistributionParameters
-    /// to <c>false</c>, all parameter checks can be turned off.</para></remarks>
     public class Exponential : IContinuousDistribution
     {
         System.Random _random;
 
-        double _rate;
+        readonly double _rate;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Exponential"/> class.
@@ -57,8 +54,13 @@ namespace MathNet.Numerics.Distributions
         /// <param name="rate">The rate (λ) parameter of the distribution. Range: λ ≥ 0.</param>
         public Exponential(double rate)
         {
-            _random = MersenneTwister.Default;
-            SetParameters(rate);
+            if (!IsValidParameterSet(rate))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            _random = SystemRandomSource.Default;
+            _rate = rate;
         }
 
         /// <summary>
@@ -68,8 +70,13 @@ namespace MathNet.Numerics.Distributions
         /// <param name="randomSource">The random number generator which is used to draw random samples.</param>
         public Exponential(double rate, System.Random randomSource)
         {
-            _random = randomSource ?? MersenneTwister.Default;
-            SetParameters(rate);
+            if (!IsValidParameterSet(rate))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            _random = randomSource ?? SystemRandomSource.Default;
+            _rate = rate;
         }
 
         /// <summary>
@@ -82,18 +89,12 @@ namespace MathNet.Numerics.Distributions
         }
 
         /// <summary>
-        /// Sets the parameters of the distribution after checking their validity.
+        /// Tests whether the provided values are valid parameters for this distribution.
         /// </summary>
         /// <param name="rate">The rate (λ) parameter of the distribution. Range: λ ≥ 0.</param>
-        /// <exception cref="ArgumentOutOfRangeException">When the parameters are out of range.</exception>
-        void SetParameters(double rate)
+        public static bool IsValidParameterSet(double rate)
         {
-            if (rate < 0.0 || Double.IsNaN(rate))
-            {
-                throw new ArgumentOutOfRangeException(Resources.InvalidDistributionParameters);
-            }
-
-            _rate = rate;
+            return rate >= 0.0;
         }
 
         /// <summary>
@@ -102,7 +103,6 @@ namespace MathNet.Numerics.Distributions
         public double Rate
         {
             get { return _rate; }
-            set { SetParameters(value); }
         }
 
         /// <summary>
@@ -111,7 +111,7 @@ namespace MathNet.Numerics.Distributions
         public System.Random RandomSource
         {
             get { return _random; }
-            set { _random = value ?? MersenneTwister.Default; }
+            set { _random = value ?? SystemRandomSource.Default; }
         }
 
         /// <summary>
@@ -183,7 +183,7 @@ namespace MathNet.Numerics.Distributions
         /// </summary>
         public double Maximum
         {
-            get { return Double.PositiveInfinity; }
+            get { return double.PositiveInfinity; }
         }
 
         /// <summary>
@@ -241,23 +241,22 @@ namespace MathNet.Numerics.Distributions
         }
 
         /// <summary>
+        /// Fills an array with samples generated from the distribution.
+        /// </summary>
+        public void Samples(double[] values)
+        {
+            SamplesUnchecked(_random, values, _rate);
+        }
+
+        /// <summary>
         /// Generates a sequence of samples from the Exponential distribution.
         /// </summary>
         /// <returns>a sequence of samples from the distribution.</returns>
         public IEnumerable<double> Samples()
         {
-            while (true)
-            {
-                yield return SampleUnchecked(_random, _rate);
-            }
+            return SamplesUnchecked(_random, _rate);
         }
 
-        /// <summary>
-        /// Samples the distribution.
-        /// </summary>
-        /// <param name="rnd">The random number generator to use.</param>
-        /// <param name="rate">The rate (λ) parameter of the distribution. Range: λ ≥ 0.</param>
-        /// <returns>a random number from the distribution.</returns>
         static double SampleUnchecked(System.Random rnd, double rate)
         {
             var r = rnd.NextDouble();
@@ -266,7 +265,31 @@ namespace MathNet.Numerics.Distributions
                 r = rnd.NextDouble();
             }
 
-            return -Math.Log(r) / rate;
+            return -Math.Log(r)/rate;
+        }
+
+        internal static void SamplesUnchecked(System.Random rnd, double[] values, double rate)
+        {
+            rnd.NextDoubles(values);
+            CommonParallel.For(0, values.Length, 4096, (a, b) =>
+            {
+                for (int i = a; i < b; i++)
+                {
+                    // this happens very rarely
+                    var r = values[i];
+                    while (r == 0.0)
+                    {
+                        r = rnd.NextDouble();
+                    }
+
+                    values[i] = -Math.Log(r)/rate;
+                }
+            });
+        }
+
+        static IEnumerable<double> SamplesUnchecked(System.Random rnd, double rate)
+        {
+            return rnd.NextDoubleSequence().Where(r => r != 0.0).Select(r => -Math.Log(r)/rate);
         }
 
         /// <summary>
@@ -278,7 +301,10 @@ namespace MathNet.Numerics.Distributions
         /// <seealso cref="Density"/>
         public static double PDF(double rate, double x)
         {
-            if (rate < 0.0) throw new ArgumentOutOfRangeException("rate", Resources.InvalidDistributionParameters);
+            if (rate < 0.0)
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
 
             return x < 0.0 ? 0.0 : rate*Math.Exp(-rate*x);
         }
@@ -292,7 +318,10 @@ namespace MathNet.Numerics.Distributions
         /// <seealso cref="DensityLn"/>
         public static double PDFLn(double rate, double x)
         {
-            if (rate < 0.0) throw new ArgumentOutOfRangeException("rate", Resources.InvalidDistributionParameters);
+            if (rate < 0.0)
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
 
             return Math.Log(rate) - (rate*x);
         }
@@ -306,7 +335,10 @@ namespace MathNet.Numerics.Distributions
         /// <seealso cref="CumulativeDistribution"/>
         public static double CDF(double rate, double x)
         {
-            if (rate < 0.0) throw new ArgumentOutOfRangeException("rate", Resources.InvalidDistributionParameters);
+            if (rate < 0.0)
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
 
             return x < 0.0 ? 0.0 : 1.0 - Math.Exp(-rate*x);
         }
@@ -321,7 +353,10 @@ namespace MathNet.Numerics.Distributions
         /// <seealso cref="InverseCumulativeDistribution"/>
         public static double InvCDF(double rate, double p)
         {
-            if (rate < 0.0) throw new ArgumentOutOfRangeException("rate", Resources.InvalidDistributionParameters);
+            if (rate < 0.0)
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
 
             return p >= 1.0 ? double.PositiveInfinity : -Math.Log(1 - p)/rate;
         }
@@ -334,9 +369,29 @@ namespace MathNet.Numerics.Distributions
         /// <returns>A random number from this distribution.</returns>
         public static double Sample(System.Random rnd, double rate)
         {
-            if (rate < 0.0) throw new ArgumentOutOfRangeException("rate", Resources.InvalidDistributionParameters);
+            if (rate < 0.0)
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
 
             return SampleUnchecked(rnd, rate);
+        }
+
+        /// <summary>
+        /// Fills an array with samples generated from the distribution.
+        /// </summary>
+        /// <param name="rnd">The random number generator to use.</param>
+        /// <param name="values">The array to fill with the samples.</param>
+        /// <param name="rate">The rate (λ) parameter of the distribution. Range: λ ≥ 0.</param>
+        /// <returns>a sequence of samples from the distribution.</returns>
+        public static void Samples(System.Random rnd, double[] values, double rate)
+        {
+            if (rate < 0.0)
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            SamplesUnchecked(rnd, values, rate);
         }
 
         /// <summary>
@@ -347,12 +402,58 @@ namespace MathNet.Numerics.Distributions
         /// <returns>a sequence of samples from the distribution.</returns>
         public static IEnumerable<double> Samples(System.Random rnd, double rate)
         {
-            if (rate < 0.0) throw new ArgumentOutOfRangeException("rate", Resources.InvalidDistributionParameters);
-
-            while (true)
+            if (rate < 0.0)
             {
-                yield return SampleUnchecked(rnd, rate);
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
             }
+
+            return SamplesUnchecked(rnd, rate);
+        }
+
+        /// <summary>
+        /// Draws a random sample from the distribution.
+        /// </summary>
+        /// <param name="rate">The rate (λ) parameter of the distribution. Range: λ ≥ 0.</param>
+        /// <returns>A random number from this distribution.</returns>
+        public static double Sample(double rate)
+        {
+            if (rate < 0.0)
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            return SampleUnchecked(SystemRandomSource.Default, rate);
+        }
+
+        /// <summary>
+        /// Fills an array with samples generated from the distribution.
+        /// </summary>
+        /// <param name="values">The array to fill with the samples.</param>
+        /// <param name="rate">The rate (λ) parameter of the distribution. Range: λ ≥ 0.</param>
+        /// <returns>a sequence of samples from the distribution.</returns>
+        public static void Samples(double[] values, double rate)
+        {
+            if (rate < 0.0)
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            SamplesUnchecked(SystemRandomSource.Default, values, rate);
+        }
+
+        /// <summary>
+        /// Generates a sequence of samples from the Exponential distribution.
+        /// </summary>
+        /// <param name="rate">The rate (λ) parameter of the distribution. Range: λ ≥ 0.</param>
+        /// <returns>a sequence of samples from the distribution.</returns>
+        public static IEnumerable<double> Samples(double rate)
+        {
+            if (rate < 0.0)
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            return SamplesUnchecked(SystemRandomSource.Default, rate);
         }
     }
 }

@@ -14,7 +14,7 @@ module DenseMatrixTests =
 
     /// A large matrix with increasingly large entries
     let largeM =
-        Array.init (100*120) (fun k -> let (j,i) = System.Math.DivRem(k,100) in float i * 100.0 + float j)
+        Array.init (100*120) (fun k -> let i, j = (k%100),(k/100) in float i * 100.0 + float j)
         |> DenseMatrix.raw 100 120
 
     [<Test>]
@@ -46,6 +46,13 @@ module DenseMatrixTests =
     [<Test>]
     let ``DenseMatrix.ofMatrixArray2`` () =
         let a = DenseMatrix.ofMatrixArray2 (array2D [[smallM;smallM];[smallM;smallM];[smallM;smallM]])
+        a.[0..2,0..1] |> should equal smallM
+        a.[3..5,2..3] |> should equal smallM
+        a.[6..8,0..1] |> should equal smallM
+
+    [<Test>]
+    let ``DenseMatrix.ofMatrixList2`` () =
+        let a = DenseMatrix.ofMatrixList2 [[smallM; smallM]; [smallM; smallM]; [smallM; smallM]]
         a.[0..2,0..1] |> should equal smallM
         a.[3..5,2..3] |> should equal smallM
         a.[6..8,0..1] |> should equal smallM
@@ -83,7 +90,7 @@ module DenseMatrixTests =
     let ``DenseMatrix.ofListi`` () =
         [ for i in 0 .. 99 do for j in 0 .. 119 -> (i,j, float i * 100.0 + float j) ]
         |> DenseMatrix.ofListi 100 120 |> should equal largeM
-        
+
     [<Test>]
     let ``DenseMatrix.diag`` () =
         DenseMatrix.diag 100 2.0 |> should equal (2.0 * (DenseMatrix.identity 100))

@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2013 Math.NET
+// Copyright (c) 2009-2014 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -36,7 +36,7 @@ using MathNet.Numerics.Properties;
 namespace MathNet.Numerics.Interpolation
 {
     /// <summary>
-    /// Linear Spline Interpolation.
+    /// Piece-wise Linear Interpolation.
     /// </summary>
     /// <remarks>Supports both differentiation and integration.</remarks>
     public class LinearSpline : IInterpolation
@@ -51,9 +51,14 @@ namespace MathNet.Numerics.Interpolation
         /// <param name="c1">Slopes (N) at the sample points (first order coefficients): N</param>
         public LinearSpline(double[] x, double[] c0, double[] c1)
         {
-            if (x.Length != c0.Length + 1 && x.Length != c0.Length || x.Length != c1.Length + 1)
+            if ((x.Length != c0.Length + 1 && x.Length != c0.Length) || x.Length != c1.Length + 1)
             {
                 throw new ArgumentException(Resources.ArgumentVectorsSameLength);
+            }
+
+            if (x.Length < 2)
+            {
+                throw new ArgumentException(string.Format(Resources.ArrayTooSmall, 2), "x");
             }
 
             _x = x;
@@ -63,37 +68,57 @@ namespace MathNet.Numerics.Interpolation
         }
 
         /// <summary>
-        /// Create a linear spline interpolation from a set of (x,y) value pairs.
+        /// Create a linear spline interpolation from a set of (x,y) value pairs, sorted ascendingly by x.
         /// </summary>
-        /// <remarks>
-        /// The value pairs do not have to be sorted, but if they are not sorted ascendingly
-        /// and the passed x and y arguments are arrays, they will be sorted inplace and thus modified.
-        /// </remarks>
-        public static LinearSpline Interpolate(IEnumerable<double> x, IEnumerable<double> y)
+        public static LinearSpline InterpolateSorted(double[] x, double[] y)
         {
-            var xx = (x as double[]) ?? x.ToArray();
-            var yy = (y as double[]) ?? y.ToArray();
-
-            if (xx.Length != yy.Length)
+            if (x.Length != y.Length)
             {
                 throw new ArgumentException(Resources.ArgumentVectorsSameLength);
             }
 
-            Sorting.Sort(xx, yy);
-
-            var c1 = new double[xx.Length - 1];
-            for (int i = 0; i < c1.Length; i++)
+            if (x.Length < 2)
             {
-                c1[i] = (yy[i + 1] - yy[i])/(xx[i + 1] - xx[i]);
+                throw new ArgumentException(string.Format(Resources.ArrayTooSmall, 2), "x");
             }
 
-            return new LinearSpline(xx, yy, c1);
+            var c1 = new double[x.Length - 1];
+            for (int i = 0; i < c1.Length; i++)
+            {
+                c1[i] = (y[i + 1] - y[i])/(x[i + 1] - x[i]);
+            }
+
+            return new LinearSpline(x, y, c1);
+        }
+
+        /// <summary>
+        /// Create a linear spline interpolation from an unsorted set of (x,y) value pairs.
+        /// WARNING: Works in-place and can thus causes the data array to be reordered.
+        /// </summary>
+        public static LinearSpline InterpolateInplace(double[] x, double[] y)
+        {
+            if (x.Length != y.Length)
+            {
+                throw new ArgumentException(Resources.ArgumentVectorsSameLength);
+            }
+
+            Sorting.Sort(x, y);
+            return InterpolateSorted(x, y);
+        }
+
+        /// <summary>
+        /// Create a linear spline interpolation from an unsorted set of (x,y) value pairs.
+        /// </summary>
+        public static LinearSpline Interpolate(IEnumerable<double> x, IEnumerable<double> y)
+        {
+            // note: we must make a copy, even if the input was arrays already
+            return InterpolateInplace(x.ToArray(), y.ToArray());
         }
 
         /// <summary>
         /// Gets a value indicating whether the algorithm supports differentiation (interpolated derivative).
         /// </summary>
-        public bool SupportsDifferentiation
+        bool IInterpolation.SupportsDifferentiation
         {
             get { return true; }
         }
@@ -101,7 +126,7 @@ namespace MathNet.Numerics.Interpolation
         /// <summary>
         /// Gets a value indicating whether the algorithm supports integration (interpolated quadrature).
         /// </summary>
-        public bool SupportsIntegration
+        bool IInterpolation.SupportsIntegration
         {
             get { return true; }
         }
@@ -113,7 +138,7 @@ namespace MathNet.Numerics.Interpolation
         /// <returns>Interpolated value x(t).</returns>
         public double Interpolate(double t)
         {
-            int k = LeftBracketIndex(t);
+            int k = LeftSegmentIndex(t);
             return _c0[k] + (t - _x[k])*_c1[k];
         }
 
@@ -124,7 +149,7 @@ namespace MathNet.Numerics.Interpolation
         /// <returns>Interpolated first derivative at point t.</returns>
         public double Differentiate(double t)
         {
-            int k = LeftBracketIndex(t);
+            int k = LeftSegmentIndex(t);
             return _c1[k];
         }
 
@@ -144,8 +169,8 @@ namespace MathNet.Numerics.Interpolation
         /// <param name="t">Point t to integrate at.</param>
         public double Integrate(double t)
         {
-            int k = LeftBracketIndex(t);
-            var x = (t - _x[k]);
+            int k = LeftSegmentIndex(t);
+            var x = t - _x[k];
             return _indefiniteIntegral.Value[k] + x*(_c0[k] + x*_c1[k]/2);
         }
 
@@ -167,31 +192,23 @@ namespace MathNet.Numerics.Interpolation
                 double w = _x[i + 1] - _x[i];
                 integral[i + 1] = integral[i] + w*(_c0[i] + w*_c1[i]/2);
             }
+
             return integral;
         }
 
         /// <summary>
-        /// Find the index of the greatest sample point smaller than t.
+        /// Find the index of the greatest sample point smaller than t,
+        /// or the left index of the closest segment for extrapolation.
         /// </summary>
-        int LeftBracketIndex(double t)
+        int LeftSegmentIndex(double t)
         {
-            // Binary search in the [ t[0], ..., t[n-2] ] (t[n-1] is not included)
-            int low = 0;
-            int high = _x.Length - 1;
-            while (low != high - 1)
+            int index = Array.BinarySearch(_x, t);
+            if (index < 0)
             {
-                int middle = (low + high)/2;
-                if (_x[middle] > t)
-                {
-                    high = middle;
-                }
-                else
-                {
-                    low = middle;
-                }
+                index = ~index - 1;
             }
 
-            return low;
+            return Math.Min(Math.Max(index, 0), _x.Length - 2);
         }
     }
 }

@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2014 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -37,15 +41,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
     [TestFixture, Category("Distributions")]
     public class ParetoTests
     {
-        /// <summary>
-        /// Set-up parameters.
-        /// </summary>
-        [SetUp]
-        public void SetUp()
-        {
-            Control.CheckDistributionParameters = true;
-        }
-
         /// <summary>
         /// Can create Pareto distribution.
         /// </summary>
@@ -78,7 +73,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [TestCase(1.0, 0.0)]
         public void ParetoCreateFailsWithBadParameters(double scale, double shape)
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => { var n = new Pareto(scale, shape); });
+            Assert.That(() => { var n = new Pareto(scale, shape); }, Throws.ArgumentException);
         }
 
         /// <summary>
@@ -89,58 +84,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         {
             var n = new Pareto(1d, 2d);
             Assert.AreEqual("Pareto(xm = 1, α = 2)", n.ToString());
-        }
-
-        /// <summary>
-        /// Can set scale.
-        /// </summary>
-        /// <param name="scale">Scale value.</param>
-        [TestCase(0.1)]
-        [TestCase(1.0)]
-        [TestCase(10.0)]
-        [TestCase(Double.PositiveInfinity)]
-        public void CanSetScale(double scale)
-        {
-            new Pareto(1.0, 1.0)
-            {
-                Scale = scale
-            };
-        }
-
-        /// <summary>
-        /// Set scale fails with negative scale.
-        /// </summary>
-        [Test]
-        public void SetScaleFailsWithNegativeScale()
-        {
-            var n = new Pareto(1.0, 1.0);
-            Assert.Throws<ArgumentOutOfRangeException>(() => n.Scale = -1.0);
-        }
-
-        /// <summary>
-        /// Can set shape.
-        /// </summary>
-        /// <param name="shape">Shape value.</param>
-        [TestCase(0.1)]
-        [TestCase(1.0)]
-        [TestCase(10.0)]
-        [TestCase(Double.PositiveInfinity)]
-        public void CanSetShape(double shape)
-        {
-            new Pareto(1.0, 1.0)
-            {
-                Shape = shape
-            };
-        }
-
-        /// <summary>
-        /// Set shape fails with negative shape.
-        /// </summary>
-        [Test]
-        public void SetShapeFailsWithNegativeShape()
-        {
-            var n = new Pareto(1.0, 1.0);
-            Assert.Throws<ArgumentOutOfRangeException>(() => n.Shape = -1.0);
         }
 
         /// <summary>
@@ -349,7 +292,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         {
             var n = new Pareto(1.0, 1.0);
             var ied = n.Samples();
-            ied.Take(5).ToArray();
+            GC.KeepAlive(ied.Take(5).ToArray());
         }
     }
 }

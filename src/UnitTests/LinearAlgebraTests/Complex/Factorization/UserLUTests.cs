@@ -24,7 +24,6 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
-using System;
 using MathNet.Numerics.LinearAlgebra;
 using NUnit.Framework;
 
@@ -86,7 +85,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex.Factorization
         public void LUFailsWithNonSquareMatrix()
         {
             var matrix = new UserDefinedMatrix(3, 2);
-            Assert.Throws<ArgumentException>(() => matrix.LU());
+            Assert.That(() => matrix.LU(), Throws.ArgumentException);
         }
 
         /// <summary>

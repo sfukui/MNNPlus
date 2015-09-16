@@ -104,7 +104,9 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Multivariate
         public void MultinomialCreateFailsWithNullHistogram()
         {
             Histogram h = null;
-            Assert.Throws<ArgumentNullException>(() => new Categorical(h));
+// ReSharper disable ExpressionIsAlwaysNull
+            Assert.That(() => new Categorical(h), Throws.TypeOf<ArgumentNullException>());
+// ReSharper restore ExpressionIsAlwaysNull
         }
 
         /// <summary>
@@ -113,7 +115,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Multivariate
         [Test]
         public void MultinomialCreateFailsWithNegativeRatios()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new Multinomial(_badP, 4));
+            Assert.That(() => new Multinomial(_badP, 4), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -122,7 +124,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Multivariate
         [Test]
         public void MultinomialCreateFailsWithAllZeroRatios()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new Multinomial(_badP2, 4));
+            Assert.That(() => new Multinomial(_badP2, 4), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -218,28 +220,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Multivariate
         }
 
         /// <summary>
-        /// Can set probability.
-        /// </summary>
-        [Test]
-        public void CanSetProbability()
-        {
-            new Multinomial(_largeP, 4)
-            {
-                P = _smallP
-            };
-        }
-
-        /// <summary>
-        /// Set bad values of probability fails.
-        /// </summary>
-        [Test]
-        public void SetProbabilityFails()
-        {
-            var b = new Multinomial(_largeP, 4);
-            Assert.Throws<ArgumentOutOfRangeException>(() => b.P = _badP);
-        }
-
-        /// <summary>
         /// Can sample static.
         /// </summary>
         [Test]
@@ -254,7 +234,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Multivariate
         [Test]
         public void FailSampleStatic()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => Multinomial.Sample(new Random(0), _badP, 4));
+            Assert.That(() => Multinomial.Sample(new Random(0), _badP, 4), Throws.ArgumentException);
         }
 
         /// <summary>

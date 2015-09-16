@@ -24,7 +24,6 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
-using System;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Single;
 using NUnit.Framework;
@@ -81,7 +80,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Factorization
         public void LUFailsWithNonSquareMatrix()
         {
             var matrix = new DenseMatrix(3, 2);
-            Assert.Throws<ArgumentException>(() => matrix.LU());
+            Assert.That(() => matrix.LU(), Throws.ArgumentException);
         }
 
         /// <summary>

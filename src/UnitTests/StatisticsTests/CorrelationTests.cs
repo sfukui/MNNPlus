@@ -40,7 +40,7 @@ namespace MathNet.Numerics.UnitTests.StatisticsTests
     /// <summary>
     /// Correlation tests
     /// </summary>
-    /// <remarks>NOTE: this class is not included into Silverlight version, because it uses data from local files. 
+    /// <remarks>NOTE: this class is not included into Silverlight version, because it uses data from local files.
     /// In Silverlight access to local files is forbidden, except several cases.</remarks>
     [TestFixture, Category("Statistics")]
     public class CorrelationTests
@@ -55,9 +55,9 @@ namespace MathNet.Numerics.UnitTests.StatisticsTests
         /// </summary>
         public CorrelationTests()
         {
-            var lottery = new StatTestData("./data/NIST/Lottery.dat");
+            var lottery = new StatTestData("NIST.Lottery.dat");
             _data.Add("lottery", lottery);
-            var lew = new StatTestData("./data/NIST/Lew.dat");
+            var lew = new StatTestData("NIST.Lew.dat");
             _data.Add("lew", lew);
         }
 
@@ -80,13 +80,29 @@ namespace MathNet.Numerics.UnitTests.StatisticsTests
         [Test]
         public void PearsonCorrelationConsistentWithCovariance()
         {
-            var dataA = _data["lottery"].Data.Take(200);
-            var dataB = _data["lew"].Data.Take(200);
+            var dataA = _data["lottery"].Data.Take(200).ToArray();
+            var dataB = _data["lew"].Data.Take(200).ToArray();
 
             var direct = Correlation.Pearson(dataA, dataB);
             var covariance = dataA.Covariance(dataB)/(dataA.StandardDeviation()*dataB.StandardDeviation());
 
             AssertHelpers.AlmostEqual(covariance, direct, 14);
+        }
+
+
+        /// <summary>
+        /// Constant-weighted Pearson correlation test.
+        /// </summary>
+        [Test]
+        public void ConstantWeightedPearsonCorrelationTest()
+        {
+            var dataA = _data["lottery"].Data.Take(200);
+            var dataB = _data["lew"].Data.Take(200);
+            var weights = Generate.Repeat(200, 2.0);
+
+            var corr = Correlation.Pearson(dataA, dataB);
+            var corr2 = Correlation.WeightedPearson(dataA, dataB, weights);
+            AssertHelpers.AlmostEqual(corr, corr2, 14);
         }
 
         /// <summary>
@@ -97,7 +113,7 @@ namespace MathNet.Numerics.UnitTests.StatisticsTests
         {
             var dataA = _data["lottery"].Data;
             var dataB = _data["lew"].Data;
-            Assert.Throws<ArgumentOutOfRangeException>(() => Correlation.Pearson(dataA, dataB));
+            Assert.That(() => Correlation.Pearson(dataA, dataB), Throws.TypeOf<ArgumentOutOfRangeException>());
         }
 
         /// <summary>
@@ -121,7 +137,7 @@ namespace MathNet.Numerics.UnitTests.StatisticsTests
         {
             var dataA = _data["lottery"].Data;
             var dataB = _data["lew"].Data;
-            Assert.Throws<ArgumentOutOfRangeException>(() => Correlation.Spearman(dataA, dataB));
+            Assert.That(() => Correlation.Spearman(dataA, dataB), Throws.TypeOf<ArgumentOutOfRangeException>());
         }
     }
 #endif

@@ -77,17 +77,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single
             CollectionAssert.AreEqual(vector, clone);
         }
 #endif
-        
-        /// <summary>
-        /// Can convert vector to string.
-        /// </summary>
-        [Test]
-        public void CanConvertVectorToString()
-        {
-            var vector = CreateVector(Data);
-            var str = vector.ToVectorString(1, int.MaxValue, 1);
-            Assert.AreEqual("1 2 3 4 5", str);
-        }
 
         /// <summary>
         /// Can copy part of a vector to another vector.
@@ -208,8 +197,8 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single
         [Test]
         public void SizeIsNotPositiveThrowsArgumentOutOfRangeException()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => CreateVector(-1));
-            Assert.Throws<ArgumentOutOfRangeException>(() => CreateVector(0));
+            Assert.That(() => CreateVector(-1), Throws.TypeOf<ArgumentOutOfRangeException>());
+            Assert.That(() => CreateVector(0), Throws.TypeOf<ArgumentOutOfRangeException>());
         }
 
         /// <summary>
@@ -255,7 +244,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single
         public void CanEnumerateOverVectorUsingNonZeroEnumerator()
         {
             var vector = CreateVector(Data);
-            foreach (var pair in vector.EnumerateNonZeroIndexed())
+            foreach (var pair in vector.EnumerateIndexed(Zeros.AllowSkip))
             {
                 Assert.AreEqual(Data[pair.Item1], pair.Item2);
                 Assert.AreNotEqual(0f, pair.Item2);
@@ -349,7 +338,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single
         public void CanGetSubVectorWithWrongValuesShouldThrowException(int index, int length)
         {
             var vector = CreateVector(Data);
-            Assert.Throws<ArgumentOutOfRangeException>(() => vector.SubVector(index, length));
+            Assert.That(() => vector.SubVector(index, length), Throws.TypeOf<ArgumentOutOfRangeException>());
         }
 
         /// <summary>
@@ -462,7 +451,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single
         [Test]
         public void CanSum()
         {
-            float[] testData = { -20, -10, 10, 20, 30, };
+            float[] testData = { -20, -10, 10, 20, 30 };
             var vector = CreateVector(testData);
             var actual = vector.Sum();
             const float Expected = 30;
@@ -475,7 +464,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single
         [Test]
         public void CanSumMagnitudes()
         {
-            float[] testData = { -20, -10, 10, 20, 30, };
+            float[] testData = { -20, -10, 10, 20, 30 };
             var vector = CreateVector(testData);
             var actual = vector.SumMagnitudes();
             const float Expected = 90;
@@ -489,7 +478,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single
         public void SetValuesWithNullParameterThrowsArgumentException()
         {
             var vector = CreateVector(Data);
-            Assert.Throws<ArgumentNullException>(() => vector.SetValues(null));
+            Assert.That(() => vector.SetValues(null), Throws.TypeOf<ArgumentNullException>());
         }
 
         /// <summary>
@@ -499,7 +488,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single
         public void SetValuesWithNonEqualDataLengthThrowsArgumentException()
         {
             var vector = CreateVector(Data.Length + 2);
-            Assert.Throws<ArgumentOutOfRangeException>(() => vector.SetValues(Data));
+            Assert.That(() => vector.SetValues(Data), Throws.TypeOf<ArgumentOutOfRangeException>());
         }
 
         /// <summary>
@@ -508,7 +497,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single
         [Test]
         public void RandomWithNumberOfElementsLessThanZeroThrowsArgumentException()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => DenseVector.CreateRandom(-2, new ContinuousUniform()));
+            Assert.That(() => DenseVector.CreateRandom(-2, new ContinuousUniform()), Throws.TypeOf<ArgumentOutOfRangeException>());
         }
 
         /// <summary>
@@ -517,7 +506,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single
         [Test]
         public void CanClearVector()
         {
-            float[] testData = { -20, -10, 10, 20, 30, };
+            float[] testData = { -20, -10, 10, 20, 30 };
             var vector = CreateVector(testData);
             vector.Clear();
             foreach (var element in vector)

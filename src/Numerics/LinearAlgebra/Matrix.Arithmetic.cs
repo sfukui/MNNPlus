@@ -29,6 +29,7 @@
 // </copyright>
 
 using System;
+using System.Linq;
 using MathNet.Numerics.Properties;
 
 namespace MathNet.Numerics.LinearAlgebra
@@ -178,18 +179,36 @@ namespace MathNet.Numerics.LinearAlgebra
         protected abstract void DoDivideByThis(T dividend, Matrix<T> result);
 
         /// <summary>
-        /// Computes the modulus for the given divisor each element of the matrix.
+        /// Computes the canonical modulus, where the result has the sign of the divisor,
+        /// for the given divisor each element of the matrix.
         /// </summary>
         /// <param name="divisor">The scalar denominator to use.</param>
         /// <param name="result">Matrix to store the results in.</param>
         protected abstract void DoModulus(T divisor, Matrix<T> result);
 
         /// <summary>
-        /// Computes the modulus for the given dividend for each element of the matrix.
+        /// Computes the canonical modulus, where the result has the sign of the divisor,
+        /// for the given dividend for each element of the matrix.
         /// </summary>
         /// <param name="dividend">The scalar numerator to use.</param>
         /// <param name="result">A vector to store the results in.</param>
         protected abstract void DoModulusByThis(T dividend, Matrix<T> result);
+
+        /// <summary>
+        /// Computes the remainder (% operator), where the result has the sign of the dividend,
+        /// for the given divisor each element of the matrix.
+        /// </summary>
+        /// <param name="divisor">The scalar denominator to use.</param>
+        /// <param name="result">Matrix to store the results in.</param>
+        protected abstract void DoRemainder(T divisor, Matrix<T> result);
+
+        /// <summary>
+        /// Computes the remainder (% operator), where the result has the sign of the dividend,
+        /// for the given dividend for each element of the matrix.
+        /// </summary>
+        /// <param name="dividend">The scalar numerator to use.</param>
+        /// <param name="result">A vector to store the results in.</param>
+        protected abstract void DoRemainderByThis(T dividend, Matrix<T> result);
 
         /// <summary>
         /// Pointwise multiplies this matrix with another matrix and stores the result into the result matrix.
@@ -206,11 +225,39 @@ namespace MathNet.Numerics.LinearAlgebra
         protected abstract void DoPointwiseDivide(Matrix<T> divisor, Matrix<T> result);
 
         /// <summary>
-        /// Pointwise modulus this matrix with another matrix and stores the result into the result matrix.
+        /// Pointwise raise this matrix to an exponent and store the result into the result vector.
+        /// </summary>
+        /// <param name="exponent">The exponent to raise this matrix values to.</param>
+        /// <param name="result">The vector to store the result of the pointwise power.</param>
+        protected abstract void DoPointwisePower(T exponent, Matrix<T> result);
+
+        /// <summary>
+        /// Pointwise canonical modulus, where the result has the sign of the divisor,
+        /// of this matrix with another matrix and stores the result into the result matrix.
         /// </summary>
         /// <param name="divisor">The pointwise denominator matrix to use</param>
         /// <param name="result">The result of the modulus.</param>
         protected abstract void DoPointwiseModulus(Matrix<T> divisor, Matrix<T> result);
+
+        /// <summary>
+        /// Pointwise remainder (% operator), where the result has the sign of the dividend,
+        /// of this matrix with another matrix and stores the result into the result matrix.
+        /// </summary>
+        /// <param name="divisor">The pointwise denominator matrix to use</param>
+        /// <param name="result">The result of the modulus.</param>
+        protected abstract void DoPointwiseRemainder(Matrix<T> divisor, Matrix<T> result);
+
+        /// <summary>
+        /// Pointwise applies the exponential function to each value and stores the result into the result matrix.
+        /// </summary>
+        /// <param name="result">The matrix to store the result.</param>
+        protected abstract void DoPointwiseExp(Matrix<T> result);
+
+        /// <summary>
+        /// Pointwise applies the natural logarithm function to each value and stores the result into the result matrix.
+        /// </summary>
+        /// <param name="result">The matrix to store the result.</param>
+        protected abstract void DoPointwiseLog(Matrix<T> result);
 
         /// <summary>
         /// Adds a scalar to each element of the matrix.
@@ -698,7 +745,7 @@ namespace MathNet.Numerics.LinearAlgebra
         /// <param name="result">The result of the multiplication.</param>
         /// <exception cref="ArgumentException">If <strong>this.Columns != other.ColumnCount</strong>.</exception>
         /// <exception cref="ArgumentException">If the result matrix's dimensions are not the this.RowCount x other.RowCount.</exception>
-        public virtual void TransposeAndMultiply(Matrix<T> other, Matrix<T> result)
+        public void TransposeAndMultiply(Matrix<T> other, Matrix<T> result)
         {
             if (ColumnCount != other.ColumnCount || result.RowCount != RowCount || result.ColumnCount != other.RowCount)
             {
@@ -837,7 +884,7 @@ namespace MathNet.Numerics.LinearAlgebra
         /// <param name="result">The result of the multiplication.</param>
         /// <exception cref="ArgumentException">If <strong>this.Columns != other.ColumnCount</strong>.</exception>
         /// <exception cref="ArgumentException">If the result matrix's dimensions are not the this.RowCount x other.RowCount.</exception>
-        public virtual void ConjugateTransposeAndMultiply(Matrix<T> other, Matrix<T> result)
+        public void ConjugateTransposeAndMultiply(Matrix<T> other, Matrix<T> result)
         {
             if (ColumnCount != other.ColumnCount || result.RowCount != RowCount || result.ColumnCount != other.RowCount)
             {
@@ -967,6 +1014,119 @@ namespace MathNet.Numerics.LinearAlgebra
             return result;
         }
 
+        private static Matrix<T> IntPower(int exponent, Matrix<T> x, Matrix<T> y, Matrix<T> work)
+        {
+            // We try to be smart about not allocating more matrices than needed
+            // and to minimize the number of multiplications (not optimal on either though)
+
+            // TODO: For large or non-integer exponents we could diagonalize the matrix with
+            // a similarity transform (eigenvalue decomposition)
+
+            // return y*x
+            if (exponent == 1)
+            {
+                // return x
+                if (y == null)
+                {
+                    return x;
+                }
+
+                if (work == null) work = y.Multiply(x); else y.Multiply(x, work);
+                return work;
+            }
+
+            // return y*x^2
+            if (exponent == 2)
+            {
+                if (work == null) work = x.Multiply(x); else x.Multiply(x, work);
+
+                // return x^2
+                if (y == null)
+                {
+                    return work;
+                }
+
+                y.Multiply(work, x);
+                return x;
+            }
+
+            // recursive n <-- n/2, y <-- y, x <-- x^2
+            if (exponent.IsEven())
+            {
+                // we store the new x in work, keep the y as is and reuse the old x as new work matrix.
+                if (work == null) work = x.Multiply(x); else x.Multiply(x, work);
+                return IntPower(exponent/2, work, y, x);
+            }
+
+            // recursive n <-- (n-1)/2, y <-- x, x <-- x^2
+            if (y == null)
+            {
+                // we store the new x in work, directly use the old x as y. no work matrix.
+                if (work == null) work = x.Multiply(x); else x.Multiply(x, work);
+                return IntPower((exponent - 1)/2, work, x, null);
+            }
+
+            // recursive n <-- (n-1)/2, y <-- y*x, x <-- x^2
+            // we store the new y in work, the new x in y, and reuse the old x as work
+            if (work == null) work = y.Multiply(x); else y.Multiply(x, work);
+            x.Multiply(x, y);
+            return IntPower((exponent - 1)/2, y, work, x);
+        }
+
+        /// <summary>
+        /// Raises this square matrix to a positive integer exponent and places the results into the result matrix.
+        /// </summary>
+        /// <param name="exponent">The positive integer exponent to raise the matrix to.</param>
+        /// <param name="result">The result of the power.</param>
+        public void Power(int exponent, Matrix<T> result)
+        {
+            if (RowCount != ColumnCount || result.RowCount != RowCount || result.ColumnCount != ColumnCount)
+            {
+                throw DimensionsDontMatch<ArgumentException>(this, result);
+            }
+            if (exponent < 0)
+            {
+                throw new ArgumentException(Resources.ArgumentNotNegative);
+            }
+            if (exponent == 0)
+            {
+                Build.DiagonalIdentity(RowCount, ColumnCount).CopyTo(result);
+                return;
+            }
+            if (exponent == 1)
+            {
+                CopyTo(result);
+                return;
+            }
+            if (exponent == 2)
+            {
+                Multiply(this, result);
+                return;
+            }
+
+            var res = IntPower(exponent, Clone(), null, result);
+            if (!ReferenceEquals(res, result))
+            {
+                res.CopyTo(result);
+            }
+        }
+
+        /// <summary>
+        /// Multiplies this square matrix with another matrix and returns the result.
+        /// </summary>
+        /// <param name="exponent">The positive integer exponent to raise the matrix to.</param>
+        public Matrix<T> Power(int exponent)
+        {
+            if (RowCount != ColumnCount) throw new ArgumentException(Resources.ArgumentMatrixSquare);
+            if (exponent < 0) throw new ArgumentException(Resources.ArgumentNotNegative);
+
+            if (exponent == 0) return Build.DiagonalIdentity(RowCount, ColumnCount);
+            if (exponent == 1) return this;
+            if (exponent == 2) return Multiply(this);
+
+            return IntPower(exponent, Clone(), null, null);
+        }
+
         /// <summary>
         /// Negate each element of this matrix.
         /// </summary>
@@ -1020,7 +1180,8 @@ namespace MathNet.Numerics.LinearAlgebra
         }
 
         /// <summary>
-        /// Computes the modulus (matrix % divisor) for each element of the matrix.
+        /// Computes the canonical modulus, where the result has the sign of the divisor,
+        /// for each element of the matrix.
         /// </summary>
         /// <param name="divisor">The scalar denominator to use.</param>
         /// <returns>A matrix containing the results.</returns>
@@ -1032,7 +1193,8 @@ namespace MathNet.Numerics.LinearAlgebra
         }
 
         /// <summary>
-        /// Computes the modulus (matrix % divisor) for each element of the matrix.
+        /// Computes the canonical modulus, where the result has the sign of the divisor,
+        /// for each element of the matrix.
         /// </summary>
         /// <param name="divisor">The scalar denominator to use.</param>
         /// <param name="result">Matrix to store the results in.</param>
@@ -1047,7 +1209,8 @@ namespace MathNet.Numerics.LinearAlgebra
         }
 
         /// <summary>
-        /// Computes the modulus (dividend % matrix) for each element of the matrix.
+        /// Computes the canonical modulus, where the result has the sign of the divisor,
+        /// for each element of the matrix.
         /// </summary>
         /// <param name="dividend">The scalar numerator to use.</param>
         /// <returns>A matrix containing the results.</returns>
@@ -1059,7 +1222,8 @@ namespace MathNet.Numerics.LinearAlgebra
         }
 
         /// <summary>
-        /// Computes the modulus (dividend % matrix) for each element of the matrix.
+        /// Computes the canonical modulus, where the result has the sign of the divisor,
+        /// for each element of the matrix.
         /// </summary>
         /// <param name="dividend">The scalar numerator to use.</param>
         /// <param name="result">Matrix to store the results in.</param>
@@ -1071,6 +1235,64 @@ namespace MathNet.Numerics.LinearAlgebra
             }
 
             DoModulusByThis(dividend, result);
+        }
+
+        /// <summary>
+        /// Computes the remainder (matrix % divisor), where the result has the sign of the dividend,
+        /// for each element of the matrix.
+        /// </summary>
+        /// <param name="divisor">The scalar denominator to use.</param>
+        /// <returns>A matrix containing the results.</returns>
+        public Matrix<T> Remainder(T divisor)
+        {
+            var result = Build.SameAs(this);
+            DoRemainder(divisor, result);
+            return result;
+        }
+
+        /// <summary>
+        /// Computes the remainder (matrix % divisor), where the result has the sign of the dividend,
+        /// for each element of the matrix.
+        /// </summary>
+        /// <param name="divisor">The scalar denominator to use.</param>
+        /// <param name="result">Matrix to store the results in.</param>
+        public void Remainder(T divisor, Matrix<T> result)
+        {
+            if (ColumnCount != result.ColumnCount || RowCount != result.RowCount)
+            {
+                throw DimensionsDontMatch<ArgumentException>(this, result);
+            }
+
+            DoRemainder(divisor, result);
+        }
+
+        /// <summary>
+        /// Computes the remainder (dividend % matrix), where the result has the sign of the dividend,
+        /// for each element of the matrix.
+        /// </summary>
+        /// <param name="dividend">The scalar numerator to use.</param>
+        /// <returns>A matrix containing the results.</returns>
+        public Matrix<T> RemainderByThis(T dividend)
+        {
+            var result = Build.SameAs(this);
+            DoRemainderByThis(dividend, result);
+            return result;
+        }
+
+        /// <summary>
+        /// Computes the remainder (dividend % matrix), where the result has the sign of the dividend,
+        /// for each element of the matrix.
+        /// </summary>
+        /// <param name="dividend">The scalar numerator to use.</param>
+        /// <param name="result">Matrix to store the results in.</param>
+        public void RemainderByThis(T dividend, Matrix<T> result)
+        {
+            if (ColumnCount != result.ColumnCount || RowCount != result.RowCount)
+            {
+                throw DimensionsDontMatch<ArgumentException>(this, result);
+            }
+
+            DoRemainderByThis(dividend, result);
         }
 
         /// <summary>
@@ -1144,11 +1366,38 @@ namespace MathNet.Numerics.LinearAlgebra
         }
 
         /// <summary>
-        /// Pointwise modulus this matrix by another matrix.
+        /// Pointwise raise this matrix to an exponent and store the result into the result matrix.
+        /// </summary>
+        /// <param name="exponent">The exponent to raise this matrix values to.</param>
+        public Matrix<T> PointwisePower(T exponent)
+        {
+            var result = Build.SameAs(this);
+            DoPointwisePower(exponent, result);
+            return result;
+        }
+
+        /// <summary>
+        /// Pointwise raise this matrix to an exponent.
+        /// </summary>
+        /// <param name="exponent">The exponent to raise this matrix values to.</param>
+        /// <param name="result">The matrix to store the result into.</param>
+        /// <exception cref="ArgumentException">If this matrix and <paramref name="result"/> are not the same size.</exception>
+        public void PointwisePower(T exponent, Matrix<T> result)
+        {
+            if (ColumnCount != result.ColumnCount || RowCount != result.RowCount)
+            {
+                throw DimensionsDontMatch<ArgumentException>(this, result);
+            }
+
+            DoPointwisePower(exponent, result);
+        }
+
+        /// <summary>
+        /// Pointwise canonical modulus, where the result has the sign of the divisor,
+        /// of this matrix by another matrix.
         /// </summary>
         /// <param name="divisor">The pointwise denominator matrix to use.</param>
         /// <exception cref="ArgumentException">If this matrix and <paramref name="divisor"/> are not the same size.</exception>
-        /// <returns>A new matrix that is the pointwise modulus of this matrix and <paramref name="divisor"/>.</returns>
         public Matrix<T> PointwiseModulus(Matrix<T> divisor)
         {
             if (ColumnCount != divisor.ColumnCount || RowCount != divisor.RowCount)
@@ -1162,7 +1411,8 @@ namespace MathNet.Numerics.LinearAlgebra
         }
 
         /// <summary>
-        /// Pointwise modulus this matrix by another matrix and stores the result into the result matrix.
+        /// Pointwise canonical modulus, where the result has the sign of the divisor,
+        /// of this matrix by another matrix and stores the result into the result matrix.
         /// </summary>
         /// <param name="divisor">The pointwise denominator matrix to use.</param>
         /// <param name="result">The matrix to store the result of the pointwise modulus.</param>
@@ -1179,6 +1429,92 @@ namespace MathNet.Numerics.LinearAlgebra
         }
 
         /// <summary>
+        /// Pointwise remainder (% operator), where the result has the sign of the dividend,
+        /// of this matrix by another matrix.
+        /// </summary>
+        /// <param name="divisor">The pointwise denominator matrix to use.</param>
+        /// <exception cref="ArgumentException">If this matrix and <paramref name="divisor"/> are not the same size.</exception>
+        public Matrix<T> PointwiseRemainder(Matrix<T> divisor)
+        {
+            if (ColumnCount != divisor.ColumnCount || RowCount != divisor.RowCount)
+            {
+                throw DimensionsDontMatch<ArgumentException>(this, divisor);
+            }
+
+            var result = Build.SameAs(this, divisor);
+            DoPointwiseRemainder(divisor, result);
+            return result;
+        }
+
+        /// <summary>
+        /// Pointwise remainder (% operator), where the result has the sign of the dividend,
+        /// of this matrix by another matrix and stores the result into the result matrix.
+        /// </summary>
+        /// <param name="divisor">The pointwise denominator matrix to use.</param>
+        /// <param name="result">The matrix to store the result of the pointwise remainder.</param>
+        /// <exception cref="ArgumentException">If this matrix and <paramref name="divisor"/> are not the same size.</exception>
+        /// <exception cref="ArgumentException">If this matrix and <paramref name="result"/> are not the same size.</exception>
+        public void PointwiseRemainder(Matrix<T> divisor, Matrix<T> result)
+        {
+            if (ColumnCount != result.ColumnCount || RowCount != result.RowCount || ColumnCount != divisor.ColumnCount || RowCount != divisor.RowCount)
+            {
+                throw DimensionsDontMatch<ArgumentException>(this, divisor, result);
+            }
+
+            DoPointwiseRemainder(divisor, result);
+        }
+
+        /// <summary>
+        /// Pointwise applies the exponent function to each value.
+        /// </summary>
+        public Matrix<T> PointwiseExp()
+        {
+            var result = Build.SameAs(this);
+            DoPointwiseExp(result);
+            return result;
+        }
+
+        /// <summary>
+        /// Pointwise applies the exponent function to each value.
+        /// </summary>
+        /// <param name="result">The matrix to store the result.</param>
+        /// <exception cref="ArgumentException">If this matrix and <paramref name="result"/> are not the same size.</exception>
+        public void PointwiseExp(Matrix<T> result)
+        {
+            if (ColumnCount != result.ColumnCount || RowCount != result.RowCount)
+            {
+                throw DimensionsDontMatch<ArgumentException>(this, result);
+            }
+
+            DoPointwiseExp(result);
+        }
+
+        /// <summary>
+        /// Pointwise applies the natural logarithm function to each value.
+        /// </summary>
+        public Matrix<T> PointwiseLog()
+        {
+            var result = Build.SameAs(this);
+            DoPointwiseLog(result);
+            return result;
+        }
+
+        /// <summary>
+        /// Pointwise applies the natural logarithm function to each value.
+        /// </summary>
+        /// <param name="result">The matrix to store the result.</param>
+        /// <exception cref="ArgumentException">If this matrix and <paramref name="result"/> are not the same size.</exception>
+        public void PointwiseLog(Matrix<T> result)
+        {
+            if (ColumnCount != result.ColumnCount || RowCount != result.RowCount)
+            {
+                throw DimensionsDontMatch<ArgumentException>(this, result);
+            }
+
+            DoPointwiseLog(result);
+        }
+
+        /// <summary>
         /// Computes the trace of this matrix.
         /// </summary>
         /// <returns>The trace of this matrix</returns>
@@ -1186,12 +1522,21 @@ namespace MathNet.Numerics.LinearAlgebra
         public abstract T Trace();
 
         /// <summary>
-        /// Calculates the rank of the matrix
+        /// Calculates the rank of the matrix.
         /// </summary>
         /// <returns>effective numerical rank, obtained from SVD</returns>
         public virtual int Rank()
         {
             return Svd(false).Rank;
+        }
+
+        /// <summary>
+        /// Calculates the nullity of the matrix.
+        /// </summary>
+        /// <returns>effective numerical nullity, obtained from SVD</returns>
+        public int Nullity()
+        {
+            return ColumnCount - Rank();
         }
 
         /// <summary>Calculates the condition number of this matrix.</summary>
@@ -1214,6 +1559,26 @@ namespace MathNet.Numerics.LinearAlgebra
             return LU().Determinant;
         }
 
+        /// <summary>
+        /// Computes an orthonormal basis for the null space of this matrix,
+        /// also known as the kernel of the corresponding matrix transformation.
+        /// </summary>
+        public virtual Vector<T>[] Kernel()
+        {
+            var svd = Svd(true);
+            return svd.VT.EnumerateRows(svd.Rank, ColumnCount - svd.Rank).ToArray();
+        }
+
+        /// <summary>
+        /// Computes an orthonormal basis for the column space of this matrix,
+        /// also known as the range or image of the corresponding matrix transformation.
+        /// </summary>
+        public virtual Vector<T>[] Range()
+        {
+            var svd = Svd(true);
+            return svd.U.EnumerateColumns(0, svd.Rank).ToArray();
+        }
+
         /// <summary>Computes the inverse of this matrix.</summary>
         /// <returns>The inverse of this matrix.</returns>
         public virtual Matrix<T> Inverse()
@@ -1231,7 +1596,7 @@ namespace MathNet.Numerics.LinearAlgebra
         /// with M = this.Rows * lower.Rows and N = this.Columns * lower.Columns.
         /// </summary>
         /// <param name="other">The other matrix.</param>
-        /// <returns>The kronecker product of the two matrices.</returns>
+        /// <returns>The Kronecker product of the two matrices.</returns>
         public Matrix<T> KroneckerProduct(Matrix<T> other)
         {
             var result = Build.SameAs(this, other, RowCount*other.RowCount, ColumnCount*other.ColumnCount);
@@ -1244,7 +1609,7 @@ namespace MathNet.Numerics.LinearAlgebra
         /// with M = this.Rows * lower.Rows and N = this.Columns * lower.Columns.
         /// </summary>
         /// <param name="other">The other matrix.</param>
-        /// <param name="result">The kronecker product of the two matrices.</param>
+        /// <param name="result">The Kronecker product of the two matrices.</param>
         /// <exception cref="ArgumentException">If the result matrix's dimensions are not (this.Rows * lower.rows) x (this.Columns * lower.Columns).</exception>
         public virtual void KroneckerProduct(Matrix<T> other, Matrix<T> result)
         {
@@ -1260,50 +1625,6 @@ namespace MathNet.Numerics.LinearAlgebra
                     result.SetSubMatrix(i*other.RowCount, other.RowCount, j*other.ColumnCount, other.ColumnCount, At(i, j)*other);
                 }
             }
-        }
-
-        /// <summary>
-        /// Normalizes the columns of a matrix.
-        /// </summary>
-        /// <param name="p">The norm under which to normalize the columns under.</param>
-        /// <returns>A normalized version of the matrix.</returns>
-        /// <exception cref="ArgumentOutOfRangeException">If the parameter p is not positive.</exception>
-        public Matrix<T> NormalizeColumns(int p)
-        {
-            if (p < 1)
-            {
-                throw new ArgumentOutOfRangeException("p", Resources.ArgumentMustBePositive);
-            }
-
-            var result = Build.SameAs(this);
-            for (var index = 0; index < ColumnCount; index++)
-            {
-                result.SetColumn(index, Column(index).Normalize(p));
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// Normalizes the rows of a matrix.
-        /// </summary>
-        /// <param name="p">The norm under which to normalize the rows under.</param>
-        /// <returns>A normalized version of the matrix.</returns>
-        /// <exception cref="ArgumentOutOfRangeException">If the parameter p is not positive.</exception>
-        public Matrix<T> NormalizeRows(int p)
-        {
-            if (p < 1)
-            {
-                throw new ArgumentOutOfRangeException("p", Resources.ArgumentMustBePositive);
-            }
-
-            var ret = Build.SameAs(this);
-            for (var index = 0; index < RowCount; index++)
-            {
-                ret.SetRow(index, Row(index).Normalize(p));
-            }
-
-            return ret;
         }
 
         /// <summary>Calculates the induced L1 norm of this matrix.</summary>
@@ -1329,7 +1650,49 @@ namespace MathNet.Numerics.LinearAlgebra
         /// <returns>The square root of the sum of the squared values.</returns>
         public abstract double FrobeniusNorm();
 
+        /// <summary>
+        /// Calculates the p-norms of all row vectors.
+        /// Typical values for p are 1.0 (L1, Manhattan norm), 2.0 (L2, Euclidean norm) and positive infinity (infinity norm)
+        /// </summary>
+        public abstract Vector<double> RowNorms(double norm);
 
+        /// <summary>
+        /// Calculates the p-norms of all column vectors.
+        /// Typical values for p are 1.0 (L1, Manhattan norm), 2.0 (L2, Euclidean norm) and positive infinity (infinity norm)
+        /// </summary>
+        public abstract Vector<double> ColumnNorms(double norm);
+
+        /// <summary>
+        /// Normalizes all row vectors to a unit p-norm.
+        /// Typical values for p are 1.0 (L1, Manhattan norm), 2.0 (L2, Euclidean norm) and positive infinity (infinity norm)
+        /// </summary>
+        public abstract Matrix<T> NormalizeRows(double norm);
+
+        /// <summary>
+        /// Normalizes all column vectors to a unit p-norm.
+        /// Typical values for p are 1.0 (L1, Manhattan norm), 2.0 (L2, Euclidean norm) and positive infinity (infinity norm)
+        /// </summary>
+        public abstract Matrix<T> NormalizeColumns(double norm);
+
+        /// <summary>
+        /// Calculates the value sum of each row vector.
+        /// </summary>
+        public abstract Vector<T> RowSums();
+
+        /// <summary>
+        /// Calculates the value sum of each column vector.
+        /// </summary>
+        public abstract Vector<T> ColumnSums();
+
+        /// <summary>
+        /// Calculates the absolute value sum of each row vector.
+        /// </summary>
+        public abstract Vector<T> RowAbsoluteSums();
+
+        /// <summary>
+        /// Calculates the absolute value sum of each column vector.
+        /// </summary>
+        public abstract Vector<T> ColumnAbsoluteSums();
 
         #region Exceptions - possibly move elsewhere?
 

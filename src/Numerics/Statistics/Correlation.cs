@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2013 Math.NET
+// Copyright (c) 2009-2014 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -69,29 +69,98 @@ namespace MathNet.Numerics.Statistics
                     {
                         throw new ArgumentOutOfRangeException("dataB", Resources.ArgumentArraysSameLength);
                     }
+
                     double currentA = ieA.Current;
                     double currentB = ieB.Current;
 
                     double deltaA = currentA - meanA;
-                    double scaleDeltaA = deltaA / ++n;
+                    double scaleDeltaA = deltaA/++n;
 
                     double deltaB = currentB - meanB;
-                    double scaleDeltaB = deltaB / n;
+                    double scaleDeltaB = deltaB/n;
 
                     meanA += scaleDeltaA;
                     meanB += scaleDeltaB;
 
-                    varA += scaleDeltaA * deltaA * (n - 1);
-                    varB += scaleDeltaB * deltaB * (n - 1);
-                    r += ((deltaA * deltaB * (n - 1)) / n);
+                    varA += scaleDeltaA*deltaA*(n - 1);
+                    varB += scaleDeltaB*deltaB*(n - 1);
+                    r += (deltaA*deltaB*(n - 1))/n;
                 }
+
                 if (ieB.MoveNext())
                 {
                     throw new ArgumentOutOfRangeException("dataA", Resources.ArgumentArraysSameLength);
                 }
             }
 
-            return r / Math.Sqrt(varA * varB);
+            return r/Math.Sqrt(varA*varB);
+        }
+
+        /// <summary>
+        /// Computes the Weighted Pearson Product-Moment Correlation coefficient.
+        /// </summary>
+        /// <param name="dataA">Sample data A.</param>
+        /// <param name="dataB">Sample data B.</param>
+        /// <param name="weights">Corresponding weights of data.</param>
+        /// <returns>The Weighted Pearson product-moment correlation coefficient.</returns>
+        public static double WeightedPearson(IEnumerable<double> dataA, IEnumerable<double> dataB, IEnumerable<double> weights)
+        {
+            int n = 0;
+
+            double meanA = 0;
+            double meanB = 0;
+            double varA = 0;
+            double varB = 0;
+            double sumWeight = 0;
+
+            double covariance = 0;
+
+            using (IEnumerator<double> ieA = dataA.GetEnumerator())
+            using (IEnumerator<double> ieB = dataB.GetEnumerator())
+            using (IEnumerator<double> ieW = weights.GetEnumerator())
+            {
+                while (ieA.MoveNext())
+                {
+                    if (!ieB.MoveNext())
+                    {
+                        throw new ArgumentOutOfRangeException("dataB", Resources.ArgumentArraysSameLength);
+                    }
+                    if (!ieW.MoveNext())
+                    {
+                        throw new ArgumentOutOfRangeException("weights", Resources.ArgumentArraysSameLength);
+                    }
+                    ++n;
+
+                    double xi = ieA.Current;
+                    double yi = ieB.Current;
+                    double wi = ieW.Current;
+
+                    double temp = sumWeight + wi;
+
+                    double deltaX = xi - meanA;
+                    double rX = deltaX*wi/temp;
+                    meanA += rX;
+                    varA += sumWeight*deltaX*rX;
+
+                    double deltaY = yi - meanB;
+                    double rY = deltaY*wi/temp;
+                    meanB += rY;
+                    varB += sumWeight*deltaY*rY;
+
+                    sumWeight = temp;
+
+                    covariance += deltaX*deltaY*(n - 1)*wi/n;
+                }
+                if (ieB.MoveNext())
+                {
+                    throw new ArgumentOutOfRangeException("dataB", Resources.ArgumentArraysSameLength);
+                }
+                if (ieW.MoveNext())
+                {
+                    throw new ArgumentOutOfRangeException("weights", Resources.ArgumentArraysSameLength);
+                }
+            }
+            return covariance/Math.Sqrt(varA*varB);
         }
 
         /// <summary>
@@ -103,12 +172,15 @@ namespace MathNet.Numerics.Statistics
         {
             var m = Matrix<double>.Build.DenseIdentity(vectors.Length);
             for (int i = 0; i < vectors.Length; i++)
+            {
                 for (int j = i + 1; j < vectors.Length; j++)
                 {
                     var c = Pearson(vectors[i], vectors[j]);
                     m.At(i, j, c);
                     m.At(j, i, c);
                 }
+            }
+
             return m;
         }
 
@@ -153,7 +225,7 @@ namespace MathNet.Numerics.Statistics
             return PearsonMatrix(vectors.Select(Rank).ToArray());
         }
 
-        private static double[] Rank(IEnumerable<double> series)
+        static double[] Rank(IEnumerable<double> series)
         {
             if (series == null)
             {
@@ -161,41 +233,10 @@ namespace MathNet.Numerics.Statistics
             }
 
             // WARNING: do not try to cast series to an array and use it directly,
-            // as we need to sort it (and thus modify id)
+            // as we need to sort it (inplace operation)
 
-            double[] samples = series.ToArray();
-            int[] index = new int[samples.Length];
-            for (int i = 0; i < index.Length; i++)
-            {
-                index[i] = i;
-            }
-            Sorting.Sort(samples, index);
-
-            double[] rankedArray = new double[samples.Length];
-            int previousIndex = 0;
-            for (int i = 1; i < samples.Length; i++)
-            {
-                if (Math.Abs(samples[i] - samples[previousIndex]) <= 0d)
-                {
-                    continue;
-                }
-
-                var rankedValue = (i + previousIndex - 1) / 2d + 1;
-                for (int k = previousIndex; k < i; k++)
-                {
-                    rankedArray[index[k]] = rankedValue;
-                }
-
-                previousIndex = i;
-            }
-
-            var finalValue = (samples.Length + previousIndex - 1) / 2d + 1;
-            for (int k = previousIndex; k < index.Length; k++)
-            {
-                rankedArray[index[k]] = finalValue;
-            }
-
-            return rankedArray;
+            var data = series.ToArray();
+            return ArrayStatistics.RanksInplace(data, RankDefinition.Average);
         }
     }
 }

@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2013 Math.NET
+// Copyright (c) 2009-2014 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -32,6 +32,7 @@ using System;
 using System.Collections.Generic;
 using MathNet.Numerics.Properties;
 using MathNet.Numerics.Random;
+using MathNet.Numerics.Threading;
 
 namespace MathNet.Numerics.Distributions
 {
@@ -42,20 +43,15 @@ namespace MathNet.Numerics.Distributions
     ///     p(x) = \frac{1}{2 * scale} \exp{- |x - mean| / scale}.
     /// <a href="http://en.wikipedia.org/wiki/Laplace_distribution">Wikipedia - Laplace distribution</a>.
     /// </summary>
-    /// <remarks>The distribution will use the <see cref="System.Random"/> by default. 
-    /// <para>Users can set the random number generator by using the <see cref="RandomSource"/> property.</para>
-    /// <para>The statistics classes will check all the incoming parameters whether they are in the allowed
-    /// range. This might involve heavy computation. Optionally, by setting Control.CheckDistributionParameters
-    /// to <c>false</c>, all parameter checks can be turned off.</para></remarks>
     public class Laplace : IContinuousDistribution
     {
         System.Random _random;
 
-        double _location;
-        double _scale;
+        readonly double _location;
+        readonly double _scale;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Laplace"/> class (location = 0, scale = 1). 
+        /// Initializes a new instance of the <see cref="Laplace"/> class (location = 0, scale = 1).
         /// </summary>
         public Laplace()
             : this(0.0, 1.0)
@@ -63,19 +59,25 @@ namespace MathNet.Numerics.Distributions
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Laplace"/> class. 
+        /// Initializes a new instance of the <see cref="Laplace"/> class.
         /// </summary>
         /// <param name="location">The location (μ) of the distribution.</param>
         /// <param name="scale">The scale (b) of the distribution. Range: b > 0.</param>
         /// <exception cref="ArgumentException">If <paramref name="scale"/> is negative.</exception>
         public Laplace(double location, double scale)
         {
-            _random = MersenneTwister.Default;
-            SetParameters(location, scale);
+            if (!IsValidParameterSet(location, scale))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            _random = SystemRandomSource.Default;
+            _location = location;
+            _scale = scale;
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Laplace"/> class. 
+        /// Initializes a new instance of the <see cref="Laplace"/> class.
         /// </summary>
         /// <param name="location">The location (μ) of the distribution.</param>
         /// <param name="scale">The scale (b) of the distribution. Range: b > 0.</param>
@@ -83,8 +85,14 @@ namespace MathNet.Numerics.Distributions
         /// <exception cref="ArgumentException">If <paramref name="scale"/> is negative.</exception>
         public Laplace(double location, double scale, System.Random randomSource)
         {
-            _random = randomSource ?? MersenneTwister.Default;
-            SetParameters(location, scale);
+            if (!IsValidParameterSet(location, scale))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            _random = randomSource ?? SystemRandomSource.Default;
+            _location = location;
+            _scale = scale;
         }
 
         /// <summary>
@@ -97,20 +105,13 @@ namespace MathNet.Numerics.Distributions
         }
 
         /// <summary>
-        /// Sets the parameters of the distribution after checking their validity.
+        /// Tests whether the provided values are valid parameters for this distribution.
         /// </summary>
         /// <param name="location">The location (μ) of the distribution.</param>
         /// <param name="scale">The scale (b) of the distribution. Range: b > 0.</param>
-        /// <exception cref="ArgumentOutOfRangeException">When the parameters are out of range.</exception>
-        void SetParameters(double location, double scale)
+        public static bool IsValidParameterSet(double location, double scale)
         {
-            if (scale <= 0.0 || Double.IsNaN(location) || Double.IsNaN(scale))
-            {
-                throw new ArgumentOutOfRangeException(Resources.InvalidDistributionParameters);
-            }
-
-            _location = location;
-            _scale = scale;
+            return scale > 0.0 && !double.IsNaN(location);
         }
 
         /// <summary>
@@ -119,7 +120,6 @@ namespace MathNet.Numerics.Distributions
         public double Location
         {
             get { return _location; }
-            set { SetParameters(value, _scale); }
         }
 
         /// <summary>
@@ -128,7 +128,6 @@ namespace MathNet.Numerics.Distributions
         public double Scale
         {
             get { return _scale; }
-            set { SetParameters(_location, value); }
         }
 
         /// <summary>
@@ -137,7 +136,7 @@ namespace MathNet.Numerics.Distributions
         public System.Random RandomSource
         {
             get { return _random; }
-            set { _random = value ?? MersenneTwister.Default; }
+            set { _random = value ?? SystemRandomSource.Default; }
         }
 
         /// <summary>
@@ -201,7 +200,7 @@ namespace MathNet.Numerics.Distributions
         /// </summary>
         public double Minimum
         {
-            get { return Double.NegativeInfinity; }
+            get { return double.NegativeInfinity; }
         }
 
         /// <summary>
@@ -209,7 +208,7 @@ namespace MathNet.Numerics.Distributions
         /// </summary>
         public double Maximum
         {
-            get { return Double.PositiveInfinity; }
+            get { return double.PositiveInfinity; }
         }
 
         /// <summary>
@@ -255,28 +254,47 @@ namespace MathNet.Numerics.Distributions
         }
 
         /// <summary>
+        /// Fills an array with samples generated from the distribution.
+        /// </summary>
+        public void Samples(double[] values)
+        {
+            SamplesUnchecked(_random, values, _location, _scale);
+        }
+
+        /// <summary>
         /// Generates a sample from the Laplace distribution.
         /// </summary>
         /// <returns>a sample from the distribution.</returns>
         public IEnumerable<double> Samples()
         {
-            while (true)
-            {
-                yield return SampleUnchecked(_random, _location, _scale);
-            }
+            return SamplesUnchecked(_random, _location, _scale);
         }
 
-        /// <summary>
-        /// Samples the distribution.
-        /// </summary>
-        /// <param name="rnd">The random number generator to use.</param>
-        /// <param name="location">The location (μ) of the distribution.</param>
-        /// <param name="scale">The scale (b) of the distribution. Range: b > 0.</param>
-        /// <returns>a random number from the distribution.</returns>
         static double SampleUnchecked(System.Random rnd, double location, double scale)
         {
             var u = rnd.NextDouble() - 0.5;
-            return location - (scale * Math.Sign(u) * Math.Log(1.0 - (2.0 * Math.Abs(u))));
+            return location - (scale*Math.Sign(u)*Math.Log(1.0 - (2.0*Math.Abs(u))));
+        }
+
+        static void SamplesUnchecked(System.Random rnd, double[] values, double location, double scale)
+        {
+            rnd.NextDoubles(values);
+            CommonParallel.For(0, values.Length, 4096, (a, b) =>
+            {
+                for (int i = a; i < b; i++)
+                {
+                    var u = values[i] - 0.5;
+                    values[i] = location - (scale*Math.Sign(u)*Math.Log(1.0 - (2.0*Math.Abs(u))));
+                }
+            });
+        }
+
+        static IEnumerable<double> SamplesUnchecked(System.Random rnd, double location, double scale)
+        {
+            while (true)
+            {
+                yield return SampleUnchecked(rnd, location, scale);
+            }
         }
 
         /// <summary>
@@ -289,7 +307,10 @@ namespace MathNet.Numerics.Distributions
         /// <seealso cref="Density"/>
         public static double PDF(double location, double scale, double x)
         {
-            if (scale <= 0.0) throw new ArgumentOutOfRangeException(Resources.InvalidDistributionParameters);
+            if (scale <= 0.0)
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
 
             return Math.Exp(-Math.Abs(x - location)/scale)/(2.0*scale);
         }
@@ -304,7 +325,10 @@ namespace MathNet.Numerics.Distributions
         /// <seealso cref="DensityLn"/>
         public static double PDFLn(double location, double scale, double x)
         {
-            if (scale <= 0.0) throw new ArgumentOutOfRangeException(Resources.InvalidDistributionParameters);
+            if (scale <= 0.0)
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
 
             return -Math.Abs(x - location)/scale - Math.Log(2.0*scale);
         }
@@ -319,7 +343,10 @@ namespace MathNet.Numerics.Distributions
         /// <seealso cref="CumulativeDistribution"/>
         public static double CDF(double location, double scale, double x)
         {
-            if (scale <= 0.0) throw new ArgumentOutOfRangeException(Resources.InvalidDistributionParameters);
+            if (scale <= 0.0)
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
 
             return 0.5*(1.0 + (Math.Sign(x - location)*(1.0 - Math.Exp(-Math.Abs(x - location)/scale))));
         }
@@ -333,7 +360,10 @@ namespace MathNet.Numerics.Distributions
         /// <returns>a sample from the distribution.</returns>
         public static double Sample(System.Random rnd, double location, double scale)
         {
-            if (scale <= 0.0) throw new ArgumentOutOfRangeException(Resources.InvalidDistributionParameters);
+            if (scale <= 0.0)
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
 
             return SampleUnchecked(rnd, location, scale);
         }
@@ -347,12 +377,79 @@ namespace MathNet.Numerics.Distributions
         /// <returns>a sequence of samples from the distribution.</returns>
         public static IEnumerable<double> Samples(System.Random rnd, double location, double scale)
         {
-            if (scale <= 0.0) throw new ArgumentOutOfRangeException(Resources.InvalidDistributionParameters);
-
-            while (true)
+            if (scale <= 0.0)
             {
-                yield return SampleUnchecked(rnd, location, scale);
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
             }
+
+            return SamplesUnchecked(rnd, location, scale);
+        }
+
+        /// <summary>
+        /// Fills an array with samples generated from the distribution.
+        /// </summary>
+        /// <param name="rnd">The random number generator to use.</param>
+        /// <param name="values">The array to fill with the samples.</param>
+        /// <param name="location">The location (μ) of the distribution.</param>
+        /// <param name="scale">The scale (b) of the distribution. Range: b > 0.</param>
+        /// <returns>a sequence of samples from the distribution.</returns>
+        public static void Samples(System.Random rnd, double[] values, double location, double scale)
+        {
+            if (scale <= 0.0)
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            SamplesUnchecked(rnd, values, location, scale);
+        }
+
+        /// <summary>
+        /// Generates a sample from the distribution.
+        /// </summary>
+        /// <param name="location">The location (μ) of the distribution.</param>
+        /// <param name="scale">The scale (b) of the distribution. Range: b > 0.</param>
+        /// <returns>a sample from the distribution.</returns>
+        public static double Sample(double location, double scale)
+        {
+            if (scale <= 0.0)
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            return SampleUnchecked(SystemRandomSource.Default, location, scale);
+        }
+
+        /// <summary>
+        /// Generates a sequence of samples from the distribution.
+        /// </summary>
+        /// <param name="location">The location (μ) of the distribution.</param>
+        /// <param name="scale">The scale (b) of the distribution. Range: b > 0.</param>
+        /// <returns>a sequence of samples from the distribution.</returns>
+        public static IEnumerable<double> Samples(double location, double scale)
+        {
+            if (scale <= 0.0)
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            return SamplesUnchecked(SystemRandomSource.Default, location, scale);
+        }
+
+        /// <summary>
+        /// Fills an array with samples generated from the distribution.
+        /// </summary>
+        /// <param name="values">The array to fill with the samples.</param>
+        /// <param name="location">The location (μ) of the distribution.</param>
+        /// <param name="scale">The scale (b) of the distribution. Range: b > 0.</param>
+        /// <returns>a sequence of samples from the distribution.</returns>
+        public static void Samples(double[] values, double location, double scale)
+        {
+            if (scale <= 0.0)
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            SamplesUnchecked(SystemRandomSource.Default, values, location, scale);
         }
     }
 }

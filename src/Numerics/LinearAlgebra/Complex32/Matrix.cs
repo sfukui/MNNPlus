@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2013 Math.NET
+// Copyright (c) 2009-2015 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -50,6 +50,390 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         protected Matrix(MatrixStorage<Complex32> storage)
             : base(storage)
         {
+        }
+
+        /// <summary>
+        /// Set all values whose absolute value is smaller than the threshold to zero.
+        /// </summary>
+        public override void CoerceZero(double threshold)
+        {
+            MapInplace(x => x.Magnitude < threshold ? Complex32.Zero : x, Zeros.AllowSkip);
+        }
+
+        /// <summary>
+        /// Returns the conjugate transpose of this matrix.
+        /// </summary>
+        /// <returns>The conjugate transpose of this matrix.</returns>
+        public override sealed Matrix<Complex32> ConjugateTranspose()
+        {
+            var ret = Transpose();
+            ret.MapInplace(c => c.Conjugate(), Zeros.AllowSkip);
+            return ret;
+        }
+
+        /// <summary>
+        /// Complex conjugates each element of this matrix and place the results into the result matrix.
+        /// </summary>
+        /// <param name="result">The result of the conjugation.</param>
+        protected override void DoConjugate(Matrix<Complex32> result)
+        {
+            Map(Complex32.Conjugate, result, Zeros.AllowSkip);
+        }
+
+        /// <summary>
+        /// Negate each element of this matrix and place the results into the result matrix.
+        /// </summary>
+        /// <param name="result">The result of the negation.</param>
+        protected override void DoNegate(Matrix<Complex32> result)
+        {
+            Map(Complex32.Negate, result, Zeros.AllowSkip);
+        }
+
+        /// <summary>
+        /// Add a scalar to each element of the matrix and stores the result in the result vector.
+        /// </summary>
+        /// <param name="scalar">The scalar to add.</param>
+        /// <param name="result">The matrix to store the result of the addition.</param>
+        protected override void DoAdd(Complex32 scalar, Matrix<Complex32> result)
+        {
+            Map(x => x + scalar, result, Zeros.Include);
+        }
+
+        /// <summary>
+        /// Adds another matrix to this matrix.
+        /// </summary>
+        /// <param name="other">The matrix to add to this matrix.</param>
+        /// <param name="result">The matrix to store the result of the addition.</param>
+        /// <exception cref="ArgumentNullException">If the other matrix is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">If the two matrices don't have the same dimensions.</exception>
+        protected override void DoAdd(Matrix<Complex32> other, Matrix<Complex32> result)
+        {
+            Map2(Complex32.Add, other, result, Zeros.AllowSkip);
+        }
+
+        /// <summary>
+        /// Subtracts a scalar from each element of the vector and stores the result in the result vector.
+        /// </summary>
+        /// <param name="scalar">The scalar to subtract.</param>
+        /// <param name="result">The matrix to store the result of the subtraction.</param>
+        protected override void DoSubtract(Complex32 scalar, Matrix<Complex32> result)
+        {
+            Map(x => x - scalar, result, Zeros.Include);
+        }
+
+        /// <summary>
+        /// Subtracts another matrix from this matrix.
+        /// </summary>
+        /// <param name="other">The matrix to subtract to this matrix.</param>
+        /// <param name="result">The matrix to store the result of subtraction.</param>
+        /// <exception cref="ArgumentNullException">If the other matrix is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">If the two matrices don't have the same dimensions.</exception>
+        protected override void DoSubtract(Matrix<Complex32> other, Matrix<Complex32> result)
+        {
+            Map2(Complex32.Subtract, other, result, Zeros.AllowSkip);
+        }
+
+        /// <summary>
+        /// Multiplies each element of the matrix by a scalar and places results into the result matrix.
+        /// </summary>
+        /// <param name="scalar">The scalar to multiply the matrix with.</param>
+        /// <param name="result">The matrix to store the result of the multiplication.</param>
+        protected override void DoMultiply(Complex32 scalar, Matrix<Complex32> result)
+        {
+            Map(x => x*scalar, result, Zeros.AllowSkip);
+        }
+
+        /// <summary>
+        /// Multiplies this matrix with a vector and places the results into the result vector.
+        /// </summary>
+        /// <param name="rightSide">The vector to multiply with.</param>
+        /// <param name="result">The result of the multiplication.</param>
+        protected override void DoMultiply(Vector<Complex32> rightSide, Vector<Complex32> result)
+        {
+            for (var i = 0; i < RowCount; i++)
+            {
+                var s = Complex32.Zero;
+                for (var j = 0; j < ColumnCount; j++)
+                {
+                    s += At(i, j)*rightSide[j];
+                }
+                result[i] = s;
+            }
+        }
+
+        /// <summary>
+        /// Divides each element of the matrix by a scalar and places results into the result matrix.
+        /// </summary>
+        /// <param name="divisor">The scalar to divide the matrix with.</param>
+        /// <param name="result">The matrix to store the result of the division.</param>
+        protected override void DoDivide(Complex32 divisor, Matrix<Complex32> result)
+        {
+            Map(x => x/divisor, result, divisor.IsZero() ? Zeros.Include : Zeros.AllowSkip);
+        }
+
+        /// <summary>
+        /// Divides a scalar by each element of the matrix and stores the result in the result matrix.
+        /// </summary>
+        /// <param name="dividend">The scalar to divide by each element of the matrix.</param>
+        /// <param name="result">The matrix to store the result of the division.</param>
+        protected override void DoDivideByThis(Complex32 dividend, Matrix<Complex32> result)
+        {
+            Map(x => dividend/x, result, Zeros.Include);
+        }
+
+        /// <summary>
+        /// Multiplies this matrix with another matrix and places the results into the result matrix.
+        /// </summary>
+        /// <param name="other">The matrix to multiply with.</param>
+        /// <param name="result">The result of the multiplication.</param>
+        protected override void DoMultiply(Matrix<Complex32> other, Matrix<Complex32> result)
+        {
+            for (var i = 0; i < RowCount; i++)
+            {
+                for (var j = 0; j != other.ColumnCount; j++)
+                {
+                    var s = Complex32.Zero;
+                    for (var k = 0; k < ColumnCount; k++)
+                    {
+                        s += At(i, k)*other.At(k, j);
+                    }
+                    result.At(i, j, s);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Multiplies this matrix with transpose of another matrix and places the results into the result matrix.
+        /// </summary>
+        /// <param name="other">The matrix to multiply with.</param>
+        /// <param name="result">The result of the multiplication.</param>
+        protected override void DoTransposeAndMultiply(Matrix<Complex32> other, Matrix<Complex32> result)
+        {
+            for (var j = 0; j < other.RowCount; j++)
+            {
+                for (var i = 0; i < RowCount; i++)
+                {
+                    var s = Complex32.Zero;
+                    for (var k = 0; k < ColumnCount; k++)
+                    {
+                        s += At(i, k)*other.At(j, k);
+                    }
+                    result.At(i, j, s);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Multiplies this matrix with the conjugate transpose of another matrix and places the results into the result matrix.
+        /// </summary>
+        /// <param name="other">The matrix to multiply with.</param>
+        /// <param name="result">The result of the multiplication.</param>
+        protected override void DoConjugateTransposeAndMultiply(Matrix<Complex32> other, Matrix<Complex32> result)
+        {
+            for (var j = 0; j < other.RowCount; j++)
+            {
+                for (var i = 0; i < RowCount; i++)
+                {
+                    var s = Complex32.Zero;
+                    for (var k = 0; k < ColumnCount; k++)
+                    {
+                        s += At(i, k)*other.At(j, k).Conjugate();
+                    }
+                    result.At(i, j, s);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Multiplies the transpose of this matrix with another matrix and places the results into the result matrix.
+        /// </summary>
+        /// <param name="other">The matrix to multiply with.</param>
+        /// <param name="result">The result of the multiplication.</param>
+        protected override void DoTransposeThisAndMultiply(Matrix<Complex32> other, Matrix<Complex32> result)
+        {
+            for (var j = 0; j < other.ColumnCount; j++)
+            {
+                for (var i = 0; i < ColumnCount; i++)
+                {
+                    var s = Complex32.Zero;
+                    for (var k = 0; k < RowCount; k++)
+                    {
+                        s += At(k, i)*other.At(k, j);
+                    }
+                    result.At(i, j, s);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Multiplies the transpose of this matrix with another matrix and places the results into the result matrix.
+        /// </summary>
+        /// <param name="other">The matrix to multiply with.</param>
+        /// <param name="result">The result of the multiplication.</param>
+        protected override void DoConjugateTransposeThisAndMultiply(Matrix<Complex32> other, Matrix<Complex32> result)
+        {
+            for (var j = 0; j < other.ColumnCount; j++)
+            {
+                for (var i = 0; i < ColumnCount; i++)
+                {
+                    var s = Complex32.Zero;
+                    for (var k = 0; k < RowCount; k++)
+                    {
+                        s += At(k, i).Conjugate()*other.At(k, j);
+                    }
+                    result.At(i, j, s);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Multiplies the transpose of this matrix with a vector and places the results into the result vector.
+        /// </summary>
+        /// <param name="rightSide">The vector to multiply with.</param>
+        /// <param name="result">The result of the multiplication.</param>
+        protected override void DoTransposeThisAndMultiply(Vector<Complex32> rightSide, Vector<Complex32> result)
+        {
+            for (var j = 0; j < ColumnCount; j++)
+            {
+                var s = Complex32.Zero;
+                for (var i = 0; i < RowCount; i++)
+                {
+                    s += At(i, j)*rightSide[i];
+                }
+                result[j] = s;
+            }
+        }
+
+        /// <summary>
+        /// Multiplies the conjugate transpose of this matrix with a vector and places the results into the result vector.
+        /// </summary>
+        /// <param name="rightSide">The vector to multiply with.</param>
+        /// <param name="result">The result of the multiplication.</param>
+        protected override void DoConjugateTransposeThisAndMultiply(Vector<Complex32> rightSide, Vector<Complex32> result)
+        {
+            for (var j = 0; j < ColumnCount; j++)
+            {
+                var s = Complex32.Zero;
+                for (var i = 0; i < RowCount; i++)
+                {
+                    s += At(i, j).Conjugate()*rightSide[i];
+                }
+                result[j] = s;
+            }
+        }
+
+        /// <summary>
+        /// Pointwise multiplies this matrix with another matrix and stores the result into the result matrix.
+        /// </summary>
+        /// <param name="other">The matrix to pointwise multiply with this one.</param>
+        /// <param name="result">The matrix to store the result of the pointwise multiplication.</param>
+        protected override void DoPointwiseMultiply(Matrix<Complex32> other, Matrix<Complex32> result)
+        {
+            Map2(Complex32.Multiply, other, result, Zeros.AllowSkip);
+        }
+
+        /// <summary>
+        /// Pointwise divide this matrix by another matrix and stores the result into the result matrix.
+        /// </summary>
+        /// <param name="divisor">The matrix to pointwise divide this one by.</param>
+        /// <param name="result">The matrix to store the result of the pointwise division.</param>
+        protected override void DoPointwiseDivide(Matrix<Complex32> divisor, Matrix<Complex32> result)
+        {
+            Map2(Complex32.Divide, divisor, result, Zeros.Include);
+        }
+
+        /// <summary>
+        /// Pointwise raise this matrix to an exponent and store the result into the result vector.
+        /// </summary>
+        /// <param name="exponent">The exponent to raise this matrix values to.</param>
+        /// <param name="result">The vector to store the result of the pointwise power.</param>
+        protected override void DoPointwisePower(Complex32 exponent, Matrix<Complex32> result)
+        {
+            Map(x => x.Power(exponent), result, Zeros.Include);
+        }
+
+        /// <summary>
+        /// Pointwise canonical modulus, where the result has the sign of the divisor,
+        /// of this matrix with another matrix and stores the result into the result matrix.
+        /// </summary>
+        /// <param name="divisor">The pointwise denominator matrix to use</param>
+        /// <param name="result">The result of the modulus.</param>
+        protected override sealed void DoPointwiseModulus(Matrix<Complex32> divisor, Matrix<Complex32> result)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// Pointwise remainder (% operator), where the result has the sign of the dividend,
+        /// of this matrix with another matrix and stores the result into the result matrix.
+        /// </summary>
+        /// <param name="divisor">The pointwise denominator matrix to use</param>
+        /// <param name="result">The result of the modulus.</param>
+        protected override sealed void DoPointwiseRemainder(Matrix<Complex32> divisor, Matrix<Complex32> result)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// Computes the canonical modulus, where the result has the sign of the divisor,
+        /// for the given divisor each element of the matrix.
+        /// </summary>
+        /// <param name="divisor">The scalar denominator to use.</param>
+        /// <param name="result">Matrix to store the results in.</param>
+        protected override sealed void DoModulus(Complex32 divisor, Matrix<Complex32> result)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// Computes the canonical modulus, where the result has the sign of the divisor,
+        /// for the given dividend for each element of the matrix.
+        /// </summary>
+        /// <param name="dividend">The scalar numerator to use.</param>
+        /// <param name="result">A vector to store the results in.</param>
+        protected override sealed void DoModulusByThis(Complex32 dividend, Matrix<Complex32> result)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// Computes the remainder (% operator), where the result has the sign of the dividend,
+        /// for the given divisor each element of the matrix.
+        /// </summary>
+        /// <param name="divisor">The scalar denominator to use.</param>
+        /// <param name="result">Matrix to store the results in.</param>
+        protected override sealed void DoRemainder(Complex32 divisor, Matrix<Complex32> result)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// Computes the remainder (% operator), where the result has the sign of the dividend,
+        /// for the given dividend for each element of the matrix.
+        /// </summary>
+        /// <param name="dividend">The scalar numerator to use.</param>
+        /// <param name="result">A vector to store the results in.</param>
+        protected override sealed void DoRemainderByThis(Complex32 dividend, Matrix<Complex32> result)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// Pointwise applies the exponential function to each value and stores the result into the result matrix.
+        /// </summary>
+        /// <param name="result">The matrix to store the result.</param>
+        protected override void DoPointwiseExp(Matrix<Complex32> result)
+        {
+            Map(Complex32.Exp, result, Zeros.Include);
+        }
+
+        /// <summary>
+        /// Pointwise applies the natural logarithm function to each value and stores the result into the result matrix.
+        /// </summary>
+        /// <param name="result">The matrix to store the result.</param>
+        protected override void DoPointwiseLog(Matrix<Complex32> result)
+        {
+            Map(Complex32.Log, result, Zeros.Include);
         }
 
         /// <summary>Calculates the induced L1 norm of this matrix.</summary>
@@ -101,381 +485,141 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         }
 
         /// <summary>
-        /// Returns the conjugate transpose of this matrix.
+        /// Calculates the p-norms of all row vectors.
+        /// Typical values for p are 1.0 (L1, Manhattan norm), 2.0 (L2, Euclidean norm) and positive infinity (infinity norm)
         /// </summary>
-        /// <returns>The conjugate transpose of this matrix.</returns>
-        public override Matrix<Complex32> ConjugateTranspose()
+        public override Vector<double> RowNorms(double norm)
         {
-            var ret = Build.SameAs(this, ColumnCount, RowCount);
-            for (var j = 0; j < ColumnCount; j++)
+            if (norm <= 0.0)
             {
-                for (var i = 0; i < RowCount; i++)
-                {
-                    ret.At(j, i, At(i, j).Conjugate());
-                }
+                throw new ArgumentOutOfRangeException("norm", Resources.ArgumentMustBePositive);
             }
-            return ret;
-        }
 
-        /// <summary>
-        /// Add a scalar to each element of the matrix and stores the result in the result vector.
-        /// </summary>
-        /// <param name="scalar">The scalar to add.</param>
-        /// <param name="result">The matrix to store the result of the addition.</param>
-        protected override void DoAdd(Complex32 scalar, Matrix<Complex32> result)
-        {
-            for (var i = 0; i < RowCount; i++)
+            var ret = new double[RowCount];
+            if (norm == 2.0)
             {
-                for (var j = 0; j < ColumnCount; j++)
-                {
-                    result.At(i, j, At(i, j) + scalar);
-                }
+                Storage.FoldByRowUnchecked(ret, (s, x) => s + x.MagnitudeSquared, (x, c) => Math.Sqrt(x), ret, Zeros.AllowSkip);
             }
-        }
-
-        /// <summary>
-        /// Adds another matrix to this matrix.
-        /// </summary>
-        /// <param name="other">The matrix to add to this matrix.</param>
-        /// <param name="result">The matrix to store the result of the addition.</param>
-        /// <exception cref="ArgumentNullException">If the other matrix is <see langword="null"/>.</exception>
-        /// <exception cref="ArgumentOutOfRangeException">If the two matrices don't have the same dimensions.</exception>
-        protected override void DoAdd(Matrix<Complex32> other, Matrix<Complex32> result)
-        {
-            for (var i = 0; i < RowCount; i++)
+            else if (norm == 1.0)
             {
-                for (var j = 0; j < ColumnCount; j++)
-                {
-                    result.At(i, j, At(i, j) + other.At(i, j));
-                }
+                Storage.FoldByRowUnchecked(ret, (s, x) => s + x.Magnitude, (x, c) => x, ret, Zeros.AllowSkip);
             }
-        }
-
-        /// <summary>
-        /// Subtracts a scalar from each element of the vector and stores the result in the result vector.
-        /// </summary>
-        /// <param name="scalar">The scalar to subtract.</param>
-        /// <param name="result">The matrix to store the result of the subtraction.</param>
-        protected override void DoSubtract(Complex32 scalar, Matrix<Complex32> result)
-        {
-            for (var i = 0; i < RowCount; i++)
+            else if (double.IsPositiveInfinity(norm))
             {
-                for (var j = 0; j < ColumnCount; j++)
-                {
-                    result.At(i, j, At(i, j) - scalar);
-                }
+                Storage.FoldByRowUnchecked(ret, (s, x) => Math.Max(s, x.Magnitude), (x, c) => x, ret, Zeros.AllowSkip);
             }
-        }
-
-        /// <summary>
-        /// Subtracts another matrix from this matrix.
-        /// </summary>
-        /// <param name="other">The matrix to subtract to this matrix.</param>
-        /// <param name="result">The matrix to store the result of subtraction.</param>
-        /// <exception cref="ArgumentNullException">If the other matrix is <see langword="null"/>.</exception>
-        /// <exception cref="ArgumentOutOfRangeException">If the two matrices don't have the same dimensions.</exception>
-        protected override void DoSubtract(Matrix<Complex32> other, Matrix<Complex32> result)
-        {
-            for (var i = 0; i < RowCount; i++)
+            else
             {
-                for (var j = 0; j < ColumnCount; j++)
-                {
-                    result.At(i, j, At(i, j) - other.At(i, j));
-                }
+                double invnorm = 1.0/norm;
+                Storage.FoldByRowUnchecked(ret, (s, x) => s + Math.Pow(x.Magnitude, norm), (x, c) => Math.Pow(x, invnorm), ret, Zeros.AllowSkip);
             }
+            return Vector<double>.Build.Dense(ret);
         }
 
         /// <summary>
-        /// Multiplies each element of the matrix by a scalar and places results into the result matrix.
+        /// Calculates the p-norms of all column vectors.
+        /// Typical values for p are 1.0 (L1, Manhattan norm), 2.0 (L2, Euclidean norm) and positive infinity (infinity norm)
         /// </summary>
-        /// <param name="scalar">The scalar to multiply the matrix with.</param>
-        /// <param name="result">The matrix to store the result of the multiplication.</param>
-        protected override void DoMultiply(Complex32 scalar, Matrix<Complex32> result)
+        public override Vector<double> ColumnNorms(double norm)
         {
-            for (var i = 0; i < RowCount; i++)
+            if (norm <= 0.0)
             {
-                for (var j = 0; j < ColumnCount; j++)
-                {
-                    result.At(i, j, At(i, j)*scalar);
-                }
+                throw new ArgumentOutOfRangeException("norm", Resources.ArgumentMustBePositive);
             }
-        }
 
-        /// <summary>
-        /// Multiplies this matrix with a vector and places the results into the result vector.
-        /// </summary>
-        /// <param name="rightSide">The vector to multiply with.</param>
-        /// <param name="result">The result of the multiplication.</param>
-        protected override void DoMultiply(Vector<Complex32> rightSide, Vector<Complex32> result)
-        {
-            for (var i = 0; i < RowCount; i++)
+            var ret = new double[ColumnCount];
+            if (norm == 2.0)
             {
-                var s = Complex32.Zero;
-                for (var j = 0; j < ColumnCount; j++)
-                {
-                    s += At(i, j)*rightSide[j];
-                }
-                result[i] = s;
+                Storage.FoldByColumnUnchecked(ret, (s, x) => s + x.MagnitudeSquared, (x, c) => Math.Sqrt(x), ret, Zeros.AllowSkip);
             }
-        }
-
-        /// <summary>
-        /// Divides each element of the matrix by a scalar and places results into the result matrix.
-        /// </summary>
-        /// <param name="divisor">The scalar to divide the matrix with.</param>
-        /// <param name="result">The matrix to store the result of the division.</param>
-        protected override void DoDivide(Complex32 divisor, Matrix<Complex32> result)
-        {
-            DoMultiply(1.0f/divisor, result);
-        }
-
-        /// <summary>
-        /// Divides a scalar by each element of the matrix and stores the result in the result matrix.
-        /// </summary>
-        /// <param name="dividend">The scalar to add.</param>
-        /// <param name="result">The matrix to store the result of the division.</param>
-        protected override void DoDivideByThis(Complex32 dividend, Matrix<Complex32> result)
-        {
-            for (var i = 0; i < RowCount; i++)
+            else if (norm == 1.0)
             {
-                for (var j = 0; j < ColumnCount; j++)
-                {
-                    result.At(i, j, dividend/At(i, j));
-                }
+                Storage.FoldByColumnUnchecked(ret, (s, x) => s + x.Magnitude, (x, c) => x, ret, Zeros.AllowSkip);
             }
-        }
-
-        /// <summary>
-        /// Multiplies this matrix with another matrix and places the results into the result matrix.
-        /// </summary>
-        /// <param name="other">The matrix to multiply with.</param>
-        /// <param name="result">The result of the multiplication.</param>
-        protected override void DoMultiply(Matrix<Complex32> other, Matrix<Complex32> result)
-        {
-            for (var j = 0; j < RowCount; j++)
+            else if (double.IsPositiveInfinity(norm))
             {
-                for (var i = 0; i != other.ColumnCount; i++)
-                {
-                    var s = Complex32.Zero;
-                    for (var l = 0; l < ColumnCount; l++)
-                    {
-                        s += At(j, l)*other.At(l, i);
-                    }
-                    result.At(j, i, s);
-                }
+                Storage.FoldByColumnUnchecked(ret, (s, x) => Math.Max(s, x.Magnitude), (x, c) => x, ret, Zeros.AllowSkip);
             }
-        }
-
-        /// <summary>
-        /// Multiplies this matrix with transpose of another matrix and places the results into the result matrix.
-        /// </summary>
-        /// <param name="other">The matrix to multiply with.</param>
-        /// <param name="result">The result of the multiplication.</param>
-        protected override void DoTransposeAndMultiply(Matrix<Complex32> other, Matrix<Complex32> result)
-        {
-            for (var j = 0; j < other.RowCount; j++)
+            else
             {
-                for (var i = 0; i < RowCount; i++)
-                {
-                    var s = Complex32.Zero;
-                    for (var l = 0; l < ColumnCount; l++)
-                    {
-                        s += At(i, l)*other.At(j, l);
-                    }
-                    result.At(i, j, s);
-                }
+                double invnorm = 1.0/norm;
+                Storage.FoldByColumnUnchecked(ret, (s, x) => s + Math.Pow(x.Magnitude, norm), (x, c) => Math.Pow(x, invnorm), ret, Zeros.AllowSkip);
             }
+            return Vector<double>.Build.Dense(ret);
         }
 
         /// <summary>
-        /// Multiplies this matrix with the conjugate transpose of another matrix and places the results into the result matrix.
+        /// Normalizes all row vectors to a unit p-norm.
+        /// Typical values for p are 1.0 (L1, Manhattan norm), 2.0 (L2, Euclidean norm) and positive infinity (infinity norm)
         /// </summary>
-        /// <param name="other">The matrix to multiply with.</param>
-        /// <param name="result">The result of the multiplication.</param>
-        protected override void DoConjugateTransposeAndMultiply(Matrix<Complex32> other, Matrix<Complex32> result)
+        public override sealed Matrix<Complex32> NormalizeRows(double norm)
         {
-            for (var j = 0; j < other.RowCount; j++)
+            var norminv = ((DenseVectorStorage<double>)RowNorms(norm).Storage).Data;
+            for (int i = 0; i < norminv.Length; i++)
             {
-                for (var i = 0; i < RowCount; i++)
-                {
-                    var s = Complex32.Zero;
-                    for (var l = 0; l < ColumnCount; l++)
-                    {
-                        s += At(i, l)*other.At(j, l).Conjugate();
-                    }
-                    result.At(i, j, s);
-                }
+                norminv[i] = norminv[i] == 0d ? 1d : 1d/norminv[i];
             }
+
+            var result = Build.SameAs(this, RowCount, ColumnCount);
+            Storage.MapIndexedTo(result.Storage, (i, j, x) => ((float)norminv[i])*x, Zeros.AllowSkip, ExistingData.AssumeZeros);
+            return result;
         }
 
         /// <summary>
-        /// Multiplies the transpose of this matrix with another matrix and places the results into the result matrix.
+        /// Normalizes all column vectors to a unit p-norm.
+        /// Typical values for p are 1.0 (L1, Manhattan norm), 2.0 (L2, Euclidean norm) and positive infinity (infinity norm)
         /// </summary>
-        /// <param name="other">The matrix to multiply with.</param>
-        /// <param name="result">The result of the multiplication.</param>
-        protected override void DoTransposeThisAndMultiply(Matrix<Complex32> other, Matrix<Complex32> result)
+        public override sealed Matrix<Complex32> NormalizeColumns(double norm)
         {
-            for (var j = 0; j < other.ColumnCount; j++)
+            var norminv = ((DenseVectorStorage<double>)ColumnNorms(norm).Storage).Data;
+            for (int i = 0; i < norminv.Length; i++)
             {
-                for (var i = 0; i < ColumnCount; i++)
-                {
-                    var s = Complex32.Zero;
-                    for (var l = 0; l < RowCount; l++)
-                    {
-                        s += At(l, i)*other.At(l, j);
-                    }
-                    result.At(i, j, s);
-                }
+                norminv[i] = norminv[i] == 0d ? 1d : 1d/norminv[i];
             }
+
+            var result = Build.SameAs(this, RowCount, ColumnCount);
+            Storage.MapIndexedTo(result.Storage, (i, j, x) => ((float)norminv[j])*x, Zeros.AllowSkip, ExistingData.AssumeZeros);
+            return result;
         }
 
         /// <summary>
-        /// Multiplies the transpose of this matrix with another matrix and places the results into the result matrix.
+        /// Calculates the value sum of each row vector.
         /// </summary>
-        /// <param name="other">The matrix to multiply with.</param>
-        /// <param name="result">The result of the multiplication.</param>
-        protected override void DoConjugateTransposeThisAndMultiply(Matrix<Complex32> other, Matrix<Complex32> result)
+        public override Vector<Complex32> RowSums()
         {
-            for (var j = 0; j < other.ColumnCount; j++)
-            {
-                for (var i = 0; i < ColumnCount; i++)
-                {
-                    var s = Complex32.Zero;
-                    for (var l = 0; l < RowCount; l++)
-                    {
-                        s += At(l, i).Conjugate()*other.At(l, j);
-                    }
-                    result.At(i, j, s);
-                }
-            }
+            var ret = new Complex32[RowCount];
+            Storage.FoldByRowUnchecked(ret, (s, x) => s + x, (x, c) => x, ret, Zeros.AllowSkip);
+            return Vector<Complex32>.Build.Dense(ret);
         }
 
         /// <summary>
-        /// Multiplies the transpose of this matrix with a vector and places the results into the result vector.
+        /// Calculates the absolute value sum of each row vector.
         /// </summary>
-        /// <param name="rightSide">The vector to multiply with.</param>
-        /// <param name="result">The result of the multiplication.</param>
-        protected override void DoTransposeThisAndMultiply(Vector<Complex32> rightSide, Vector<Complex32> result)
+        public override Vector<Complex32> RowAbsoluteSums()
         {
-            for (var i = 0; i < ColumnCount; i++)
-            {
-                var s = Complex32.Zero;
-                for (var j = 0; j < RowCount; j++)
-                {
-                    s += At(j, i)*rightSide[j];
-                }
-                result[i] = s;
-            }
+            var ret = new Complex32[RowCount];
+            Storage.FoldByRowUnchecked(ret, (s, x) => s + x.Magnitude, (x, c) => x, ret, Zeros.AllowSkip);
+            return Vector<Complex32>.Build.Dense(ret);
         }
 
         /// <summary>
-        /// Multiplies the conjugate transpose of this matrix with a vector and places the results into the result vector.
+        /// Calculates the value sum of each column vector.
         /// </summary>
-        /// <param name="rightSide">The vector to multiply with.</param>
-        /// <param name="result">The result of the multiplication.</param>
-        protected override void DoConjugateTransposeThisAndMultiply(Vector<Complex32> rightSide, Vector<Complex32> result)
+        public override Vector<Complex32> ColumnSums()
         {
-            for (var i = 0; i < ColumnCount; i++)
-            {
-                var s = Complex32.Zero;
-                for (var j = 0; j < RowCount; j++)
-                {
-                    s += At(j, i).Conjugate()*rightSide[j];
-                }
-                result[i] = s;
-            }
+            var ret = new Complex32[ColumnCount];
+            Storage.FoldByColumnUnchecked(ret, (s, x) => s + x, (x, c) => x, ret, Zeros.AllowSkip);
+            return Vector<Complex32>.Build.Dense(ret);
         }
 
         /// <summary>
-        /// Negate each element of this matrix and place the results into the result matrix.
+        /// Calculates the absolute value sum of each column vector.
         /// </summary>
-        /// <param name="result">The result of the negation.</param>
-        protected override void DoNegate(Matrix<Complex32> result)
+        public override Vector<Complex32> ColumnAbsoluteSums()
         {
-            for (var i = 0; i < RowCount; i++)
-            {
-                for (var j = 0; j < ColumnCount; j++)
-                {
-                    result.At(i, j, -At(i, j));
-                }
-            }
-        }
-
-        /// <summary>
-        /// Complex conjugates each element of this matrix and place the results into the result matrix.
-        /// </summary>
-        /// <param name="result">The result of the conjugation.</param>
-        protected override void DoConjugate(Matrix<Complex32> result)
-        {
-            for (var i = 0; i < RowCount; i++)
-            {
-                for (var j = 0; j < ColumnCount; j++)
-                {
-                    result.At(i, j, At(i, j).Conjugate());
-                }
-            }
-        }
-
-        /// <summary>
-        /// Pointwise multiplies this matrix with another matrix and stores the result into the result matrix.
-        /// </summary>
-        /// <param name="other">The matrix to pointwise multiply with this one.</param>
-        /// <param name="result">The matrix to store the result of the pointwise multiplication.</param>
-        protected override void DoPointwiseMultiply(Matrix<Complex32> other, Matrix<Complex32> result)
-        {
-            for (var j = 0; j < ColumnCount; j++)
-            {
-                for (var i = 0; i < RowCount; i++)
-                {
-                    result.At(i, j, At(i, j)*other.At(i, j));
-                }
-            }
-        }
-
-        /// <summary>
-        /// Pointwise divide this matrix by another matrix and stores the result into the result matrix.
-        /// </summary>
-        /// <param name="divisor">The matrix to pointwise divide this one by.</param>
-        /// <param name="result">The matrix to store the result of the pointwise division.</param>
-        protected override void DoPointwiseDivide(Matrix<Complex32> divisor, Matrix<Complex32> result)
-        {
-            for (var j = 0; j < ColumnCount; j++)
-            {
-                for (var i = 0; i < RowCount; i++)
-                {
-                    result.At(i, j, At(i, j)/divisor.At(i, j));
-                }
-            }
-        }
-
-        /// <summary>
-        /// Pointwise modulus this matrix with another matrix and stores the result into the result matrix.
-        /// </summary>
-        /// <param name="divisor">The pointwise denominator matrix to use</param>
-        /// <param name="result">The result of the modulus.</param>
-        protected override void DoPointwiseModulus(Matrix<Complex32> divisor, Matrix<Complex32> result)
-        {
-            throw new NotSupportedException();
-        }
-
-        /// <summary>
-        /// Computes the modulus for each element of the matrix.
-        /// </summary>
-        /// <param name="divisor">The scalar denominator to use.</param>
-        /// <param name="result">Matrix to store the results in.</param>
-        protected override void DoModulus(Complex32 divisor, Matrix<Complex32> result)
-        {
-            throw new NotSupportedException();
-        }
-
-        /// <summary>
-        /// Computes the modulus for each element of the matrix.
-        /// </summary>
-        /// <param name="dividend">The scalar numerator to use.</param>
-        /// <param name="result">Matrix to store the results in.</param>
-        protected override void DoModulusByThis(Complex32 dividend, Matrix<Complex32> result)
-        {
-            throw new NotSupportedException();
+            var ret = new Complex32[ColumnCount];
+            Storage.FoldByColumnUnchecked(ret, (s, x) => s + x.Magnitude, (x, c) => x, ret, Zeros.AllowSkip);
+            return Vector<Complex32>.Build.Dense(ret);
         }
 
         /// <summary>
@@ -497,6 +641,38 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
             }
 
             return sum;
+        }
+
+        /// <summary>
+        /// Evaluates whether this matrix is hermitian (conjugate symmetric).
+        /// </summary>
+        public override bool IsHermitian()
+        {
+            if (RowCount != ColumnCount)
+            {
+                return false;
+            }
+
+            for (var k = 0; k < RowCount; k++)
+            {
+                if (!At(k, k).IsReal())
+                {
+                    return false;
+                }
+            }
+
+            for (var row = 0; row < RowCount; row++)
+            {
+                for (var column = row + 1; column < ColumnCount; column++)
+                {
+                    if (!At(row, column).Equals(At(column, row).Conjugate()))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
         }
 
         public override Cholesky<Complex32> Cholesky()
@@ -524,9 +700,9 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
             return UserSvd.Create(this, computeVectors);
         }
 
-        public override Evd<Complex32> Evd()
+        public override Evd<Complex32> Evd(Symmetricity symmetricity = Symmetricity.Unknown)
         {
-            return UserEvd.Create(this);
+            return UserEvd.Create(this, symmetricity);
         }
     }
 }

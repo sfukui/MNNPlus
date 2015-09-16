@@ -340,7 +340,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         public static SparseMatrix Create(int rows, int columns, Complex value)
         {
             if (value == Complex.Zero) return new SparseMatrix(rows, columns);
-            return new SparseMatrix(SparseCompressedRowMatrixStorage<Complex>.OfInit(rows, columns, (i, j) => value));
+            return new SparseMatrix(SparseCompressedRowMatrixStorage<Complex>.OfValue(rows, columns, value));
         }
 
         /// <summary>
@@ -648,42 +648,6 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
             DoMultiply(-1, result);
         }
 
-        /// <summary>
-        /// Returns the transpose of this matrix.
-        /// </summary>
-        /// <returns>The transpose of this matrix.</returns>
-        public override Matrix<Complex> Transpose()
-        {
-            var rowPointers = _storage.RowPointers;
-            var columnIndices = _storage.ColumnIndices;
-            var values = _storage.Values;
-
-            var ret = new SparseCompressedRowMatrixStorage<Complex>(ColumnCount, RowCount)
-                {
-                    ColumnIndices = new int[_storage.ValueCount],
-                    Values = new Complex[_storage.ValueCount]
-                };
-
-            // Do an 'inverse' CopyTo iterate over the rows
-            for (var i = 0; i < RowCount; i++)
-            {
-                var startIndex = rowPointers[i];
-                var endIndex = rowPointers[i + 1];
-
-                if (startIndex == endIndex)
-                {
-                    continue;
-                }
-
-                for (var j = startIndex; j < endIndex; j++)
-                {
-                    ret.At(columnIndices[j], i, values[j]);
-                }
-            }
-
-            return new SparseMatrix(ret);
-        }
-
         /// <summary>Calculates the induced infinity norm of this matrix.</summary>
         /// <returns>The maximum absolute row sum of the matrix.</returns>
         public override double InfinityNorm()
@@ -762,7 +726,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
                     CopyTo(result);
                 }
 
-                Control.LinearAlgebraProvider.ScaleArray(2.0, _storage.Values, _storage.Values);
+                Control.LinearAlgebraProvider.ScaleArray(2.0, sparseResult._storage.Values, sparseResult._storage.Values);
                 return;
             }
 
@@ -923,6 +887,30 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         /// <param name="result">The result of the multiplication.</param>
         protected override void DoMultiply(Matrix<Complex> other, Matrix<Complex> result)
         {
+            var sparseOther = other as SparseMatrix;
+            var sparseResult = result as SparseMatrix;
+            if (sparseOther != null && sparseResult != null)
+            {
+                DoMultiplySparse(sparseOther, sparseResult);
+                return;
+            }
+
+            var diagonalOther = other.Storage as DiagonalMatrixStorage<Complex>;
+            if (diagonalOther != null && sparseResult != null)
+            {
+                var diagonal = diagonalOther.Data;
+                if (other.ColumnCount == other.RowCount)
+                {
+                    Storage.MapIndexedTo(result.Storage, (i, j, x) => x*diagonal[j], Zeros.AllowSkip, ExistingData.Clear);
+                }
+                else
+                {
+                    result.Storage.Clear();
+                    Storage.MapSubMatrixIndexedTo(result.Storage, (i, j, x) => x*diagonal[j], 0, 0, RowCount, 0, 0, ColumnCount, Zeros.AllowSkip, ExistingData.AssumeZeros);
+                }
+                return;
+            }
+
             result.Clear();
             var columnVector = new DenseVector(other.RowCount);
 
@@ -954,6 +942,92 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
                     result.At(row, column, sum);
                 }
             }
+        }
+
+        void DoMultiplySparse(SparseMatrix other, SparseMatrix result)
+        {
+            result.Clear();
+
+            var ax = _storage.Values;
+            var ap = _storage.RowPointers;
+            var ai = _storage.ColumnIndices;
+
+            var bx = other._storage.Values;
+            var bp = other._storage.RowPointers;
+            var bi = other._storage.ColumnIndices;
+
+            int rows = RowCount;
+            int cols = other.ColumnCount;
+
+            int[] cp = result._storage.RowPointers;
+
+            var marker = new int[cols];
+            for (int ib = 0; ib < cols; ib++)
+            {
+                marker[ib] = -1;
+            }
+
+            int count = 0;
+            for (int i = 0; i < rows; i++)
+            {
+                // For each row of A
+                for (int j = ap[i]; j < ap[i + 1]; j++)
+                {
+                    // Row number to be added
+                    int a = ai[j];
+                    for (int k = bp[a]; k < bp[a + 1]; k++)
+                    {
+                        int b = bi[k];
+                        if (marker[b] != i)
+                        {
+                            marker[b] = i;
+                            count++;
+                        }
+                    }
+                }
+
+                // Record non-zero count.
+                cp[i + 1] = count;
+            }
+
+            var ci = new int[count];
+            var cx = new Complex[count];
+
+            for (int ib = 0; ib < cols; ib++)
+            {
+                marker[ib] = -1;
+            }
+
+            count = 0;
+            for (int i = 0; i < rows; i++)
+            {
+                int rowStart = cp[i];
+                for (int j = ap[i]; j < ap[i + 1]; j++)
+                {
+                    int a = ai[j];
+                    Complex aEntry = ax[j];
+                    for (int k = bp[a]; k < bp[a + 1]; k++)
+                    {
+                        int b = bi[k];
+                        Complex bEntry = bx[k];
+                        if (marker[b] < rowStart)
+                        {
+                            marker[b] = count;
+                            ci[marker[b]] = b;
+                            cx[marker[b]] = aEntry * bEntry;
+                            count++;
+                        }
+                        else
+                        {
+                            cx[marker[b]] += aEntry * bEntry;
+                        }
+                    }
+                }
+            }
+
+            result._storage.Values = cx;
+            result._storage.ColumnIndices = ci;
+            result._storage.Normalize();
         }
 
         /// <summary>
@@ -1135,58 +1209,73 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         }
 
         /// <summary>
-        /// Gets a value indicating whether this matrix is symmetric.
+        /// Evaluates whether this matrix is symmetric.
         /// </summary>
-        public override bool IsSymmetric
+        public override bool IsSymmetric()
         {
-            get
+            if (RowCount != ColumnCount)
             {
-                if (RowCount != ColumnCount)
+                return false;
+            }
+
+            var rowPointers = _storage.RowPointers;
+            var columnIndices = _storage.ColumnIndices;
+            var values = _storage.Values;
+
+            for (var row = 0; row < RowCount; row++)
+            {
+                var start = rowPointers[row];
+                var end = rowPointers[row + 1];
+
+                if (start == end)
                 {
-                    return false;
+                    continue;
                 }
 
-                // todo: we might be able to speed this up by caching one half of the matrix
-                var rowPointers = _storage.RowPointers;
-                for (var row = 0; row < RowCount; row++)
+                for (var index = start; index < end; index++)
                 {
-                    var start = rowPointers[row];
-                    var end = rowPointers[row + 1];
-
-                    if (start == end)
-                    {
-                        continue;
-                    }
-
-                    if (!CheckIfOppositesAreEqual(start, end, row))
+                    var column = columnIndices[index];
+                    if (!values[index].Equals(At(column, row)))
                     {
                         return false;
                     }
                 }
-
-                return true;
             }
+
+            return true;
         }
 
         /// <summary>
-        /// Checks if opposites in a range are equal.
+        /// Evaluates whether this matrix is hermitian (conjugate symmetric).
         /// </summary>
-        /// <param name="start">The start of the range.</param>
-        /// <param name="end">The end of the range.</param>
-        /// <param name="row">The row the row to check.</param>
-        /// <returns>If the values are equal or not.</returns>
-        private bool CheckIfOppositesAreEqual(int start, int end, int row)
+        public override bool IsHermitian()
         {
+            if (RowCount != ColumnCount)
+            {
+                return false;
+            }
+
+            var rowPointers = _storage.RowPointers;
             var columnIndices = _storage.ColumnIndices;
             var values = _storage.Values;
 
-            for (var index = start; index < end; index++)
+            for (var row = 0; row < RowCount; row++)
             {
-                var column = columnIndices[index];
-                var opposite = At(column, row);
-                if (!values[index].Equals(opposite))
+                var start = rowPointers[row];
+                var end = rowPointers[row + 1];
+
+                if (start == end)
                 {
-                    return false;
+                    continue;
+                }
+
+                for (var index = start; index < end; index++)
+                {
+                    var column = columnIndices[index];
+                    if (!values[index].Equals(At(column, row).Conjugate()))
+                    {
+                        return false;
+                    }
                 }
             }
 
@@ -1400,7 +1489,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
                 throw new ArgumentNullException("leftSide");
             }
 
-            return (SparseMatrix)leftSide.Modulus(rightSide);
+            return (SparseMatrix)leftSide.Remainder(rightSide);
         }
 
         public override string ToTypeString()

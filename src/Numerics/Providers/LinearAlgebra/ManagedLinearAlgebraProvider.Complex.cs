@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2013 Math.NET
+// Copyright (c) 2009-2015 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -82,43 +82,23 @@ namespace MathNet.Numerics.Providers.LinearAlgebra
             }
             else if (alpha.IsOne())
             {
-                if (Control.ParallelizeOperation(x.Length))
+                CommonParallel.For(0, y.Length, 4096, (a, b) =>
                 {
-                    CommonParallel.For(0, y.Length, 4096, (a, b) =>
-                        {
-                            for (int i = a; i < b; i++)
-                            {
-                                result[i] = y[i] + x[i];
-                            }
-                        });
-                }
-                else
-                {
-                    for (var index = 0; index < x.Length; index++)
+                    for (int i = a; i < b; i++)
                     {
-                        result[index] = y[index] + x[index];
+                        result[i] = y[i] + x[i];
                     }
-                }
+                });
             }
             else
             {
-                if (Control.ParallelizeOperation(x.Length))
+                CommonParallel.For(0, y.Length, 4096, (a, b) =>
                 {
-                    CommonParallel.For(0, y.Length, 4096, (a, b) =>
-                        {
-                            for (int i = a; i < b; i++)
-                            {
-                                result[i] = y[i] + (alpha*x[i]);
-                            }
-                        });
-                }
-                else
-                {
-                    for (var index = 0; index < x.Length; index++)
+                    for (int i = a; i < b; i++)
                     {
-                        result[index] = y[index] + (alpha*x[index]);
+                        result[i] = y[i] + (alpha*x[i]);
                     }
-                }
+                });
             }
         }
 
@@ -146,23 +126,13 @@ namespace MathNet.Numerics.Providers.LinearAlgebra
             }
             else
             {
-                if (Control.ParallelizeOperation(x.Length))
+                CommonParallel.For(0, x.Length, 4096, (a, b) =>
                 {
-                    CommonParallel.For(0, x.Length, 4096, (a, b) =>
-                        {
-                            for (int i = a; i < b; i++)
-                            {
-                                result[i] = alpha*x[i];
-                            }
-                        });
-                }
-                else
-                {
-                    for (var index = 0; index < x.Length; index++)
+                    for (int i = a; i < b; i++)
                     {
-                        result[index] = alpha*x[index];
+                        result[i] = alpha*x[i];
                     }
-                }
+                });
             }
         }
 
@@ -178,23 +148,13 @@ namespace MathNet.Numerics.Providers.LinearAlgebra
                 throw new ArgumentNullException("x");
             }
 
-            if (Control.ParallelizeOperation(x.Length))
+            CommonParallel.For(0, x.Length, 4096, (a, b) =>
             {
-                CommonParallel.For(0, x.Length, 4096, (a, b) =>
+                for (int i = a; i < b; i++)
                 {
-                    for (int i = a; i < b; i++)
-                    {
-                        result[i] = x[i].Conjugate();
-                    }
-                });
-            }
-            else
-            {
-                for (var index = 0; index < x.Length; index++)
-                {
-                    result[index] = x[index].Conjugate();
+                    result[i] = x[i].Conjugate();
                 }
-            }
+            });
         }
 
         /// <summary>
@@ -262,23 +222,13 @@ namespace MathNet.Numerics.Providers.LinearAlgebra
                 throw new ArgumentException(Resources.ArgumentVectorsSameLength);
             }
 
-            if (Control.ParallelizeOperation(x.Length))
+            CommonParallel.For(0, y.Length, 4096, (a, b) =>
             {
-                CommonParallel.For(0, y.Length, 4096, (a, b) =>
-                    {
-                        for (int i = a; i < b; i++)
-                        {
-                            result[i] = x[i] + y[i];
-                        }
-                    });
-            }
-            else
-            {
-                for (var index = 0; index < x.Length; index++)
+                for (int i = a; i < b; i++)
                 {
-                    result[index] = x[index] + y[index];
+                    result[i] = x[i] + y[i];
                 }
-            }
+            });
         }
 
         /// <summary>
@@ -313,23 +263,13 @@ namespace MathNet.Numerics.Providers.LinearAlgebra
                 throw new ArgumentException(Resources.ArgumentVectorsSameLength);
             }
 
-            if (Control.ParallelizeOperation(x.Length))
+            CommonParallel.For(0, y.Length, 4096, (a, b) =>
             {
-                CommonParallel.For(0, y.Length, 4096, (a, b) =>
-                    {
-                        for (int i = a; i < b; i++)
-                        {
-                            result[i] = x[i] - y[i];
-                        }
-                    });
-            }
-            else
-            {
-                for (var index = 0; index < x.Length; index++)
+                for (int i = a; i < b; i++)
                 {
-                    result[index] = x[index] - y[index];
+                    result[i] = x[i] - y[i];
                 }
-            }
+            });
         }
 
         /// <summary>
@@ -364,23 +304,13 @@ namespace MathNet.Numerics.Providers.LinearAlgebra
                 throw new ArgumentException(Resources.ArgumentVectorsSameLength);
             }
 
-            if (Control.ParallelizeOperation(x.Length))
+            CommonParallel.For(0, y.Length, 4096, (a, b) =>
             {
-                CommonParallel.For(0, y.Length, 4096, (a, b) =>
-                    {
-                        for (int i = a; i < b; i++)
-                        {
-                            result[i] = x[i]*y[i];
-                        }
-                    });
-            }
-            else
-            {
-                for (var index = 0; index < x.Length; index++)
+                for (int i = a; i < b; i++)
                 {
-                    result[index] = x[index]*y[index];
+                    result[i] = x[i] * y[i];
                 }
-            }
+            });
         }
 
         /// <summary>
@@ -415,23 +345,13 @@ namespace MathNet.Numerics.Providers.LinearAlgebra
                 throw new ArgumentException(Resources.ArgumentVectorsSameLength);
             }
 
-            if (Control.ParallelizeOperation(x.Length))
+            CommonParallel.For(0, y.Length, 4096, (a, b) =>
             {
-                CommonParallel.For(0, y.Length, 4096, (a, b) =>
-                    {
-                        for (int i = a; i < b; i++)
-                        {
-                            result[i] = x[i]/y[i];
-                        }
-                    });
-            }
-            else
-            {
-                for (var index = 0; index < x.Length; index++)
+                for (int i = a; i < b; i++)
                 {
-                    result[index] = x[index]/y[index];
+                    result[i] = x[i] / y[i];
                 }
-            }
+            });
         }
 
         /// <summary>
@@ -576,7 +496,9 @@ namespace MathNet.Numerics.Providers.LinearAlgebra
                 ydata = y;
             }
 
-            MatrixMultiplyWithUpdate(Transpose.DontTranspose, Transpose.DontTranspose, Complex.One, xdata, rowsX, columnsX, ydata, rowsY, columnsY, Complex.Zero, result);
+            Array.Clear(result, 0, result.Length);
+
+            CacheObliviousMatrixMultiply(Transpose.DontTranspose, Transpose.DontTranspose, Complex.One, xdata, 0, 0, ydata, 0, 0, result, 0, 0, rowsX, columnsY, columnsX, rowsX, columnsY, columnsX, true);
         }
 
         /// <summary>
@@ -710,7 +632,7 @@ namespace MathNet.Numerics.Providers.LinearAlgebra
             }
             else if (!beta.IsOne())
             {
-                Control.LinearAlgebraProvider.ScaleArray(beta, c, c);
+                ScaleArray(beta, c, c);
             }
 
             if (alpha.IsZero())
@@ -1137,35 +1059,6 @@ namespace MathNet.Numerics.Providers.LinearAlgebra
         }
 
         /// <summary>
-        /// Computes the inverse of matrix using LU factorization.
-        /// </summary>
-        /// <param name="a">The N by N matrix to invert. Contains the inverse On exit.</param>
-        /// <param name="order">The order of the square matrix <paramref name="a"/>.</param>
-        /// <param name="work">The work array. The array must have a length of at least N,
-        /// but should be N*blocksize. The blocksize is machine dependent. On exit, work[0] contains the optimal
-        /// work size value.</param>
-        /// <remarks>This is equivalent to the GETRF and GETRI LAPACK routines.</remarks>
-        public virtual void LUInverse(Complex[] a, int order, Complex[] work)
-        {
-            LUInverse(a, order);
-        }
-
-        /// <summary>
-        /// Computes the inverse of a previously factored matrix.
-        /// </summary>
-        /// <param name="a">The LU factored N by N matrix.  Contains the inverse On exit.</param>
-        /// <param name="order">The order of the square matrix <paramref name="a"/>.</param>
-        /// <param name="ipiv">The pivot indices of <paramref name="a"/>.</param>
-        /// <param name="work">The work array. The array must have a length of at least N,
-        /// but should be N*blocksize. The blocksize is machine dependent. On exit, work[0] contains the optimal
-        /// work size value.</param>
-        /// <remarks>This is equivalent to the GETRI LAPACK routine.</remarks>
-        public virtual void LUInverseFactored(Complex[] a, int order, int[] ipiv, Complex[] work)
-        {
-            LUInverseFactored(a, order, ipiv);
-        }
-
-        /// <summary>
         /// Solves A*X=B for X using LU factorization.
         /// </summary>
         /// <param name="columnsOfB">The number of columns of B.</param>
@@ -1345,7 +1238,7 @@ namespace MathNet.Numerics.Providers.LinearAlgebra
                     }
 
                     // Remaining columns, below the diagonal
-                    DoCholeskyStep(a, order, ij + 1, order, tmpColumn, Control.NumberOfParallelWorkerThreads);
+                    DoCholeskyStep(a, order, ij + 1, order, tmpColumn, Control.MaxDegreeOfParallelism);
                 }
                 else
                 {
@@ -1547,72 +1440,6 @@ namespace MathNet.Numerics.Providers.LinearAlgebra
             }
 
             var work = columnsR > rowsR ? new Complex[rowsR*rowsR] : new Complex[rowsR*columnsR];
-            QRFactor(r, rowsR, columnsR, q, tau, work);
-        }
-
-        /// <summary>
-        /// Computes the QR factorization of A.
-        /// </summary>
-        /// <param name="r">On entry, it is the M by N A matrix to factor. On exit,
-        /// it is overwritten with the R matrix of the QR factorization. </param>
-        /// <param name="rowsR">The number of rows in the A matrix.</param>
-        /// <param name="columnsR">The number of columns in the A matrix.</param>
-        /// <param name="q">On exit, A M by M matrix that holds the Q matrix of the
-        /// QR factorization.</param>
-        /// <param name="tau">A min(m,n) vector. On exit, contains additional information
-        /// to be used by the QR solve routine.</param>
-        /// <param name="work">The work array. The array must have a length of at least N,
-        /// but should be N*blocksize. The blocksize is machine dependent. On exit, work[0] contains the optimal
-        /// work size value.</param>
-        /// <remarks>This is similar to the GEQRF and ORGQR LAPACK routines.</remarks>
-        public virtual void QRFactor(Complex[] r, int rowsR, int columnsR, Complex[] q, Complex[] tau, Complex[] work)
-        {
-            if (r == null)
-            {
-                throw new ArgumentNullException("r");
-            }
-
-            if (q == null)
-            {
-                throw new ArgumentNullException("q");
-            }
-
-            if (work == null)
-            {
-                throw new ArgumentNullException("q");
-            }
-
-            if (r.Length != rowsR*columnsR)
-            {
-                throw new ArgumentException(string.Format(Resources.ArgumentArrayWrongLength, "rowsR * columnsR"), "r");
-            }
-
-            if (tau.Length < Math.Min(rowsR, columnsR))
-            {
-                throw new ArgumentException(string.Format(Resources.ArrayTooSmall, "min(m,n)"), "tau");
-            }
-
-            if (q.Length != rowsR*rowsR)
-            {
-                throw new ArgumentException(string.Format(Resources.ArgumentArrayWrongLength, "rowsR * rowsR"), "q");
-            }
-
-            if (columnsR > rowsR)
-            {
-                if (work.Length < rowsR*rowsR)
-                {
-                    work[0] = rowsR*rowsR;
-                    throw new ArgumentException(Resources.WorkArrayTooSmall, "work");
-                }
-            }
-            else
-            {
-                if (work.Length < rowsR*columnsR)
-                {
-                    work[0] = rowsR*columnsR;
-                    throw new ArgumentException(Resources.WorkArrayTooSmall, "work");
-                }
-            }
 
             CommonParallel.For(0, rowsR, (a, b) =>
                 {
@@ -1626,15 +1453,13 @@ namespace MathNet.Numerics.Providers.LinearAlgebra
             for (var i = 0; i < minmn; i++)
             {
                 GenerateColumn(work, r, rowsR, i, i);
-                ComputeQR(work, i, r, i, rowsR, i + 1, columnsR, Control.NumberOfParallelWorkerThreads);
+                ComputeQR(work, i, r, i, rowsR, i + 1, columnsR, Control.MaxDegreeOfParallelism);
             }
 
             for (var i = minmn - 1; i >= 0; i--)
             {
-                ComputeQR(work, i, q, i, rowsR, i, rowsR, Control.NumberOfParallelWorkerThreads);
+                ComputeQR(work, i, q, i, rowsR, i, rowsR, Control.MaxDegreeOfParallelism);
             }
-
-            work[0] = columnsR > rowsR ? rowsR*rowsR : rowsR*columnsR;
         }
 
         /// <summary>
@@ -1677,67 +1502,12 @@ namespace MathNet.Numerics.Providers.LinearAlgebra
             }
 
             var work = new Complex[rowsA*columnsA];
-            ThinQRFactor(a, rowsA, columnsA, r, tau, work);
-        }
-
-        /// <summary>
-        /// Computes the QR factorization of A where M &gt; N.
-        /// </summary>
-        /// <param name="a">On entry, it is the M by N A matrix to factor. On exit,
-        /// it is overwritten with the Q matrix of the QR factorization.</param>
-        /// <param name="rowsA">The number of rows in the A matrix.</param>
-        /// <param name="columnsA">The number of columns in the A matrix.</param>
-        /// <param name="r">On exit, A N by N matrix that holds the R matrix of the
-        /// QR factorization.</param>
-        /// <param name="tau">A min(m,n) vector. On exit, contains additional information
-        /// to be used by the QR solve routine.</param>
-        /// <param name="work">The work array. The array must have a length of at least N,
-        /// but should be N*blocksize. The blocksize is machine dependent. On exit, work[0] contains the optimal
-        /// work size value.</param>
-        /// <remarks>This is similar to the GEQRF and ORGQR LAPACK routines.</remarks>
-        public virtual void ThinQRFactor(Complex[] a, int rowsA, int columnsA, Complex[] r, Complex[] tau, Complex[] work)
-        {
-            if (r == null)
-            {
-                throw new ArgumentNullException("r");
-            }
-
-            if (a == null)
-            {
-                throw new ArgumentNullException("a");
-            }
-
-            if (work == null)
-            {
-                throw new ArgumentNullException("work");
-            }
-
-            if (a.Length != rowsA*columnsA)
-            {
-                throw new ArgumentException(string.Format(Resources.ArgumentArrayWrongLength, "rowsR * columnsR"), "a");
-            }
-
-            if (tau.Length < Math.Min(rowsA, columnsA))
-            {
-                throw new ArgumentException(string.Format(Resources.ArrayTooSmall, "min(m,n)"), "tau");
-            }
-
-            if (r.Length != columnsA*columnsA)
-            {
-                throw new ArgumentException(string.Format(Resources.ArgumentArrayWrongLength, "columnsA * columnsA"), "r");
-            }
-
-            if (work.Length < rowsA*columnsA)
-            {
-                work[0] = rowsA*columnsA;
-                throw new ArgumentException(Resources.WorkArrayTooSmall, "work");
-            }
 
             var minmn = Math.Min(rowsA, columnsA);
             for (var i = 0; i < minmn; i++)
             {
                 GenerateColumn(work, a, rowsA, i, i);
-                ComputeQR(work, i, a, i, rowsA, i + 1, columnsA, Control.NumberOfParallelWorkerThreads);
+                ComputeQR(work, i, a, i, rowsA, i + 1, columnsA, Control.MaxDegreeOfParallelism);
             }
 
             //copy R
@@ -1760,10 +1530,8 @@ namespace MathNet.Numerics.Providers.LinearAlgebra
 
             for (var i = minmn - 1; i >= 0; i--)
             {
-                ComputeQR(work, i, a, i, rowsA, i, columnsA, Control.NumberOfParallelWorkerThreads);
+                ComputeQR(work, i, a, i, rowsA, i, columnsA, Control.MaxDegreeOfParallelism);
             }
-
-            work[0] = rowsA*columnsA;
         }
 
 
@@ -1894,26 +1662,6 @@ namespace MathNet.Numerics.Providers.LinearAlgebra
         /// <remarks>Rows must be greater or equal to columns.</remarks>
         public virtual void QRSolve(Complex[] a, int rows, int columns, Complex[] b, int columnsB, Complex[] x, QRMethod method = QRMethod.Full)
         {
-            var work = new Complex[rows*columns];
-            QRSolve(a, rows, columns, b, columnsB, x, work, method);
-        }
-
-        /// <summary>
-        /// Solves A*X=B for X using QR factorization of A.
-        /// </summary>
-        /// <param name="a">The A matrix.</param>
-        /// <param name="rows">The number of rows in the A matrix.</param>
-        /// <param name="columns">The number of columns in the A matrix.</param>
-        /// <param name="b">The B matrix.</param>
-        /// <param name="columnsB">The number of columns of B.</param>
-        /// <param name="x">On exit, the solution matrix.</param>
-        /// <param name="work">The work array. The array must have a length of at least N,
-        /// but should be N*blocksize. The blocksize is machine dependent. On exit, work[0] contains the optimal
-        /// work size value.</param>
-        /// <param name="method">The type of QR factorization to perform. <seealso cref="QRMethod"/></param>
-        /// <remarks>Rows must be greater or equal to columns.</remarks>
-        public virtual void QRSolve(Complex[] a, int rows, int columns, Complex[] b, int columnsB, Complex[] x, Complex[] work, QRMethod method = QRMethod.Full)
-        {
             if (a == null)
             {
                 throw new ArgumentNullException("a");
@@ -1929,10 +1677,7 @@ namespace MathNet.Numerics.Providers.LinearAlgebra
                 throw new ArgumentNullException("x");
             }
 
-            if (work == null)
-            {
-                throw new ArgumentNullException("work");
-            }
+
 
             if (a.Length != rows*columns)
             {
@@ -1954,11 +1699,7 @@ namespace MathNet.Numerics.Providers.LinearAlgebra
                 throw new ArgumentException(Resources.ArgumentArraysSameLength, "x");
             }
 
-            if (work.Length < rows*columns)
-            {
-                work[0] = rows*columns;
-                throw new ArgumentException(Resources.WorkArrayTooSmall, "work");
-            }
+            var work = new Complex[rows * columns];
 
             var clone = new Complex[a.Length];
             a.Copy(clone);
@@ -1975,31 +1716,6 @@ namespace MathNet.Numerics.Providers.LinearAlgebra
                 ThinQRFactor(clone, rows, columns, r, work);
                 QRSolveFactored(clone, r, rows, columns, null, b, columnsB, x, method);
             }
-
-            work[0] = rows*columns;
-        }
-
-        /// <summary>
-        /// Solves A*X=B for X using a previously QR factored matrix.
-        /// </summary>
-        /// <param name="q">The Q matrix obtained by QR factor. This is only used for the managed provider and can be
-        /// <c>null</c> for the native provider. The native provider uses the Q portion stored in the R matrix.</param>
-        /// <param name="r">The R matrix obtained by calling <see cref="QRFactor(Complex[],int,int,Complex[],Complex[])"/>. </param>
-        /// <param name="rowsR">The number of rows in the A matrix.</param>
-        /// <param name="columnsR">The number of columns in the A matrix.</param>
-        /// <param name="tau">Contains additional information on Q. Only used for the native solver
-        /// and can be <c>null</c> for the managed provider.</param>
-        /// <param name="b">On entry the B matrix; on exit the X matrix.</param>
-        /// <param name="columnsB">The number of columns of B.</param>
-        /// <param name="x">On exit, the solution matrix.</param>
-        /// <param name="work">The work array - only used in the native provider. The array must have a length of at least N,
-        /// but should be N*blocksize. The blocksize is machine dependent. On exit, work[0] contains the optimal
-        /// work size value.</param>
-        /// <param name="method">The type of QR factorization to perform. <seealso cref="QRMethod"/></param>
-        /// <remarks>Rows must be greater or equal to columns.</remarks>
-        public virtual void QRSolveFactored(Complex[] q, Complex[] r, int rowsR, int columnsR, Complex[] tau, Complex[] b, int columnsB, Complex[] x, Complex[] work, QRMethod method = QRMethod.Full)
-        {
-            QRSolveFactored(q, r, rowsR, columnsR, tau, b, columnsB, x, method);
         }
 
         /// <summary>
@@ -2180,77 +1896,7 @@ namespace MathNet.Numerics.Providers.LinearAlgebra
             }
 
             var work = new Complex[rowsA];
-            SingularValueDecomposition(computeVectors, a, rowsA, columnsA, s, u, vt, work);
-        }
-
-        /// <summary>
-        /// Computes the singular value decomposition of A.
-        /// </summary>
-        /// <param name="computeVectors">Compute the singular U and VT vectors or not.</param>
-        /// <param name="a">On entry, the M by N matrix to decompose. On exit, A may be overwritten.</param>
-        /// <param name="rowsA">The number of rows in the A matrix.</param>
-        /// <param name="columnsA">The number of columns in the A matrix.</param>
-        /// <param name="s">The singular values of A in ascending value.</param>
-        /// <param name="u">If <paramref name="computeVectors"/> is <c>true</c>, on exit U contains the left
-        /// singular vectors.</param>
-        /// <param name="vt">If <paramref name="computeVectors"/> is <c>true</c>, on exit VT contains the transposed
-        /// right singular vectors.</param>
-        /// <param name="work">The work array. Length should be at least <paramref name="rowsA"/>.</param>
-        /// <remarks>This is equivalent to the GESVD LAPACK routine.</remarks>
-        /// <exception cref="NonConvergenceException"></exception>
-        public virtual void SingularValueDecomposition(bool computeVectors, Complex[] a, int rowsA, int columnsA, Complex[] s, Complex[] u, Complex[] vt, Complex[] work)
-        {
-            if (a == null)
-            {
-                throw new ArgumentNullException("a");
-            }
-
-            if (s == null)
-            {
-                throw new ArgumentNullException("s");
-            }
-
-            if (u == null)
-            {
-                throw new ArgumentNullException("u");
-            }
-
-            if (vt == null)
-            {
-                throw new ArgumentNullException("vt");
-            }
-
-            if (work == null)
-            {
-                throw new ArgumentNullException("work");
-            }
-
-            if (u.Length != rowsA*rowsA)
-            {
-                throw new ArgumentException(Resources.ArgumentArraysSameLength, "u");
-            }
-
-            if (vt.Length != columnsA*columnsA)
-            {
-                throw new ArgumentException(Resources.ArgumentArraysSameLength, "vt");
-            }
-
-            if (s.Length != Math.Min(rowsA, columnsA))
-            {
-                throw new ArgumentException(Resources.ArgumentArraysSameLength, "s");
-            }
-
-            if (work.Length == 0)
-            {
-                throw new ArgumentException(Resources.ArgumentSingleDimensionArray, "work");
-            }
-
-            if (work.Length < rowsA)
-            {
-                work[0] = rowsA;
-                throw new ArgumentException(Resources.WorkArrayTooSmall, "work");
-            }
-
+  
             const int maxiter = 1000;
 
             var e = new Complex[columnsA];
@@ -2862,10 +2508,6 @@ namespace MathNet.Numerics.Providers.LinearAlgebra
             // a singular vector of length rows+1 when rows < columns. The last element is not used and needs to be removed.
             // We should port lapack's svd routine to remove this problem.
             Array.Copy(stemp, s, Math.Min(rowsA, columnsA));
-
-            // On return the first element of the work array stores the min size of the work array could have been
-            // work[0] = Math.Max(3 * Math.Min(aRows, aColumns) + Math.Max(aRows, aColumns), 5 * Math.Min(aRows, aColumns));
-            work[0] = rowsA;
         }
 
         /// <summary>
@@ -2904,14 +2546,13 @@ namespace MathNet.Numerics.Providers.LinearAlgebra
                 throw new ArgumentException(Resources.ArgumentArraysSameLength, "b");
             }
 
-            var work = new Complex[rowsA];
             var s = new Complex[Math.Min(rowsA, columnsA)];
             var u = new Complex[rowsA*rowsA];
             var vt = new Complex[columnsA*columnsA];
 
             var clone = new Complex[a.Length];
             a.Copy(clone);
-            SingularValueDecomposition(true, clone, rowsA, columnsA, s, u, vt, work);
+            SingularValueDecomposition(true, clone, rowsA, columnsA, s, u, vt);
             SvdSolveFactored(rowsA, columnsA, s, u, vt, b, columnsB, x);
         }
 
@@ -3015,7 +2656,7 @@ namespace MathNet.Numerics.Providers.LinearAlgebra
         /// <summary>
         /// Computes the eigenvalues and eigenvectors of a matrix.
         /// </summary>
-        /// <param name="isSymmetric">Wether the matrix is symmetric or not.</param>
+        /// <param name="isSymmetric">Whether the matrix is symmetric or not.</param>
         /// <param name="order">The order of the matrix.</param>
         /// <param name="matrix">The matrix to decompose. The lenth of the array must be order * order.</param>
         /// <param name="matrixEv">On output, the matrix contains the eigen vectors. The lenth of the array must be order * order.</param>

@@ -82,17 +82,6 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
 #endif
 
         /// <summary>
-        /// Can convert vector to string.
-        /// </summary>
-        [Test]
-        public void CanConvertVectorToString()
-        {
-            var vector = CreateVector(Data);
-            var str = vector.ToVectorString(1, int.MaxValue, 1);
-            Assert.AreEqual("(1, 1) (2, 1) (3, 1) (4, 1) (5, 1)", str);
-        }
-
-        /// <summary>
         /// Can copy part of a vector to another vector.
         /// </summary>
         [Test]
@@ -211,8 +200,8 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         [Test]
         public void SizeIsNotPositiveThrowsArgumentOutOfRangeException()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => CreateVector(-1));
-            Assert.Throws<ArgumentOutOfRangeException>(() => CreateVector(0));
+            Assert.That(() => CreateVector(-1), Throws.TypeOf<ArgumentOutOfRangeException>());
+            Assert.That(() => CreateVector(0), Throws.TypeOf<ArgumentOutOfRangeException>());
         }
 
         /// <summary>
@@ -258,7 +247,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         public void CanEnumerateOverVectorUsingNonZeroEnumerator()
         {
             var vector = CreateVector(Data);
-            foreach (var pair in vector.EnumerateNonZeroIndexed())
+            foreach (var pair in vector.EnumerateIndexed(Zeros.AllowSkip))
             {
                 Assert.AreEqual(Data[pair.Item1], pair.Item2);
                 Assert.AreNotEqual(Complex32.Zero, pair.Item2);
@@ -352,7 +341,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         public void CanGetSubVectorWithWrongValuesShouldThrowException(int index, int length)
         {
             var vector = CreateVector(Data);
-            Assert.Throws<ArgumentOutOfRangeException>(() => vector.SubVector(index, length));
+            Assert.That(() => vector.SubVector(index, length), Throws.TypeOf<ArgumentOutOfRangeException>());
         }
 
         /// <summary>
@@ -410,7 +399,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         public void FindMaximumIndexThrowsNotSupportedException()
         {
             var vector = CreateVector(Data);
-            Assert.Throws<NotSupportedException>(() => { var actual = vector.MaximumIndex(); });
+            Assert.That(() => { var actual = vector.MaximumIndex(); }, Throws.TypeOf<NotSupportedException>());
         }
 
         /// <summary>
@@ -420,7 +409,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         public void FindMaximumThrowsNotSupportedException()
         {
             var vector = CreateVector(Data);
-            Assert.Throws<NotSupportedException>(() => { var actual = vector.Maximum(); });
+            Assert.That(() => { var actual = vector.Maximum(); }, Throws.TypeOf<NotSupportedException>());
         }
 
         /// <summary>
@@ -430,7 +419,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         public void FindMinimumIndexThrowsNotSupportedException()
         {
             var vector = CreateVector(Data);
-            Assert.Throws<NotSupportedException>(() => { var actual = vector.MinimumIndex(); });
+            Assert.That(() => { var actual = vector.MinimumIndex(); }, Throws.TypeOf<NotSupportedException>());
         }
 
         /// <summary>
@@ -440,7 +429,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         public void FindMinimumThrowsNotSupportedException()
         {
             var vector = CreateVector(Data);
-            Assert.Throws<NotSupportedException>(() => { var actual = vector.Minimum(); });
+            Assert.That(() => { var actual = vector.Minimum(); }, Throws.TypeOf<NotSupportedException>());
         }
 
         /// <summary>
@@ -476,7 +465,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         public void SetValuesWithNullParameterThrowsArgumentException()
         {
             var vector = CreateVector(Data);
-            Assert.Throws<ArgumentNullException>(() => vector.SetValues(null));
+            Assert.That(() => vector.SetValues(null), Throws.TypeOf<ArgumentNullException>());
         }
 
         /// <summary>
@@ -486,7 +475,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         public void SetValuesWithNonEqualDataLengthThrowsArgumentException()
         {
             var vector = CreateVector(Data.Length + 2);
-            Assert.Throws<ArgumentOutOfRangeException>(() => vector.SetValues(Data));
+            Assert.That(() => vector.SetValues(Data), Throws.TypeOf<ArgumentOutOfRangeException>());
         }
 
         /// <summary>
@@ -495,7 +484,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32
         [Test]
         public void RandomWithNumberOfElementsLessThanZeroThrowsArgumentException()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => DenseVector.CreateRandom(-2, new ContinuousUniform()));
+            Assert.That(() => DenseVector.CreateRandom(-2, new ContinuousUniform()), Throws.TypeOf<ArgumentOutOfRangeException>());
         }
 
         /// <summary>

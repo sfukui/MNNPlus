@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2014 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -37,15 +41,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
     [TestFixture, Category("Distributions")]
     public class LaplaceTests
     {
-        /// <summary>
-        /// Set-up parameters.
-        /// </summary>
-        [SetUp]
-        public void SetUp()
-        {
-            Control.CheckDistributionParameters = true;
-        }
-
         /// <summary>
         /// Can create Laplace.
         /// </summary>
@@ -83,65 +78,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         {
             var n = new Laplace(-1d, 2d);
             Assert.AreEqual("Laplace(μ = -1, b = 2)", n.ToString());
-        }
-
-        /// <summary>
-        /// Can set location.
-        /// </summary>
-        /// <param name="location">Location value.</param>
-        [TestCase(Double.NegativeInfinity)]
-        [TestCase(-5.0 - 1.0)]
-        [TestCase(0.0)]
-        [TestCase(1.0)]
-        [TestCase(5.0)]
-        [TestCase(Double.PositiveInfinity)]
-        public void CanSetLocation(double location)
-        {
-            new Laplace
-            {
-                Location = location
-            };
-        }
-
-        /// <summary>
-        /// Set location fails with negative value.
-        /// </summary>
-        [Test]
-        public void SetLocationFailsWithNegativeLocation()
-        {
-            var n = new Laplace();
-            Assert.Throws<ArgumentOutOfRangeException>(() => n.Location = Double.NaN);
-        }
-
-        /// <summary>
-        /// Can set scale.
-        /// </summary>
-        /// <param name="scale">Scale value.</param>
-        [TestCase(0.1)]
-        [TestCase(1.0)]
-        [TestCase(10.0)]
-        [TestCase(Double.PositiveInfinity)]
-        public void CanSetScale(double scale)
-        {
-            new Laplace
-            {
-                Scale = scale
-            };
-        }
-
-        /// <summary>
-        /// Set scale fails with negative value.
-        /// </summary>
-        /// <param name="scale">Scale value.</param>
-        [TestCase(0.0)]
-        [TestCase(-1.0)]
-        [TestCase(-5.0)]
-        [TestCase(Double.NegativeInfinity)]
-        [TestCase(Double.NaN)]
-        public void SetScaleFailsWithNegativeScale(double scale)
-        {
-            var n = new Laplace();
-            Assert.Throws<ArgumentOutOfRangeException>(() => n.Scale = scale);
         }
 
         /// <summary>
@@ -371,7 +307,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         {
             var n = new Laplace();
             var ied = n.Samples();
-            ied.Take(5).ToArray();
+            GC.KeepAlive(ied.Take(5).ToArray());
         }
 
         /// <summary>

@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2013 Math.NET
+// Copyright (c) 2009-2014 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -30,6 +30,10 @@
 
 using System.Collections.Generic;
 
+#if !PORTABLE
+using System.Runtime;
+#endif
+
 namespace MathNet.Numerics.Random
 {
     /// <summary>
@@ -37,7 +41,7 @@ namespace MathNet.Numerics.Random
     /// </summary>
     /// <remarks>See: Wichmann, B. A. &amp; Hill, I. D. (1982), "Algorithm AS 183:
     /// An efficient and portable pseudo-random number generator". Applied Statistics 31 (1982) 188-190
-    ///</remarks>
+    /// </remarks>
     public class WH1982 : RandomSource
     {
         const uint Modx = 30269;
@@ -80,6 +84,7 @@ namespace MathNet.Numerics.Random
             {
                 seed = 1;
             }
+
             _xn = (uint)seed%Modx;
         }
 
@@ -96,6 +101,7 @@ namespace MathNet.Numerics.Random
             {
                 seed = 1;
             }
+
             _xn = (uint)seed%Modx;
         }
 
@@ -117,29 +123,40 @@ namespace MathNet.Numerics.Random
         }
 
         /// <summary>
-        /// Returns an array of random numbers greater than or equal to 0.0 and less than 1.0.
+        /// Fills an array with random numbers greater than or equal to 0.0 and less than 1.0.
         /// </summary>
         /// <remarks>Supports being called in parallel from multiple threads.</remarks>
-        public static double[] Doubles(int length, int seed)
+        public static void Doubles(double[] values, int seed)
         {
             if (seed == 0)
             {
                 seed = 1;
             }
+
             uint xn = (uint)seed%Modx;
             uint yn = 1;
             uint zn = 1;
 
-            var data = new double[length];
-            for (int i = 0; i < data.Length; i++)
+            for (int i = 0; i < values.Length; i++)
             {
                 xn = (171*xn)%Modx;
                 yn = (172*yn)%Mody;
                 zn = (170*zn)%Modz;
 
                 double w = xn*ModxRecip + yn*ModyRecip + zn*ModzRecip;
-                data[i] = w - (int)w;
+                values[i] = w - (int)w;
             }
+        }
+
+        /// <summary>
+        /// Returns an array of random numbers greater than or equal to 0.0 and less than 1.0.
+        /// </summary>
+        /// <remarks>Supports being called in parallel from multiple threads.</remarks>
+        [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
+        public static double[] Doubles(int length, int seed)
+        {
+            var data = new double[length];
+            Doubles(data, seed);
             return data;
         }
 
@@ -153,6 +170,7 @@ namespace MathNet.Numerics.Random
             {
                 seed = 1;
             }
+
             uint xn = (uint)seed%Modx;
             uint yn = 1;
             uint zn = 1;

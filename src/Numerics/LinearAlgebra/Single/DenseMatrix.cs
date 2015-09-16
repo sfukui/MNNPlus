@@ -346,7 +346,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         public static DenseMatrix Create(int rows, int columns, float value)
         {
             if (value == 0f) return new DenseMatrix(rows, columns);
-            return new DenseMatrix(DenseColumnMajorMatrixStorage<float>.OfInit(rows, columns, (i, j) => value));
+            return new DenseMatrix(DenseColumnMajorMatrixStorage<float>.OfValue(rows, columns, value));
         }
 
         /// <summary>
@@ -387,7 +387,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         /// </summary>
         public static DenseMatrix CreateRandom(int rows, int columns, IContinuousDistribution distribution)
         {
-            return new DenseMatrix(DenseColumnMajorMatrixStorage<float>.OfInit(rows, columns, (i, j) => (float) distribution.Sample()));
+            return new DenseMatrix(new DenseColumnMajorMatrixStorage<float>(rows, columns, Generate.RandomSingle(rows*columns, distribution)));
         }
 
         /// <summary>
@@ -437,25 +437,6 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         }
 
         /// <summary>
-        /// Returns the transpose of this matrix.
-        /// </summary>
-        /// <returns>The transpose of this matrix.</returns>
-        public override Matrix<float> Transpose()
-        {
-            var ret = new DenseMatrix(_columnCount, _rowCount);
-            for (var j = 0; j < _columnCount; j++)
-            {
-                var index = j * _rowCount;
-                for (var i = 0; i < _rowCount; i++)
-                {
-                    ret._values[(i * _columnCount) + j] = _values[index + i];
-                }
-            }
-
-            return ret;
-        }
-
-        /// <summary>
         /// Add a scalar to each element of the matrix and stores the result in the result vector.
         /// </summary>
         /// <param name="scalar">The scalar to add.</param>
@@ -501,7 +482,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single
             var diagonalOther = other.Storage as DiagonalMatrixStorage<float>;
             if (diagonalOther != null)
             {
-                Storage.CopyToUnchecked(result.Storage);
+                Storage.CopyToUnchecked(result.Storage, ExistingData.Clear);
                 var diagonal = diagonalOther.Data;
                 for (int i = 0; i < diagonal.Length; i++)
                 {
@@ -603,17 +584,13 @@ namespace MathNet.Numerics.LinearAlgebra.Single
             }
             else
             {
-                Control.LinearAlgebraProvider.MatrixMultiplyWithUpdate(
-                    Providers.LinearAlgebra.Transpose.DontTranspose,
-                    Providers.LinearAlgebra.Transpose.DontTranspose,
-                    1.0f,
+                Control.LinearAlgebraProvider.MatrixMultiply(
                     _values,
                     _rowCount,
                     _columnCount,
                     denseRight.Values,
                     denseRight.Count,
                     1,
-                    0.0f,
                     denseResult.Values);
             }
         }
@@ -629,17 +606,13 @@ namespace MathNet.Numerics.LinearAlgebra.Single
             var denseResult = result as DenseMatrix;
             if (denseOther != null && denseResult != null)
             {
-                Control.LinearAlgebraProvider.MatrixMultiplyWithUpdate(
-                    Providers.LinearAlgebra.Transpose.DontTranspose,
-                    Providers.LinearAlgebra.Transpose.DontTranspose,
-                    1.0f,
+                Control.LinearAlgebraProvider.MatrixMultiply(
                     _values,
                     _rowCount,
                     _columnCount,
                     denseOther._values,
                     denseOther._rowCount,
                     denseOther._columnCount,
-                    0.0f,
                     denseResult._values);
                 return;
             }
@@ -859,9 +832,10 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         }
 
         /// <summary>
-        /// Computes the modulus for each element of the matrix.
+        /// Computes the canonical modulus, where the result has the sign of the divisor,
+        /// for the given divisor each element of the matrix.
         /// </summary>
-        /// <param name="divisor">The divisor to use.</param>
+        /// <param name="divisor">The scalar denominator to use.</param>
         /// <param name="result">Matrix to store the results in.</param>
         protected override void DoModulus(float divisor, Matrix<float> result)
         {
@@ -878,20 +852,21 @@ namespace MathNet.Numerics.LinearAlgebra.Single
             }
 
             CommonParallel.For(0, _values.Length, (a, b) =>
+            {
+                var v = denseResult._values;
+                for (int i = a; i < b; i++)
                 {
-                    var v = denseResult._values;
-                    for (int i = a; i < b; i++)
-                    {
-                        v[i] %= divisor;
-                    }
-                });
+                    v[i] = Euclid.Modulus(v[i], divisor);
+                }
+            });
         }
 
         /// <summary>
-        /// Computes the modulus for each element of the matrix.
+        /// Computes the canonical modulus, where the result has the sign of the divisor,
+        /// for the given dividend for each element of the matrix.
         /// </summary>
         /// <param name="dividend">The scalar numerator to use.</param>
-        /// <param name="result">Matrix to store the results in.</param>
+        /// <param name="result">A vector to store the results in.</param>
         protected override void DoModulusByThis(float dividend, Matrix<float> result)
         {
             var denseResult = result as DenseMatrix;
@@ -902,13 +877,68 @@ namespace MathNet.Numerics.LinearAlgebra.Single
             }
 
             CommonParallel.For(0, _values.Length, 4096, (a, b) =>
+            {
+                var v = denseResult._values;
+                for (int i = a; i < b; i++)
                 {
-                    var v = denseResult._values;
-                    for (int i = a; i < b; i++)
-                    {
-                        v[i] = dividend%_values[i];
-                    }
-                });
+                    v[i] = Euclid.Modulus(dividend, _values[i]);
+                }
+            });
+        }
+
+        /// <summary>
+        /// Computes the remainder (% operator), where the result has the sign of the dividend,
+        /// for the given divisor each element of the matrix.
+        /// </summary>
+        /// <param name="divisor">The scalar denominator to use.</param>
+        /// <param name="result">Matrix to store the results in.</param>
+        protected override void DoRemainder(float divisor, Matrix<float> result)
+        {
+            var denseResult = result as DenseMatrix;
+            if (denseResult == null)
+            {
+                base.DoRemainder(divisor, result);
+                return;
+            }
+
+            if (!ReferenceEquals(this, result))
+            {
+                CopyTo(result);
+            }
+
+            CommonParallel.For(0, _values.Length, (a, b) =>
+            {
+                var v = denseResult._values;
+                for (int i = a; i < b; i++)
+                {
+                    v[i] %= divisor;
+                }
+            });
+        }
+
+        /// <summary>
+        /// Computes the remainder (% operator), where the result has the sign of the dividend,
+        /// for the given dividend for each element of the matrix.
+        /// </summary>
+        /// <param name="dividend">The scalar numerator to use.</param>
+        /// <param name="result">A vector to store the results in.</param>
+        protected override void DoRemainderByThis(float dividend, Matrix<float> result)
+        {
+            var denseResult = result as DenseMatrix;
+            if (denseResult == null)
+            {
+                base.DoRemainderByThis(dividend, result);
+                return;
+            }
+
+            CommonParallel.For(0, _values.Length, 4096, (a, b) =>
+            {
+                var v = denseResult._values;
+                for (int i = a; i < b; i++)
+                {
+                    v[i] = dividend%_values[i];
+                }
+            });
         }
 
         /// <summary>
@@ -1139,7 +1169,32 @@ namespace MathNet.Numerics.LinearAlgebra.Single
                 throw new ArgumentNullException("leftSide");
             }
 
-            return (DenseMatrix)leftSide.Modulus(rightSide);
+            return (DenseMatrix)leftSide.Remainder(rightSide);
+        }
+
+        /// <summary>
+        /// Evaluates whether this matrix is symmetric.
+        /// </summary>
+        public override bool IsSymmetric()
+        {
+            if (RowCount != ColumnCount)
+            {
+                return false;
+            }
+
+            for (var j = 0; j < ColumnCount; j++)
+            {
+                var index = j * RowCount;
+                for (var i = j + 1; i < RowCount; i++)
+                {
+                    if (_values[(i*ColumnCount) + j] != _values[index + i])
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
         }
 
         public override Cholesky<float> Cholesky()
@@ -1167,9 +1222,9 @@ namespace MathNet.Numerics.LinearAlgebra.Single
             return DenseSvd.Create(this, computeVectors);
         }
 
-        public override Evd<float> Evd()
+        public override Evd<float> Evd(Symmetricity symmetricity = Symmetricity.Unknown)
         {
-            return DenseEvd.Create(this);
+            return DenseEvd.Create(this, symmetricity);
         }
     }
 }

@@ -24,7 +24,6 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
-using System;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Complex32;
 using NUnit.Framework;
@@ -71,7 +70,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
         {
             var matrixI = DenseMatrix.CreateIdentity(10);
             matrixI[3, 3] = -4.0f;
-            Assert.Throws<ArgumentException>(() => matrixI.Cholesky());
+            Assert.That(() => matrixI.Cholesky(), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -81,7 +80,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
         public void CholeskyFailsWithNonSquareMatrix()
         {
             var matrix = new DenseMatrix(3, 1);
-            Assert.Throws<ArgumentException>(() => matrix.Cholesky());
+            Assert.That(() => matrix.Cholesky(), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -165,8 +164,8 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
             // Check the reconstruction.
             for (var i = 0; i < order; i++)
             {
-                Assert.AreEqual(matrixB[i].Real, matrixBReconstruct[i].Real, 1e-3f);
-                Assert.AreEqual(matrixB[i].Imaginary, matrixBReconstruct[i].Imaginary, 1e-3f);
+                Assert.AreEqual(matrixB[i].Real, matrixBReconstruct[i].Real, 1e-2f);
+                Assert.AreEqual(matrixB[i].Imaginary, matrixBReconstruct[i].Imaginary, 1e-2f);
             }
 
             // Make sure A didn't change.
@@ -208,8 +207,8 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
             {
                 for (var j = 0; j < matrixB.ColumnCount; j++)
                 {
-                    Assert.AreEqual(matrixB[i, j].Real, matrixBReconstruct[i, j].Real, 0.01f);
-                    Assert.AreEqual(matrixB[i, j].Imaginary, matrixBReconstruct[i, j].Imaginary, 0.01f);
+                    Assert.AreEqual(matrixB[i, j].Real, matrixBReconstruct[i, j].Real, 0.02f);
+                    Assert.AreEqual(matrixB[i, j].Imaginary, matrixBReconstruct[i, j].Imaginary, 0.02f);
                 }
             }
 
@@ -250,8 +249,8 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
             // Check the reconstruction.
             for (var i = 0; i < order; i++)
             {
-                Assert.AreEqual(matrixB[i].Real, matrixBReconstruct[i].Real, 1e-3f);
-                Assert.AreEqual(matrixB[i].Imaginary, matrixBReconstruct[i].Imaginary, 1e-3f);
+                Assert.AreEqual(matrixB[i].Real, matrixBReconstruct[i].Real, 1e-2f);
+                Assert.AreEqual(matrixB[i].Imaginary, matrixBReconstruct[i].Imaginary, 1e-2f);
             }
 
             // Make sure A didn't change.
@@ -301,8 +300,8 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
             {
                 for (var j = 0; j < matrixB.ColumnCount; j++)
                 {
-                    Assert.AreEqual(matrixB[i, j].Real, matrixBReconstruct[i, j].Real, 0.01f);
-                    Assert.AreEqual(matrixB[i, j].Imaginary, matrixBReconstruct[i, j].Imaginary, 0.01f);
+                    Assert.AreEqual(matrixB[i, j].Real, matrixBReconstruct[i, j].Real, 0.03f);
+                    Assert.AreEqual(matrixB[i, j].Imaginary, matrixBReconstruct[i, j].Imaginary, 0.03f);
                 }
             }
 

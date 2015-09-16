@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2013 Math.NET
+// Copyright (c) 2009-2015 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -30,6 +30,7 @@
 
 using MathNet.Numerics.Providers.LinearAlgebra;
 using System;
+using System.Threading.Tasks;
 
 namespace MathNet.Numerics
 {
@@ -38,7 +39,9 @@ namespace MathNet.Numerics
     /// </summary>
     public static class Control
     {
-        static int _numberOfThreads;
+        const string EnvVarLAProvider = "MathNetNumericsLAProvider";
+
+        static int _maxDegreeOfParallelism;
         static int _blockSize;
         static int _parallelizeOrder;
         static int _parallelizeElements;
@@ -53,31 +56,48 @@ namespace MathNet.Numerics
         {
             // Random Numbers & Distributions
             CheckDistributionParameters = true;
-            ThreadSafeRandomNumberGenerators = true;
-
-            // ToString & Formatting
-            MaxToStringColumns = 6;
-            MaxToStringRows = 8;
 
             // Parallelization & Threading
-            _numberOfThreads = Environment.ProcessorCount;
-            DisableParallelization = _numberOfThreads < 2;
+            ThreadSafeRandomNumberGenerators = true;
+            _maxDegreeOfParallelism = Environment.ProcessorCount;
             _blockSize = 512;
             _parallelizeOrder = 64;
             _parallelizeElements = 300;
+            TaskScheduler = TaskScheduler.Default;
 
             // Linear Algebra Provider
+#if PORTABLE
             LinearAlgebraProvider = new ManagedLinearAlgebraProvider();
-#if !PORTABLE
+#else
             try
             {
-                const string name = "MathNetNumericsLAProvider";
-                var value = Environment.GetEnvironmentVariable(name);
+                var value = Environment.GetEnvironmentVariable(EnvVarLAProvider);
                 switch (value != null ? value.ToUpperInvariant() : string.Empty)
                 {
-#if NATIVEMKL
+#if NATIVE
                     case "MKL":
-                        LinearAlgebraProvider = new Providers.LinearAlgebra.Mkl.MklLinearAlgebraProvider();
+                        UseNativeMKL();
+                        break;
+
+                    case "CUDA":
+                        UseNativeCUDA();
+                        break;
+
+                    case "OPENBLAS":
+                        UseNativeOpenBLAS();
+                        break;
+
+                    default:
+#if NATIVE
+                        if (!TryUseNative())
+#endif
+                        {
+                            UseManaged();
+                        }
+                        break;
+#else
+                    default:
+                        UseManaged();
                         break;
 #endif
                 }
@@ -85,16 +105,9 @@ namespace MathNet.Numerics
             catch
             {
                 // We don't care about any failures here at all (because "auto")
-                LinearAlgebraProvider = new ManagedLinearAlgebraProvider();
+                UseManaged();
             }
 #endif
-        }
-
-        public static void UseSingleThread()
-        {
-            _numberOfThreads = 1;
-            DisableParallelization = true;
-            ThreadSafeRandomNumberGenerators = false;
         }
 
         public static void UseManaged()
@@ -102,12 +115,126 @@ namespace MathNet.Numerics
             LinearAlgebraProvider = new ManagedLinearAlgebraProvider();
         }
 
-#if NATIVEMKL
+#if NATIVE
+
+        /// <summary>
+        /// Use the Intel MKL native provider for linear algebra.
+        /// Throws if it is not available or failed to initialize, in which case the previous provider is still active.
+        /// </summary>
         public static void UseNativeMKL()
         {
             LinearAlgebraProvider = new Providers.LinearAlgebra.Mkl.MklLinearAlgebraProvider();
         }
+
+        /// <summary>
+        /// Use the Intel MKL native provider for linear algebra, with the specified configuration parameters.
+        /// Throws if it is not available or failed to initialize, in which case the previous provider is still active.
+        /// </summary>
+        [CLSCompliant(false)]
+        public static void UseNativeMKL(
+            Providers.LinearAlgebra.Mkl.MklConsistency consistency = Providers.LinearAlgebra.Mkl.MklConsistency.Auto,
+            Providers.LinearAlgebra.Mkl.MklPrecision precision = Providers.LinearAlgebra.Mkl.MklPrecision.Double,
+            Providers.LinearAlgebra.Mkl.MklAccuracy accuracy = Providers.LinearAlgebra.Mkl.MklAccuracy.High)
+        {
+            LinearAlgebraProvider = new Providers.LinearAlgebra.Mkl.MklLinearAlgebraProvider(consistency, precision, accuracy);
+        }
+
+        /// <summary>
+        /// Try to use the Intel MKL native provider for linear algebra.
+        /// </summary>
+        /// <returns>
+        /// True if the provider was found and initialized successfully.
+        /// False if it failed and the previous provider is still active.
+        /// </returns>
+        public static bool TryUseNativeMKL()
+        {
+            return Try(UseNativeMKL);
+        }
+
+        /// <summary>
+        /// Use the Nvidia CUDA native provider for linear algebra.
+        /// Throws if it is not available or failed to initialize, in which case the previous provider is still active.
+        /// </summary>
+        public static void UseNativeCUDA()
+        {
+            LinearAlgebraProvider = new Providers.LinearAlgebra.Cuda.CudaLinearAlgebraProvider();
+        }
+
+        /// <summary>
+        /// Try to use the Nvidia CUDA native provider for linear algebra.
+        /// </summary>
+        /// <returns>
+        /// True if the provider was found and initialized successfully.
+        /// False if it failed and the previous provider is still active.
+        /// </returns>
+        public static bool TryUseNativeCUDA()
+        {
+            return Try(UseNativeCUDA);
+        }
+
+        /// <summary>
+        /// Use the OpenBLAS native provider for linear algebra.
+        /// Throws if it is not available or failed to initialize, in which case the previous provider is still active.
+        /// </summary>
+        public static void UseNativeOpenBLAS()
+        {
+            LinearAlgebraProvider = new Providers.LinearAlgebra.OpenBlas.OpenBlasLinearAlgebraProvider();
+        }
+
+        /// <summary>
+        /// Try to use the OpenBLAS native provider for linear algebra.
+        /// </summary>
+        /// <returns>
+        /// True if the provider was found and initialized successfully.
+        /// False if it failed and the previous provider is still active.
+        /// </returns>
+        public static bool TryUseNativeOpenBLAS()
+        {
+            return Try(UseNativeOpenBLAS);
+        }
+
+        /// <summary>
+        /// Try to use any available native provider in an undefined order.
+        /// </summary>
+        /// <returns>
+        /// True if one of the native providers was found and successfully initialized.
+        /// False if it failed and the previous provider is still active.
+        /// </returns>
+        public static bool TryUseNative()
+        {
+            return TryUseNativeCUDA() || TryUseNativeMKL() || TryUseNativeOpenBLAS();
+        }
+
+        static bool Try(Action action)
+        {
+            try
+            {
+                action();
+                return true;
+            }
+            catch
+            {
+                // intentionally swallow exceptions here - use the non-try variants if you're interested in why
+                return false;
+            }
+        }
 #endif
+
+        public static void UseSingleThread()
+        {
+            _maxDegreeOfParallelism = 1;
+            ThreadSafeRandomNumberGenerators = false;
+
+            LinearAlgebraProvider.InitializeVerify();
+        }
+
+        public static void UseMultiThreading()
+        {
+            _maxDegreeOfParallelism = Environment.ProcessorCount;
+            ThreadSafeRandomNumberGenerators = true;
+
+            LinearAlgebraProvider.InitializeVerify();
+        }
 
         /// <summary>
         /// Gets or sets a value indicating whether the distribution classes check validate each parameter.
@@ -118,7 +245,7 @@ namespace MathNet.Numerics
 
         /// <summary>
         /// Gets or sets a value indicating whether to use thread safe random number generators (RNG).
-        /// Thread safe RNG about two and half time slower than non-thread safe RNG. 
+        /// Thread safe RNG about two and half time slower than non-thread safe RNG.
         /// </summary>
         /// <value>
         ///     <c>true</c> to use thread safe random number generators ; otherwise, <c>false</c>.
@@ -126,9 +253,9 @@ namespace MathNet.Numerics
         public static bool ThreadSafeRandomNumberGenerators { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether parallelization shall be disabled globally.
+        /// Optional path to try to load native provider binaries from.
         /// </summary>
-        public static bool DisableParallelization { get; set; }
+        public static string NativeProviderPath { get; set; }
 
         /// <summary>
         /// Gets or sets the linear algebra provider. Consider to use UseNativeMKL or UseManaged instead.
@@ -151,11 +278,22 @@ namespace MathNet.Numerics
         /// when parallelization is applicable.
         /// </summary>
         /// <remarks>Default to the number of processor cores, must be between 1 and 1024 (inclusive).</remarks>
-        public static int NumberOfParallelWorkerThreads
+        public static int MaxDegreeOfParallelism
         {
-            get { return _numberOfThreads; }
-            set { _numberOfThreads = Math.Max(1, Math.Min(1024, value)); }
+            get { return _maxDegreeOfParallelism; }
+            set
+            {
+                _maxDegreeOfParallelism = Math.Max(1, Math.Min(1024, value));
+
+                // Reinitialize providers:
+                LinearAlgebraProvider.InitializeVerify();
+            }
         }
+
+        /// <summary>
+        /// Gets or sets the TaskScheduler used to schedule the worker tasks.
+        /// </summary>
+        public static TaskScheduler TaskScheduler { get; set; }
 
         /// <summary>
         /// Gets or sets the the block size to use for
@@ -173,7 +311,7 @@ namespace MathNet.Numerics
         /// must calculate multiply in parallel threads.
         /// </summary>
         /// <value>The order. Default 64, must be at least 3.</value>
-        public static int ParallelizeOrder
+        internal static int ParallelizeOrder
         {
             get { return _parallelizeOrder; }
             set { _parallelizeOrder = Math.Max(3, value); }
@@ -184,30 +322,10 @@ namespace MathNet.Numerics
         /// must contain before we multiply threads.
         /// </summary>
         /// <value>Number of elements. Default 300, must be at least 3.</value>
-        public static int ParallelizeElements
+        internal static int ParallelizeElements
         {
             get { return _parallelizeElements; }
             set { _parallelizeElements = Math.Max(3, value); }
         }
-
-        /// <summary>
-        /// Given the number elements, should the operation be parallelized.
-        /// </summary>
-        /// <param name="elements">The number elements to check.</param>
-        /// <returns><c>true</c> if the operation should be parallelized; <c>false</c> otherwise.</returns>
-        public static bool ParallelizeOperation(int elements)
-        {
-            return !DisableParallelization && NumberOfParallelWorkerThreads >= 2 && elements >= ParallelizeElements;
-        }
-
-        /// <summary>
-        /// Maximum number of columns to print in ToString methods by default.
-        /// </summary>
-        public static int MaxToStringColumns { get; set; }
-
-        /// <summary>
-        /// Maximum number of rows to print in ToString methods by default.
-        /// </summary>
-        public static int MaxToStringRows { get; set; }
     }
 }

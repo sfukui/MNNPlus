@@ -143,7 +143,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         public static DenseVector Create(int length, Complex value)
         {
             if (value == Complex.Zero) return new DenseVector(length);
-            return new DenseVector(DenseVectorStorage<Complex>.OfInit(length, i => value));
+            return new DenseVector(DenseVectorStorage<Complex>.OfValue(length, value));
         }
 
         /// <summary>
@@ -159,8 +159,8 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         /// </summary>
         public static DenseVector CreateRandom(int length, IContinuousDistribution distribution)
         {
-            return new DenseVector(DenseVectorStorage<Complex>.OfInit(length,
-                i => new Complex(distribution.Sample(), distribution.Sample())));
+            var samples = Generate.RandomComplex(length, distribution);
+            return new DenseVector(new DenseVectorStorage<Complex>(length, samples));
         }
 
         /// <summary>
@@ -184,7 +184,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         {
             if (vector == null)
             {
-                throw new ArgumentNullException();
+                throw new ArgumentNullException("vector");
             }
 
             return vector.Values;
@@ -201,7 +201,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         {
             if (array == null)
             {
-                throw new ArgumentNullException();
+                throw new ArgumentNullException("array");
             }
 
             return new DenseVector(array);
@@ -599,7 +599,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         /// <summary>
         /// Calculates the infinity norm of the vector.
         /// </summary>
-        /// <returns>The square root of the sum of the squared values.</returns>
+        /// <returns>The maximum absolute value.</returns>
         public override double InfinityNorm()
         {
             return CommonParallel.Aggregate(_values, (i, v) => v.Magnitude, Math.Max, 0d);
@@ -665,53 +665,6 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
             {
                 Control.LinearAlgebraProvider.PointWiseDivideArrays(_values, denseOther._values, denseResult._values);
             }
-        }
-
-        /// <summary>
-        /// Outer product of two vectors
-        /// </summary>
-        /// <param name="u">First vector</param>
-        /// <param name="v">Second vector</param>
-        /// <returns>Matrix M[i,j] = u[i]*v[j] </returns>
-        /// <exception cref="ArgumentNullException">If the u vector is <see langword="null" />.</exception>
-        /// <exception cref="ArgumentNullException">If the v vector is <see langword="null" />.</exception>
-        public static DenseMatrix OuterProduct(DenseVector u, DenseVector v)
-        {
-            if (u == null)
-            {
-                throw new ArgumentNullException("u");
-            }
-
-            if (v == null)
-            {
-                throw new ArgumentNullException("v");
-            }
-
-            var matrix = new DenseMatrix(u.Count, v.Count);
-            CommonParallel.For(0, u.Count, (a, b) =>
-                {
-                    for (int i = a; i < b; i++)
-                    {
-                        for (var j = 0; j < v.Count; j++)
-                        {
-                            matrix.At(i, j, u._values[i]*v._values[j]);
-                        }
-                    }
-                });
-            return matrix;
-        }
-
-        /// <summary>
-        /// Outer product of this and another vector.
-        /// </summary>
-        /// <param name="v">The vector to operate on.</param>
-        /// <returns>
-        /// Matrix M[i,j] = this[i] * v[j].
-        /// </returns>
-        /// <seealso cref="OuterProduct(DenseVector, DenseVector)"/>
-        public Matrix<Complex> OuterProduct(DenseVector v)
-        {
-            return OuterProduct(this, v);
         }
 
         #region Parse Functions

@@ -55,7 +55,7 @@ namespace MathNet.Numerics.UnitTests.InterpolationTests
         [Test]
         public void FitsAtSamplePoints()
         {
-            IInterpolation interpolation = new BulirschStoerRationalInterpolation(_t, _x);
+            IInterpolation interpolation = BulirschStoerRationalInterpolation.Interpolate(_t, _x);
 
             for (int i = 0; i < _x.Length; i++)
             {
@@ -87,9 +87,16 @@ namespace MathNet.Numerics.UnitTests.InterpolationTests
         [TestCase(-10.0, -3.6017584308603731307, 1e-13)]
         public void FitsAtArbitraryPointsWithMaple(double t, double x, double maxAbsoluteError)
         {
-            IInterpolation interpolation = new BulirschStoerRationalInterpolation(_t, _x);
+            IInterpolation interpolation = BulirschStoerRationalInterpolation.Interpolate(_t, _x);
 
             Assert.AreEqual(x, interpolation.Interpolate(t), maxAbsoluteError, "Interpolation at {0}", t);
+        }
+
+        [Test]
+        public void FewSamples()
+        {
+            Assert.That(() => BulirschStoerRationalInterpolation.Interpolate(new double[0], new double[0]), Throws.ArgumentException);
+            Assert.That(BulirschStoerRationalInterpolation.Interpolate(new[] { 1.0 }, new[] { 2.0 }).Interpolate(1.0), Is.EqualTo(2.0));
         }
 
         // NOTE: No test for the linear case because this algorithms is incredibly bad at this.

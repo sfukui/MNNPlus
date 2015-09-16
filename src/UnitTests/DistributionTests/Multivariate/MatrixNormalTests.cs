@@ -101,7 +101,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Multivariate
             var matrixV = Matrix<double>.Build.Random(rowsOfV, columnsOfV, 1);
             var matrixK = Matrix<double>.Build.Random(rowsOfK, columnsOfK, 1);
 
-            Assert.Throws<ArgumentOutOfRangeException>(() => new MatrixNormal(matrixM, matrixV, matrixK));
+            Assert.That(() => new MatrixNormal(matrixM, matrixV, matrixK), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -124,10 +124,10 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Multivariate
         {
             const int N = 2;
             const int P = 3;
-            new MatrixNormal(Matrix<double>.Build.Random(N, P, 1), Matrix<double>.Build.RandomPositiveDefinite(N, 1), Matrix<double>.Build.RandomPositiveDefinite(P, 1))
+            GC.KeepAlive(new MatrixNormal(Matrix<double>.Build.Random(N, P, 1), Matrix<double>.Build.RandomPositiveDefinite(N, 1), Matrix<double>.Build.RandomPositiveDefinite(P, 1))
             {
                 RandomSource = new System.Random(0)
-            };
+            });
         }
 
         [Test]
@@ -174,22 +174,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Multivariate
         }
 
         /// <summary>
-        /// Can set M.
-        /// </summary>
-        /// <param name="n">Matrix rows count.</param>
-        /// <param name="p">Matrix columns count.</param>
-        [TestCase(1, 1)]
-        [TestCase(3, 3)]
-        [TestCase(10, 10)]
-        public void CanSetM(int n, int p)
-        {
-            new MatrixNormal(Matrix<double>.Build.Random(n, p, 1), Matrix<double>.Build.RandomPositiveDefinite(n, 1), Matrix<double>.Build.RandomPositiveDefinite(p, 1))
-            {
-                Mean = Matrix<double>.Build.Random(n, p, 1)
-            };
-        }
-
-        /// <summary>
         /// Can get V matrix.
         /// </summary>
         /// <param name="n">Matrix rows count.</param>
@@ -208,22 +192,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Multivariate
                     Assert.AreEqual(matrixV[i, j], d.RowCovariance[i, j]);
                 }
             }
-        }
-
-        /// <summary>
-        /// Can set V matrix.
-        /// </summary>
-        /// <param name="n">Matrix rows count.</param>
-        /// <param name="p">Matrix columns count.</param>
-        [TestCase(1, 1)]
-        [TestCase(3, 3)]
-        [TestCase(10, 10)]
-        public void CanSetV(int n, int p)
-        {
-            new MatrixNormal(Matrix<double>.Build.Random(n, p, 1), Matrix<double>.Build.RandomPositiveDefinite(n, 1), Matrix<double>.Build.RandomPositiveDefinite(p, 1))
-            {
-                RowCovariance = Matrix<double>.Build.RandomPositiveDefinite(n, 1)
-            };
         }
 
         /// <summary>
@@ -248,22 +216,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Multivariate
         }
 
         /// <summary>
-        /// Can set K matrix.
-        /// </summary>
-        /// <param name="n">Matrix rows count.</param>
-        /// <param name="p">Matrix columns count.</param>
-        [TestCase(1, 1)]
-        [TestCase(3, 3)]
-        [TestCase(10, 10)]
-        public void CanSetK(int n, int p)
-        {
-            new MatrixNormal(Matrix<double>.Build.Random(n, p, 1), Matrix<double>.Build.RandomPositiveDefinite(n, 1), Matrix<double>.Build.RandomPositiveDefinite(p, 1))
-            {
-                ColumnCovariance = Matrix<double>.Build.RandomPositiveDefinite(p, 1)
-            };
-        }
-
-        /// <summary>
         /// Validate density.
         /// </summary>
         [Test]
@@ -271,30 +223,61 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Multivariate
         {
             const int Rows = 2;
             const int Cols = 2;
-            var m = new DenseMatrix(Rows, Cols);
+            var m = Matrix<double>.Build.Dense(Rows, Cols);
             m[0, 0] = 0.156065579983862;
             m[0, 1] = -0.568039841576594;
             m[1, 0] = -0.806288628097313;
             m[1, 1] = -1.20004405005077;
 
-            var v = new DenseMatrix(Rows, Rows);
+            var v = Matrix<double>.Build.Dense(Rows, Rows);
             v[0, 0] = 0.674457817054746;
             v[0, 1] = 0.878930403442185;
             v[1, 0] = 0.878930403442185;
             v[1, 1] = 1.76277498368061;
 
-            var k = new DenseMatrix(Cols, Cols);
+            var k = Matrix<double>.Build.Dense(Cols, Cols);
             k[0, 0] = 0.674457817054746;
             k[0, 1] = 0.878930403442185;
             k[1, 0] = 0.878930403442185;
             k[1, 1] = 1.76277498368061;
+
             var d = new MatrixNormal(m, v, k);
 
-            var x = new DenseMatrix(Rows, Cols);
+            var x = Matrix<double>.Build.Dense(Rows, Cols);
             x[0, 0] = 2;
             x[0, 1] = 2;
 
             AssertHelpers.AlmostEqualRelative(0.00015682927366491211, d.Density(x), 16);
+        }
+
+        /// <summary>
+        /// Validate density with non-square matrices.
+        /// </summary>
+        [Test]
+        public void ValidateNonsquareDensity()
+        {
+            const int Rows = 2;
+            const int Cols = 1;
+            var m = Matrix<double>.Build.Dense(Rows, Cols);
+            m[0, 0] = 0.156065579983862;
+            m[1, 0] = -0.806288628097313;
+
+            var v = Matrix<double>.Build.Dense(Rows, Rows);
+            v[0, 0] = 0.674457817054746;
+            v[0, 1] = 0.878930403442185;
+            v[1, 0] = 0.878930403442185;
+            v[1, 1] = 1.76277498368061;
+
+            var k = Matrix<double>.Build.Dense(Cols, Cols);
+            k[0, 0] = 0.674457817054746;
+
+            var d = new MatrixNormal(m, v, k);
+
+            var x = Matrix<double>.Build.Dense(Rows, Cols);
+            x[0, 0] = 2;
+            x[1, 0] = 1.5;
+
+            AssertHelpers.AlmostEqualRelative(0.008613384131384546, d.Density(x), 12);
         }
 
         /// <summary>
@@ -343,7 +326,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Multivariate
         [TestCase(5, 2, 5, 5, 2, 3)]
         public void FailSampleStatic(int rowsOfM, int columnsOfM, int rowsOfV, int columnsOfV, int rowsOfK, int columnsOfK)
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => MatrixNormal.Sample(new System.Random(0), Matrix<double>.Build.Random(rowsOfM, columnsOfM, 1), Matrix<double>.Build.Random(rowsOfV, columnsOfV, 1), Matrix<double>.Build.Random(rowsOfK, columnsOfK, 1)));
+            Assert.That(() => MatrixNormal.Sample(new System.Random(0), Matrix<double>.Build.Random(rowsOfM, columnsOfM, 1), Matrix<double>.Build.Random(rowsOfV, columnsOfV, 1), Matrix<double>.Build.Random(rowsOfK, columnsOfK, 1)), Throws.ArgumentException);
         }
     }
 }

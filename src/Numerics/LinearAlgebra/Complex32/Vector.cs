@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2013 Math.NET
+// Copyright (c) 2009-2015 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -51,6 +51,32 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         }
 
         /// <summary>
+        /// Set all values whose absolute value is smaller than the threshold to zero.
+        /// </summary>
+        public override void CoerceZero(double threshold)
+        {
+            MapInplace(x => x.Magnitude < threshold ? Complex32.Zero : x, Zeros.AllowSkip);
+        }
+
+        /// <summary>
+        /// Conjugates vector and save result to <paramref name="result"/>
+        /// </summary>
+        /// <param name="result">Target vector</param>
+        protected override void DoConjugate(Vector<Complex32> result)
+        {
+            Map(Complex32.Conjugate, result, Zeros.AllowSkip);
+        }
+
+        /// <summary>
+        /// Negates vector and saves result to <paramref name="result"/>
+        /// </summary>
+        /// <param name="result">Target vector</param>
+        protected override void DoNegate(Vector<Complex32> result)
+        {
+            Map(Complex32.Negate, result, Zeros.AllowSkip);
+        }
+
+        /// <summary>
         /// Adds a scalar to each element of the vector and stores the result in the result vector.
         /// </summary>
         /// <param name="scalar">
@@ -61,10 +87,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         /// </param>
         protected override void DoAdd(Complex32 scalar, Vector<Complex32> result)
         {
-            for (var index = 0; index < Count; index++)
-            {
-                result.At(index, At(index) + scalar);
-            }
+            Map(x => x + scalar, result, Zeros.Include);
         }
 
         /// <summary>
@@ -78,10 +101,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         /// </param>
         protected override void DoAdd(Vector<Complex32> other, Vector<Complex32> result)
         {
-            for (var index = 0; index < Count; index++)
-            {
-                result.At(index, At(index) + other.At(index));
-            }
+            Map2(Complex32.Add, other, result, Zeros.AllowSkip);
         }
 
         /// <summary>
@@ -95,7 +115,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         /// </param>
         protected override void DoSubtract(Complex32 scalar, Vector<Complex32> result)
         {
-            DoAdd(-scalar, result);
+            Map(x => x - scalar, result, Zeros.Include);
         }
 
         /// <summary>
@@ -109,10 +129,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         /// </param>
         protected override void DoSubtract(Vector<Complex32> other, Vector<Complex32> result)
         {
-            for (var index = 0; index < Count; index++)
-            {
-                result.At(index, At(index) - other.At(index));
-            }
+            Map2(Complex32.Subtract, other, result, Zeros.AllowSkip);
         }
 
         /// <summary>
@@ -126,10 +143,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         /// </param>
         protected override void DoMultiply(Complex32 scalar, Vector<Complex32> result)
         {
-            for (var index = 0; index < Count; index++)
-            {
-                result.At(index, At(index) * scalar);
-            }
+            Map(x => x*scalar, result, Zeros.AllowSkip);
         }
 
         /// <summary>
@@ -143,7 +157,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         /// </param>
         protected override void DoDivide(Complex32 divisor, Vector<Complex32> result)
         {
-            DoMultiply(1 / divisor, result);
+            Map(x => x/divisor, result, divisor.IsZero() ? Zeros.Include : Zeros.AllowSkip);
         }
 
         /// <summary>
@@ -153,10 +167,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         /// <param name="result">The vector to store the result of the division.</param>
         protected override void DoDivideByThis(Complex32 dividend, Vector<Complex32> result)
         {
-            for (var index = 0; index < Count; index++)
-            {
-                result.At(index, dividend / At(index));
-            }
+            Map(x => dividend/x, result, Zeros.Include);
         }
 
         /// <summary>
@@ -166,10 +177,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         /// <param name="result">The vector to store the result of the pointwise multiplication.</param>
         protected override void DoPointwiseMultiply(Vector<Complex32> other, Vector<Complex32> result)
         {
-            for (var index = 0; index < Count; index++)
-            {
-                result.At(index, At(index) * other.At(index));
-            }
+            Map2(Complex32.Multiply, other, result, Zeros.AllowSkip);
         }
 
         /// <summary>
@@ -179,20 +187,57 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         /// <param name="result">The vector to store the result of the pointwise division.</param>
         protected override void DoPointwiseDivide(Vector<Complex32> divisor, Vector<Complex32> result)
         {
-            for (var index = 0; index < Count; index++)
-            {
-                result.At(index, At(index) / divisor.At(index));
-            }
+            Map2(Complex32.Divide, divisor, result, Zeros.Include);
         }
 
         /// <summary>
-        /// Pointwise modulus this vector with another vector and stores the result into the result vector.
+        /// Pointwise raise this vector to an exponent and store the result into the result vector.
         /// </summary>
-        /// <param name="divisor">The vector to pointwise modulus this one by.</param>
+        /// <param name="exponent">The exponent to raise this vector values to.</param>
+        /// <param name="result">The vector to store the result of the pointwise power.</param>
+        protected override void DoPointwisePower(Complex32 exponent, Vector<Complex32> result)
+        {
+            Map(x => x.Power(exponent), result, Zeros.Include);
+        }
+
+        /// <summary>
+        /// Pointwise canonical modulus, where the result has the sign of the divisor,
+        /// of this vector with another vector and stores the result into the result vector.
+        /// </summary>
+        /// <param name="divisor">The pointwise denominator vector to use.</param>
         /// <param name="result">The result of the modulus.</param>
-        protected override void DoPointwiseModulus(Vector<Complex32> divisor, Vector<Complex32> result)
+        protected override sealed void DoPointwiseModulus(Vector<Complex32> divisor, Vector<Complex32> result)
         {
             throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// Pointwise remainder (% operator), where the result has the sign of the dividend,
+        /// of this vector with another vector and stores the result into the result vector.
+        /// </summary>
+        /// <param name="divisor">The pointwise denominator vector to use.</param>
+        /// <param name="result">The result of the modulus.</param>
+        protected override sealed void DoPointwiseRemainder(Vector<Complex32> divisor, Vector<Complex32> result)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// Pointwise applies the exponential function to each value and stores the result into the result vector.
+        /// </summary>
+        /// <param name="result">The vector to store the result.</param>
+        protected override void DoPointwiseExp(Vector<Complex32> result)
+        {
+            Map(Complex32.Exp, result, Zeros.Include);
+        }
+
+        /// <summary>
+        /// Pointwise applies the natural logarithm function to each value and stores the result into the result vector.
+        /// </summary>
+        /// <param name="result">The vector to store the result.</param>
+        protected override void DoPointwiseLog(Vector<Complex32> result)
+        {
+            Map(Complex32.Log, result, Zeros.Include);
         }
 
         /// <summary>
@@ -226,21 +271,45 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         }
 
         /// <summary>
-        /// Computes the modulus for each element of the vector for the given divisor.
+        /// Computes the canonical modulus, where the result has the sign of the divisor,
+        /// for each element of the vector for the given divisor.
         /// </summary>
         /// <param name="divisor">The scalar denominator to use.</param>
         /// <param name="result">A vector to store the results in.</param>
-        protected override void DoModulus(Complex32 divisor, Vector<Complex32> result)
+        protected override sealed void DoModulus(Complex32 divisor, Vector<Complex32> result)
         {
             throw new NotSupportedException();
         }
 
         /// <summary>
-        /// Computes the modulus for the given dividend for each element of the vector.
+        /// Computes the canonical modulus, where the result has the sign of the divisor,
+        /// for the given dividend for each element of the vector.
         /// </summary>
         /// <param name="dividend">The scalar numerator to use.</param>
         /// <param name="result">A vector to store the results in.</param>
-        protected override void DoModulusByThis(Complex32 dividend, Vector<Complex32> result)
+        protected override sealed void DoModulusByThis(Complex32 dividend, Vector<Complex32> result)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// Computes the remainder (% operator), where the result has the sign of the dividend,
+        /// for each element of the vector for the given divisor.
+        /// </summary>
+        /// <param name="divisor">The scalar denominator to use.</param>
+        /// <param name="result">A vector to store the results in.</param>
+        protected override sealed void DoRemainder(Complex32 divisor, Vector<Complex32> result)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// Computes the remainder (% operator), where the result has the sign of the dividend,
+        /// for the given dividend for each element of the vector.
+        /// </summary>
+        /// <param name="dividend">The scalar numerator to use.</param>
+        /// <param name="result">A vector to store the results in.</param>
+        protected override sealed void DoRemainderByThis(Complex32 dividend, Vector<Complex32> result)
         {
             throw new NotSupportedException();
         }
@@ -345,7 +414,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
         /// <summary>
         /// Calculates the infinity norm of the vector.
         /// </summary>
-        /// <returns>The square root of the sum of the squared values.</returns>
+        /// <returns>The maximum absolute value.</returns>
         public override double InfinityNorm()
         {
             return CommonParallel.Aggregate(0, Count, i => At(i).Magnitude, Math.Max, 0f);
@@ -374,30 +443,6 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
                 sum += Math.Pow(At(index).Magnitude, p);
             }
             return Math.Pow(sum, 1.0/p);
-        }
-
-        /// <summary>
-        /// Conjugates vector and save result to <paramref name="result"/>
-        /// </summary>
-        /// <param name="result">Target vector</param>
-        protected override void DoConjugate(Vector<Complex32> result)
-        {
-            for (var index = 0; index < Count; index++)
-            {
-                result.At(index, At(index).Conjugate());
-            }
-        }
-
-        /// <summary>
-        /// Negates vector and saves result to <paramref name="result"/>
-        /// </summary>
-        /// <param name="result">Target vector</param>
-        protected override void DoNegate(Vector<Complex32> result)
-        {
-            for (var index = 0; index < Count; index++)
-            {
-                result.At(index, -At(index));
-            }
         }
 
         /// <summary>

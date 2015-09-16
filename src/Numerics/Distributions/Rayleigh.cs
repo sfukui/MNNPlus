@@ -30,51 +30,58 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using MathNet.Numerics.Properties;
 using MathNet.Numerics.Random;
+using MathNet.Numerics.Threading;
 
 namespace MathNet.Numerics.Distributions
 {
     /// <summary>
     /// Continuous Univariate Rayleigh distribution.
-    /// The Rayleigh distribution (pronounced /ˈreɪli/) is a continuous probability distribution. As an 
-    /// example of how it arises, the wind speed will have a Rayleigh distribution if the components of 
+    /// The Rayleigh distribution (pronounced /ˈreɪli/) is a continuous probability distribution. As an
+    /// example of how it arises, the wind speed will have a Rayleigh distribution if the components of
     /// the two-dimensional wind velocity vector are uncorrelated and normally distributed with equal variance.
-    /// For details about this distribution, see 
+    /// For details about this distribution, see
     /// <a href="http://en.wikipedia.org/wiki/Rayleigh_distribution">Wikipedia - Rayleigh distribution</a>.
     /// </summary>
-    /// <remarks><para>The distribution will use the <see cref="System.Random"/> by default. 
-    /// Users can get/set the random number generator by using the <see cref="RandomSource"/> property.</para>
-    /// <para>The statistics classes will check all the incoming parameters whether they are in the allowed
-    /// range. This might involve heavy computation. Optionally, by setting Control.CheckDistributionParameters
-    /// to <c>false</c>, all parameter checks can be turned off.</para></remarks>
     public class Rayleigh : IContinuousDistribution
     {
         System.Random _random;
 
-        double _scale;
+        readonly double _scale;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Rayleigh"/> class. 
+        /// Initializes a new instance of the <see cref="Rayleigh"/> class.
         /// </summary>
         /// <param name="scale">The scale (σ) of the distribution. Range: σ > 0.</param>
         /// <exception cref="ArgumentException">If <paramref name="scale"/> is negative.</exception>
         public Rayleigh(double scale)
         {
-            _random = MersenneTwister.Default;
-            SetParameters(scale);
+            if (!IsValidParameterSet(scale))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            _random = SystemRandomSource.Default;
+            _scale = scale;
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Rayleigh"/> class. 
+        /// Initializes a new instance of the <see cref="Rayleigh"/> class.
         /// </summary>
         /// <param name="scale">The scale (σ) of the distribution. Range: σ > 0.</param>
         /// <param name="randomSource">The random number generator which is used to draw random samples.</param>
         /// <exception cref="ArgumentException">If <paramref name="scale"/> is negative.</exception>
         public Rayleigh(double scale, System.Random randomSource)
         {
-            _random = randomSource ?? MersenneTwister.Default;
-            SetParameters(scale);
+            if (!IsValidParameterSet(scale))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            _random = randomSource ?? SystemRandomSource.Default;
+            _scale = scale;
         }
 
         /// <summary>
@@ -87,18 +94,12 @@ namespace MathNet.Numerics.Distributions
         }
 
         /// <summary>
-        /// Sets the parameters of the distribution after checking their validity.
+        /// Tests whether the provided values are valid parameters for this distribution.
         /// </summary>
         /// <param name="scale">The scale (σ) of the distribution. Range: σ > 0.</param>
-        /// <exception cref="ArgumentOutOfRangeException">When the parameters are out of range.</exception>
-        void SetParameters(double scale)
+        public static bool IsValidParameterSet(double scale)
         {
-            if (scale <= 0.0 || Double.IsNaN(scale))
-            {
-                throw new ArgumentOutOfRangeException(Resources.InvalidDistributionParameters);
-            }
-
-            _scale = scale;
+            return scale > 0.0;
         }
 
         /// <summary>
@@ -107,7 +108,6 @@ namespace MathNet.Numerics.Distributions
         public double Scale
         {
             get { return _scale; }
-            set { SetParameters(value); }
         }
 
         /// <summary>
@@ -116,7 +116,7 @@ namespace MathNet.Numerics.Distributions
         public System.Random RandomSource
         {
             get { return _random; }
-            set { _random = value ?? MersenneTwister.Default; }
+            set { _random = value ?? SystemRandomSource.Default; }
         }
 
         /// <summary>
@@ -188,7 +188,7 @@ namespace MathNet.Numerics.Distributions
         /// </summary>
         public double Maximum
         {
-            get { return Double.PositiveInfinity; }
+            get { return double.PositiveInfinity; }
         }
 
         /// <summary>
@@ -242,7 +242,15 @@ namespace MathNet.Numerics.Distributions
         /// <returns>A random number from this distribution.</returns>
         public double Sample()
         {
-            return _scale*Math.Sqrt(-2.0*Math.Log(_random.NextDouble()));
+            return SampleUnchecked(_random, _scale);
+        }
+
+        /// <summary>
+        /// Fills an array with samples generated from the distribution.
+        /// </summary>
+        public void Samples(double[] values)
+        {
+            SamplesUnchecked(_random, values, _scale);
         }
 
         /// <summary>
@@ -251,10 +259,29 @@ namespace MathNet.Numerics.Distributions
         /// <returns>a sequence of samples from the distribution.</returns>
         public IEnumerable<double> Samples()
         {
-            while (true)
+            return SamplesUnchecked(_random, _scale);
+        }
+
+        static double SampleUnchecked(System.Random rnd, double scale)
+        {
+            return scale*Math.Sqrt(-2.0*Math.Log(rnd.NextDouble()));
+        }
+
+        static IEnumerable<double> SamplesUnchecked(System.Random rnd, double scale)
+        {
+            return rnd.NextDoubleSequence().Select(x => scale*Math.Sqrt(-2.0*Math.Log(x)));
+        }
+
+        static void SamplesUnchecked(System.Random rnd, double[] values, double scale)
+        {
+            rnd.NextDoubles(values);
+            CommonParallel.For(0, values.Length, 4096, (a, b) =>
             {
-                yield return _scale*Math.Sqrt(-2.0*Math.Log(_random.NextDouble()));
-            }
+                for (int i = a; i < b; i++)
+                {
+                    values[i] = scale*Math.Sqrt(-2.0*Math.Log(values[i]));
+                }
+            });
         }
 
         /// <summary>
@@ -266,7 +293,10 @@ namespace MathNet.Numerics.Distributions
         /// <seealso cref="Density"/>
         public static double PDF(double scale, double x)
         {
-            if (scale <= 0.0) throw new ArgumentOutOfRangeException("scale", Resources.InvalidDistributionParameters);
+            if (scale <= 0.0)
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
 
             return (x/(scale*scale))*Math.Exp(-x*x/(2.0*scale*scale));
         }
@@ -280,7 +310,10 @@ namespace MathNet.Numerics.Distributions
         /// <seealso cref="DensityLn"/>
         public static double PDFLn(double scale, double x)
         {
-            if (scale <= 0.0) throw new ArgumentOutOfRangeException("scale", Resources.InvalidDistributionParameters);
+            if (scale <= 0.0)
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
 
             return Math.Log(x/(scale*scale)) - (x*x/(2.0*scale*scale));
         }
@@ -294,7 +327,10 @@ namespace MathNet.Numerics.Distributions
         /// <seealso cref="CumulativeDistribution"/>
         public static double CDF(double scale, double x)
         {
-            if (scale <= 0.0) throw new ArgumentOutOfRangeException("scale", Resources.InvalidDistributionParameters);
+            if (scale <= 0.0)
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
 
             return 1.0 - Math.Exp(-x*x/(2.0*scale*scale));
         }
@@ -309,7 +345,10 @@ namespace MathNet.Numerics.Distributions
         /// <seealso cref="InverseCumulativeDistribution"/>
         public static double InvCDF(double scale, double p)
         {
-            if (scale <= 0.0) throw new ArgumentOutOfRangeException("scale", Resources.InvalidDistributionParameters);
+            if (scale <= 0.0)
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
 
             return scale*Math.Sqrt(-2*Math.Log(1 - p));
         }
@@ -322,9 +361,12 @@ namespace MathNet.Numerics.Distributions
         /// <returns>a sample from the distribution.</returns>
         public static double Sample(System.Random rnd, double scale)
         {
-            if (scale <= 0.0) throw new ArgumentOutOfRangeException("scale", Resources.InvalidDistributionParameters);
+            if (scale <= 0.0)
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
 
-            return scale*Math.Sqrt(-2.0*Math.Log(rnd.NextDouble()));
+            return SampleUnchecked(rnd, scale);
         }
 
         /// <summary>
@@ -335,12 +377,75 @@ namespace MathNet.Numerics.Distributions
         /// <returns>a sequence of samples from the distribution.</returns>
         public static IEnumerable<double> Samples(System.Random rnd, double scale)
         {
-            if (scale <= 0.0) throw new ArgumentOutOfRangeException("scale", Resources.InvalidDistributionParameters);
-
-            while (true)
+            if (scale <= 0.0)
             {
-                yield return scale*Math.Sqrt(-2.0*Math.Log(rnd.NextDouble()));
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
             }
+
+            return SamplesUnchecked(rnd, scale);
+        }
+
+        /// <summary>
+        /// Fills an array with samples generated from the distribution.
+        /// </summary>
+        /// <param name="rnd">The random number generator to use.</param>
+        /// <param name="values">The array to fill with the samples.</param>
+        /// <param name="scale">The scale (σ) of the distribution. Range: σ > 0.</param>
+        /// <returns>a sequence of samples from the distribution.</returns>
+        public static void Samples(System.Random rnd, double[] values, double scale)
+        {
+            if (scale <= 0.0)
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            SamplesUnchecked(rnd, values, scale);
+        }
+
+        /// <summary>
+        /// Generates a sample from the distribution.
+        /// </summary>
+        /// <param name="scale">The scale (σ) of the distribution. Range: σ > 0.</param>
+        /// <returns>a sample from the distribution.</returns>
+        public static double Sample(double scale)
+        {
+            if (scale <= 0.0)
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            return SampleUnchecked(SystemRandomSource.Default, scale);
+        }
+
+        /// <summary>
+        /// Generates a sequence of samples from the distribution.
+        /// </summary>
+        /// <param name="scale">The scale (σ) of the distribution. Range: σ > 0.</param>
+        /// <returns>a sequence of samples from the distribution.</returns>
+        public static IEnumerable<double> Samples(double scale)
+        {
+            if (scale <= 0.0)
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            return SamplesUnchecked(SystemRandomSource.Default, scale);
+        }
+
+        /// <summary>
+        /// Fills an array with samples generated from the distribution.
+        /// </summary>
+        /// <param name="values">The array to fill with the samples.</param>
+        /// <param name="scale">The scale (σ) of the distribution. Range: σ > 0.</param>
+        /// <returns>a sequence of samples from the distribution.</returns>
+        public static void Samples(double[] values, double scale)
+        {
+            if (scale <= 0.0)
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            SamplesUnchecked(SystemRandomSource.Default, values, scale);
         }
     }
 }

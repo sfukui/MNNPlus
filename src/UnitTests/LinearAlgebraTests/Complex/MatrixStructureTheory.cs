@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2013 Math.NET
+// Copyright (c) 2009-2015 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -42,28 +42,33 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
     [TestFixture, Category("LA")]
     public class MatrixStructureTheory : MatrixStructureTheory<Complex>
     {
-        [Datapoints]
-        Matrix<Complex>[] _matrices = new Matrix<Complex>[]
+        protected override Matrix<Complex> Get(TestMatrix matrix)
         {
-            Matrix<Complex>.Build.DenseOfArray(new[,] { { 1d, new Complex(1.1d, -4d), 2d }, { 1d, 1d, 2d }, { 1d, new Complex(1d, 2d), 2d } }),
-            Matrix<Complex>.Build.DenseOfArray(new[,] { { -1.1d, -2.2d, -3.3d }, { 0d, 1.1d, new Complex(2.2d, -1.2d) }, { -4.4d, 5.5d, 6.6d } }),
-            Matrix<Complex>.Build.DenseOfArray(new[,] { { new Complex(-1.1d, -2d), -2.2d, -3.3d, -4.4d }, { 0d, 1.1d, 2.2d, 3.3d }, { 1d, 2.1d, 6.2d, 4.3d }, { -4.4d, 5.5d, 6.6d, -7.7d } }),
-            Matrix<Complex>.Build.DenseOfArray(new[,] { { -1.1d, new Complex(-2.2d, 3.4d), -3.3d, -4.4d }, { -1.1d, -2.2d, -3.3d, -4.4d }, { -1.1d, -2.2d, -3.3d, -4.4d }, { -1.1d, -2.2d, -3.3d, -4.4d } }),
-            Matrix<Complex>.Build.DenseOfArray(new[,] { { -1.1d, -2.2d }, { Complex.Zero, 1.1d }, { -4.4d, 5.5d } }),
-            Matrix<Complex>.Build.DenseOfArray(new[,] { { -1.1d, -2.2d, -3.3d }, { 0d, new Complex(1.1d, 0.1d), 2.2d } }),
-            Matrix<Complex>.Build.DenseOfArray(new[,] { { 1d, 2d, 3d }, { 2d, new Complex(2d, 2d), 0d }, { 3d, Complex.Zero, 3d } }),
+            return TestData.Matrix(matrix);
+        }
 
-            Matrix<Complex>.Build.SparseOfArray(new[,] { { 7d, 1d, 2d }, { 1d, 1d, 2d }, { 1d, 1d + Complex.ImaginaryOne, 2d } }),
-            Matrix<Complex>.Build.SparseOfArray(new[,] { { 7d, 1d, 2d }, { new Complex(1d, 2d), 0d, Complex.Zero }, { -2d, 0d, 0d } }),
-            Matrix<Complex>.Build.SparseOfArray(new[,] { { -1.1d, 0d, 0d }, { 0d, new Complex(1.1d, 2d), 2.2d } }),
+        [Datapoints]
+        TestMatrix[] _matrices =
+        {
+            TestMatrix.DenseSquare3x3,
+            TestMatrix.DenseSquare3x3b,
+            TestMatrix.DenseSquare4x4,
+            TestMatrix.DenseSquare4x4b,
+            TestMatrix.DenseTall3x2,
+            TestMatrix.DenseWide2x3,
+            TestMatrix.DenseSquare3x3c,
 
-            Matrix<Complex>.Build.Diagonal(3, 3, new[] { new Complex(1d, 1d), -2d, 1.5d }),
-            Matrix<Complex>.Build.Diagonal(3, 3, new[] { new Complex(1d, 2d), 0d, -1.5d }),
+            TestMatrix.SparseSquare3x3,
+            TestMatrix.SparseSquare3x3b,
+            TestMatrix.SparseWide2x3,
 
-            new UserDefinedMatrix(new[,] { { 0d, 1d, 2d }, { -1d, 7.7d, 0d }, { -2d, Complex.Zero, 0d } })
+            TestMatrix.DiagonalSquare3x3,
+            TestMatrix.DiagonalSquare3x3b,
+
+            TestMatrix.UserSquare3x3
         };
 
         [Datapoints]
-        Complex[] _scalars = new[] { new Complex(2d, 0d), new Complex(-1.5d, 3.5d), Complex.Zero };
+        Complex[] _scalars = { new Complex(2d, 0d), new Complex(-1.5d, 3.5d), Complex.Zero };
     }
 }

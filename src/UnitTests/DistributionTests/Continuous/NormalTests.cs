@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2014 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -39,15 +43,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
     [TestFixture, Category("Distributions")]
     public class NormalTests
     {
-        /// <summary>
-        /// Set-up parameters.
-        /// </summary>
-        [SetUp]
-        public void SetUp()
-        {
-            Control.CheckDistributionParameters = true;
-        }
-
         /// <summary>
         /// Can create standard normal.
         /// </summary>
@@ -88,7 +83,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [TestCase(1.0, -1.0)]
         public void NormalCreateFailsWithBadParameters(double mean, double sdev)
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new Normal(mean, sdev));
+            Assert.That(() => new Normal(mean, sdev), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -153,113 +148,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         {
             var n = new Normal(1d, 2d);
             Assert.AreEqual("Normal(μ = 1, σ = 2)", n.ToString());
-        }
-
-        /// <summary>
-        /// Can set precision.
-        /// </summary>
-        /// <param name="prec">Precision value.</param>
-        [TestCase(-0.0)]
-        [TestCase(0.0)]
-        [TestCase(0.1)]
-        [TestCase(1.0)]
-        [TestCase(10.0)]
-        [TestCase(Double.PositiveInfinity)]
-        public void CanSetPrecision(double prec)
-        {
-            new Normal
-            {
-                Precision = prec
-            };
-        }
-
-        /// <summary>
-        /// Set precision fails with negative value.
-        /// </summary>
-        [Test]
-        public void SetPrecisionFailsWithNegativePrecision()
-        {
-            var n = new Normal();
-            Assert.Throws<ArgumentOutOfRangeException>(() => n.Precision = -1.0);
-        }
-
-        /// <summary>
-        /// Can set variance.
-        /// </summary>
-        /// <param name="var">Variance value.</param>
-        [TestCase(-0.0)]
-        [TestCase(0.0)]
-        [TestCase(0.1)]
-        [TestCase(1.0)]
-        [TestCase(10.0)]
-        [TestCase(Double.PositiveInfinity)]
-        public void CanSetVariance(double var)
-        {
-            var dist = new Normal
-            {
-                Variance = var
-            };
-
-            Assert.AreEqual(var, dist.Variance, 1e-14);
-        }
-
-        /// <summary>
-        /// Set variance fails with negative value.
-        /// </summary>
-        [Test]
-        public void SetVarianceFailsWithNegativeVariance()
-        {
-            var n = new Normal();
-            Assert.Throws<ArgumentOutOfRangeException>(() => n.Variance = -1.0);
-        }
-
-        /// <summary>
-        /// Can set standard deviation.
-        /// </summary>
-        /// <param name="sdev">Standard deviation value.</param>
-        [TestCase(-0.0)]
-        [TestCase(0.0)]
-        [TestCase(0.1)]
-        [TestCase(1.0)]
-        [TestCase(10.0)]
-        [TestCase(Double.PositiveInfinity)]
-        public void CanSetStdDev(double sdev)
-        {
-            var dist = new Normal
-            {
-                StdDev = sdev
-            };
-
-            Assert.AreEqual(sdev, dist.StdDev, 1e-14);
-        }
-
-        /// <summary>
-        /// Set standard deviation fails with negative value.
-        /// </summary>
-        [Test]
-        public void SetStdDevFailsWithNegativeStdDev()
-        {
-            var n = new Normal();
-            Assert.Throws<ArgumentOutOfRangeException>(() => n.StdDev = -1.0);
-        }
-
-        /// <summary>
-        /// Can set mean.
-        /// </summary>
-        /// <param name="mean">Mean value.</param>
-        [TestCase(Double.NegativeInfinity)]
-        [TestCase(-0.0)]
-        [TestCase(0.0)]
-        [TestCase(0.1)]
-        [TestCase(1.0)]
-        [TestCase(10.0)]
-        [TestCase(Double.PositiveInfinity)]
-        public void CanSetMean(double mean)
-        {
-            new Normal
-            {
-                Mean = mean
-            };
         }
 
         /// <summary>
@@ -412,7 +300,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void CanSampleSequenceStatic()
         {
             var ied = Normal.Samples(new Random(0), 0.0, 1.0);
-            ied.Take(5).ToArray();
+            GC.KeepAlive(ied.Take(5).ToArray());
         }
 
         /// <summary>
@@ -421,7 +309,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [Test]
         public void FailSampleStatic()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => { var d = Normal.Sample(new Random(0), 0.0, -1.0); });
+            Assert.That(() => { var d = Normal.Sample(new Random(0), 0.0, -1.0); }, Throws.ArgumentException);
         }
 
         /// <summary>
@@ -430,7 +318,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [Test]
         public void FailSampleSequenceStatic()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => { var ied = Normal.Samples(new Random(0), 0.0, -1.0).First(); });
+            Assert.That(() => { var ied = Normal.Samples(new Random(0), 0.0, -1.0).First(); }, Throws.ArgumentException);
         }
 
         /// <summary>
@@ -451,14 +339,14 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         {
             var n = new Normal();
             var ied = n.Samples();
-            ied.Take(5).ToArray();
+            GC.KeepAlive(ied.Take(5).ToArray());
         }
 
         /// <summary>
         /// Validate cumulative distribution.
         /// </summary>
         /// <param name="x">Input X value.</param>
-        /// <param name="f">Expected value.</param>
+        /// <param name="p">Expected value.</param>
         [TestCase(Double.NegativeInfinity, 0.0)]
         [TestCase(-5.0, 0.00000028665157187919391167375233287464535385442301361187883)]
         [TestCase(-2.0, 0.0002326290790355250363499258867279847735487493358890356)]
@@ -469,18 +357,18 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [TestCase(6.0, 0.69146246127401310363770461060833773988360217555457859)]
         [TestCase(10.0, 0.9937903346742238648330218954258077788721022530769078)]
         [TestCase(Double.PositiveInfinity, 1.0)]
-        public void ValidateCumulativeDistribution(double x, double f)
+        public void ValidateCumulativeDistribution(double x, double p)
         {
             var n = Normal.WithMeanStdDev(5.0, 2.0);
-            AssertHelpers.AlmostEqualRelative(f, n.CumulativeDistribution(x), 9);
-            AssertHelpers.AlmostEqualRelative(f, Normal.CDF(5.0, 2.0, x), 9);
+            AssertHelpers.AlmostEqualRelative(p, n.CumulativeDistribution(x), 9);
+            AssertHelpers.AlmostEqualRelative(p, Normal.CDF(5.0, 2.0, x), 9);
         }
 
         /// <summary>
         /// Validate inverse cumulative distribution.
         /// </summary>
         /// <param name="x">Input X value.</param>
-        /// <param name="f">Expected value.</param>
+        /// <param name="p">Expected value.</param>
         [TestCase(Double.NegativeInfinity, 0.0)]
         [TestCase(-5.0, 0.00000028665157187919391167375233287464535385442301361187883)]
         [TestCase(-2.0, 0.0002326290790355250363499258867279847735487493358890356)]
@@ -491,11 +379,11 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [TestCase(6.0, .69146246127401310363770461060833773988360217555457859)]
         [TestCase(10.0, 0.9937903346742238648330218954258077788721022530769078)]
         [TestCase(Double.PositiveInfinity, 1.0)]
-        public void ValidateInverseCumulativeDistribution(double x, double f)
+        public void ValidateInverseCumulativeDistribution(double x, double p)
         {
             var n = Normal.WithMeanStdDev(5.0, 2.0);
-            AssertHelpers.AlmostEqualRelative(x, n.InverseCumulativeDistribution(f), 14);
-            AssertHelpers.AlmostEqualRelative(x, Normal.InvCDF(5.0, 2.0, f), 14);
+            AssertHelpers.AlmostEqualRelative(x, n.InverseCumulativeDistribution(p), 14);
+            AssertHelpers.AlmostEqualRelative(x, Normal.InvCDF(5.0, 2.0, p), 14);
         }
 
         /// <summary>

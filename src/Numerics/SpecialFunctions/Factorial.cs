@@ -28,17 +28,21 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+using System;
+using MathNet.Numerics.Properties;
+
+#if !NOSYSNUMERICS
+using System.Numerics;
+#endif
+
 // ReSharper disable CheckNamespace
 namespace MathNet.Numerics
 // ReSharper restore CheckNamespace
 {
-    using System;
-    using Properties;
-
     public partial class SpecialFunctions
     {
-        private const int FactorialMaxArgument = 170;
-        private static double[] _factorialCache;
+        const int FactorialMaxArgument = 170;
+        static double[] _factorialCache;
 
         /// <summary>
         /// Initializes static members of the SpecialFunctions class.
@@ -48,13 +52,13 @@ namespace MathNet.Numerics
             InitializeFactorial();
         }
 
-        private static void InitializeFactorial()
+        static void InitializeFactorial()
         {
             _factorialCache = new double[FactorialMaxArgument + 1];
             _factorialCache[0] = 1.0;
             for (int i = 1; i < _factorialCache.Length; i++)
             {
-                _factorialCache[i] = _factorialCache[i - 1] * i;
+                _factorialCache[i] = _factorialCache[i - 1]*i;
             }
         }
 
@@ -64,7 +68,7 @@ namespace MathNet.Numerics
         /// </summary>
         /// <returns>A value value! for value > 0</returns>
         /// <remarks>
-        /// If you need to multiply or divide various such factorials, consider using the logarithmic version 
+        /// If you need to multiply or divide various such factorials, consider using the logarithmic version
         /// <see cref="FactorialLn"/> instead so you can add instead of multiply and subtract instead of divide, and
         /// then exponentiate the result using <see cref="System.Math.Exp"/>. This will also circumvent the problem that
         /// factorials become very large even for small parameters.
@@ -82,8 +86,34 @@ namespace MathNet.Numerics
                 return _factorialCache[x];
             }
 
-            return Double.PositiveInfinity;
+            return double.PositiveInfinity;
         }
+
+#if !NOSYSNUMERICS
+        /// <summary>
+        /// Computes the factorial of an integer.
+        /// </summary>
+        public static BigInteger Factorial(BigInteger x)
+        {
+            if (x < 0)
+            {
+                throw new ArgumentOutOfRangeException("x", Resources.ArgumentPositive);
+            }
+
+            if (x == 0)
+            {
+                return BigInteger.One;
+            }
+
+            BigInteger r = x;
+            while (--x > 1)
+            {
+                r *= x;
+            }
+
+            return r;
+        }
+#endif
 
         /// <summary>
         /// Computes the logarithmic factorial function x -> ln(x!) of an integer number > 0.
@@ -135,7 +165,7 @@ namespace MathNet.Numerics
         {
             if (k < 0 || n < 0 || k > n)
             {
-                return Double.NegativeInfinity;
+                return double.NegativeInfinity;
             }
 
             return FactorialLn(n) - FactorialLn(k) - FactorialLn(n - k);
@@ -147,7 +177,7 @@ namespace MathNet.Numerics
         /// <param name="n">A nonnegative value n.</param>
         /// <param name="ni">An array of nonnegative values that sum to <paramref name="n"/>.</param>
         /// <returns>The multinomial coefficient.</returns>
-        /// <exception cref="ArgumentNullException">if <paramref name="ni"/> is <see langword="null" />.</exception>   
+        /// <exception cref="ArgumentNullException">if <paramref name="ni"/> is <see langword="null" />.</exception>
         /// <exception cref="ArgumentException">If <paramref name="n"/> or any of the <paramref name="ni"/> are negative.</exception>
         /// <exception cref="ArgumentException">If the sum of all <paramref name="ni"/> is not equal to <paramref name="n"/>.</exception>
         public static double Multinomial(int n, int[] ni)
@@ -156,6 +186,7 @@ namespace MathNet.Numerics
             {
                 throw new ArgumentException(Resources.ArgumentMustBePositive, "n");
             }
+
             if (ni == null)
             {
                 throw new ArgumentNullException("ni");
@@ -177,7 +208,7 @@ namespace MathNet.Numerics
             // Before returning, check that the sum of all elements was equal to n.
             if (sum != n)
             {
-                throw new ArgumentException(Resources.ArgumentParameterSetInvalid , "ni");
+                throw new ArgumentException(Resources.ArgumentParameterSetInvalid, "ni");
             }
 
             return Math.Floor(0.5 + Math.Exp(ret));

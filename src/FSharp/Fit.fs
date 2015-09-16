@@ -31,6 +31,7 @@
 namespace MathNet.Numerics
 
 open System
+open MathNet.Numerics
 open MathNet.Numerics.LinearAlgebra
 open MathNet.Numerics.LinearAlgebra.Factorization
 
@@ -41,12 +42,19 @@ module Fit =
 
     /// Least-Squares fitting the points (x,y) to a line y : x -> a+b*x,
     /// returning its best fitting parameters as (a, b) tuple.
-    let line x y = Fit.Line(x,y)
+    let line x y = Fit.Line(x,y) |> properTuple2
 
     /// Least-Squares fitting the points (x,y) to a line y : x -> a+b*x,
     /// returning a function y' for the best fitting line.
-    let lineF x y = Fit.LineFunc(x,y) |> tofs
+    let lineFunc x y = Fit.LineFunc(x,y) |> tofs
 
+    /// Least-Squares fitting the points ((x0,x1,...,xk),y) to a linear surface y : X -> p0*x0 + p1*x1 + ... + pk*xk,
+    /// returning its best fitting parameters as [p0, p1, p2, ..., pk] array.
+    let multiDim intercept x y = Fit.MultiDim(x,y,intercept)
+
+    /// Least-Squares fitting the points ((x0,x1,...,xk),y) to a linear surface y : X -> p0*x0 + p1*x1 + ... + pk*xk,
+    /// returning a function y' for the best fitting surface.
+    let multiDimFunc intercept x y = Fit.MultiDimFunc(x,y,intercept) |> tofs
 
     /// Least-Squares fitting the points (x,y) to a k-order polynomial y : x -> p0 + p1*x + p2*x^2 + ... + pk*x^k,
     /// returning its best fitting parameters as [p0, p1, p2, ..., pk] array, compatible with Evaluate.Polynomial.
@@ -54,8 +62,7 @@ module Fit =
 
     /// Least-Squares fitting the points (x,y) to a k-order polynomial y : x -> p0 + p1*x + p2*x^2 + ... + pk*x^k,
     /// returning a function y' for the best fitting polynomial.
-    let polynomialF order x y = Fit.PolynomialFunc(x,y,order) |> tofs
-
+    let polynomialFunc order x y = Fit.PolynomialFunc(x,y,order) |> tofs
 
     /// Least-Squares fitting the points (x,y) to an arbitrary linear combination y : x -> p0*f0(x) + p1*f1(x) + ... + pk*fk(x),
     /// returning its best fitting parameters as [p0, p1, p2, ..., pk] list.
@@ -68,6 +75,6 @@ module Fit =
 
     /// Least-Squares fitting the points (x,y) to an arbitrary linear combination y : x -> p0*f0(x) + p1*f1(x) + ... + pk*fk(x),
     /// returning a function y' for the best fitting combination.
-    let linearF functions x y =
+    let linearFunc functions x y =
         let parts = linear functions x y |> List.zip functions
         in fun z -> parts |> List.fold (fun s (f,p) -> s+p*(f z)) 0.0

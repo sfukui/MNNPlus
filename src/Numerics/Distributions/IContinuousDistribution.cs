@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2013 Math.NET
+// Copyright (c) 2009-2014 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -44,11 +44,6 @@ namespace MathNet.Numerics.Distributions
         double Mode { get; }
 
         /// <summary>
-        /// Gets the median of the distribution.
-        /// </summary>
-        double Median { get; }
-
-        /// <summary>
         /// Gets the smallest element in the domain of the distribution which can be represented by a double.
         /// </summary>
         double Minimum { get; }
@@ -77,6 +72,11 @@ namespace MathNet.Numerics.Distributions
         /// </summary>
         /// <returns>a sample from the distribution.</returns>
         double Sample();
+
+        /// <summary>
+        /// Fills an array with samples generated from the distribution.
+        /// </summary>
+        void Samples(double[] values);
 
         /// <summary>
         /// Draws a sequence of random samples from the distribution.

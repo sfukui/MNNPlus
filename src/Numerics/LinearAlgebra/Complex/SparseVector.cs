@@ -121,8 +121,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         /// </summary>
         public static SparseVector Create(int length, Complex value)
         {
-            if (value == Complex.Zero) return new SparseVector(length);
-            return new SparseVector(SparseVectorStorage<Complex>.OfInit(length, i => value));
+            return new SparseVector(SparseVectorStorage<Complex>.OfValue(length, value));
         }
 
         /// <summary>
@@ -684,6 +683,33 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         }
 
         /// <summary>
+        /// Returns the index of the absolute maximum element.
+        /// </summary>
+        /// <returns>The index of absolute maximum element.</returns>
+        public override int AbsoluteMaximumIndex()
+        {
+            if (_storage.ValueCount == 0)
+            {
+                // No non-zero elements. Return 0
+                return 0;
+            }
+
+            var index = 0;
+            var max = _storage.Values[index].Magnitude;
+            for (var i = 1; i < _storage.ValueCount; i++)
+            {
+                var test = _storage.Values[i].Magnitude;
+                if (test > max)
+                {
+                    index = i;
+                    max = test;
+                }
+            }
+
+            return _storage.Indices[index];
+        }
+
+        /// <summary>
         /// Computes the sum of the vector's elements.
         /// </summary>
         /// <returns>The sum of the vector's elements.</returns>
@@ -714,7 +740,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         /// <summary>
         /// Calculates the infinity norm of the vector.
         /// </summary>
-        /// <returns>The square root of the sum of the squared values.</returns>
+        /// <returns>The maximum absolute value.</returns>
         public override double InfinityNorm()
         {
             return CommonParallel.Aggregate(0, _storage.ValueCount, i => _storage.Values[i].Magnitude, Math.Max, 0d);
@@ -792,53 +818,6 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
                     result.At(index, _storage.Values[i] / divisor.At(index));
                 }
             }
-        }
-
-        /// <summary>
-        /// Outer product of two vectors
-        /// </summary>
-        /// <param name="u">First vector</param>
-        /// <param name="v">Second vector</param>
-        /// <returns>Matrix M[i,j] = u[i]*v[j] </returns>
-        /// <exception cref="ArgumentNullException">If the u vector is <see langword="null" />.</exception>
-        /// <exception cref="ArgumentNullException">If the v vector is <see langword="null" />.</exception>
-        public static Matrix<Complex> OuterProduct(SparseVector u, SparseVector v)
-        {
-            if (u == null)
-            {
-                throw new ArgumentNullException("u");
-            }
-
-            if (v == null)
-            {
-                throw new ArgumentNullException("v");
-            }
-
-            var matrix = new SparseMatrix(u.Count, v.Count);
-            for (var i = 0; i < u._storage.ValueCount; i++)
-            {
-                for (var j = 0; j < v._storage.ValueCount; j++)
-                {
-                    if (u._storage.Indices[i] == v._storage.Indices[j])
-                    {
-                        matrix.At(i, j, u._storage.Values[i] * v._storage.Values[j]);
-                    }
-                }
-            }
-
-            return matrix;
-        }
-
-        /// <summary>
-        /// Outer product of this and another vector.
-        /// </summary>
-        /// <param name="v">The vector to operate on.</param>
-        /// <returns>
-        /// Matrix M[i,j] = this[i] * v[j].
-        /// </returns>
-        public Matrix<Complex> OuterProduct(SparseVector v)
-        {
-            return OuterProduct(this, v);
         }
 
         #region Parse Functions

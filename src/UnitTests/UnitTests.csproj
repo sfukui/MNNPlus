@@ -3,8 +3,6 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{DAF07AA8-C5C9-4963-98F7-2C3285064DAD}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -14,15 +12,14 @@
     <FileAlignment>512</FileAlignment>
     <!-- Conditional Strong Name -->
     <AssemblyOriginatorKeyFile>..\MathNet.Numerics.snk</AssemblyOriginatorKeyFile>
-    <SignAssembly Condition=" '$(SignAssembly)' == '' ">false</SignAssembly>
     <TargetFrameworkProfile />
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <OutputPath>..\..\out\test\Net40\</OutputPath>
     <IntermediateOutputPath>..\..\obj\test\Net40\</IntermediateOutputPath>
     <BaseIntermediateOutputPath>..\..\obj\test\Net40\</BaseIntermediateOutputPath>
     <!-- Conditional Strong Name: NO -->
-    <SignAssembly>false</SignAssembly>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <DefineConstants>TRACE</DefineConstants>
@@ -31,6 +28,7 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <NoWarn>1591</NoWarn>
     <Prefer32Bit>false</Prefer32Bit>
+    <LangVersion>5</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DefineConstants>DEBUG;TRACE</DefineConstants>
@@ -38,7 +36,6 @@
     <IntermediateOutputPath>..\..\obj\test-debug\Net40\</IntermediateOutputPath>
     <BaseIntermediateOutputPath>..\..\obj\test-debug\Net40\</BaseIntermediateOutputPath>
     <!-- Conditional Strong Name: NO -->
-    <SignAssembly>false</SignAssembly>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -47,6 +44,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <NoWarn>1591</NoWarn>
     <Prefer32Bit>false</Prefer32Bit>
+    <LangVersion>5</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release-Signed|AnyCPU'">
     <OutputPath>..\..\out\test-signed\Net40\</OutputPath>
@@ -62,21 +60,17 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <NoWarn>1591</NoWarn>
     <Prefer32Bit>false</Prefer32Bit>
+    <LangVersion>5</LangVersion>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\TestData\TestData.csproj">
+      <Project>{af3253c9-4db5-45a0-98cf-c105fda9da47}</Project>
+      <Name>TestData</Name>
+    </ProjectReference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
-    <Reference Include="nunit.framework">
-      <HintPath>..\..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
-      <SpecificVersion>False</SpecificVersion>
-      <Private>True</Private>
-    </Reference>
     <ProjectReference Include="..\Numerics\Numerics.csproj">
       <Project>{B7CAE5F4-A23F-4438-B5BE-41226618B695}</Project>
       <Name>Numerics</Name>
@@ -90,6 +84,11 @@
     <Compile Include="ComplexTests\Complex32Test.TextHandling.cs" />
     <Compile Include="ComplexTests\ComplexTest.cs" />
     <Compile Include="ComplexTests\ComplexTest.TextHandling.cs" />
+    <Compile Include="DifferentiationTests\FiniteDifferenceCoefficientsTests.cs" />
+    <Compile Include="DifferentiationTests\NumericalDerivativeTests.cs" />
+    <Compile Include="DifferentiationTests\NumericalHessianTests.cs" />
+    <Compile Include="DifferentiationTests\NumericalJacobianTests.cs" />
+    <Compile Include="DistanceTests.cs" />
     <Compile Include="DistributionTests\CommonDistributionTests.cs" />
     <Compile Include="DistributionTests\Continuous\BetaTests.cs" />
     <Compile Include="DistributionTests\Continuous\CauchyTests.cs" />
@@ -108,6 +107,7 @@
     <Compile Include="DistributionTests\Continuous\RayleighTests.cs" />
     <Compile Include="DistributionTests\Continuous\StableTests.cs" />
     <Compile Include="DistributionTests\Continuous\StudentTTests.cs" />
+    <Compile Include="DistributionTests\Continuous\TriangularTests.cs" />
     <Compile Include="DistributionTests\Continuous\WeibullTests.cs" />
     <Compile Include="DistributionTests\Discrete\BernoulliTests.cs" />
     <Compile Include="DistributionTests\Discrete\BinomialTests.cs" />
@@ -125,7 +125,7 @@
     <Compile Include="DistributionTests\Multivariate\MultinomialTests.cs" />
     <Compile Include="DistributionTests\Multivariate\NormalGammaTests.cs" />
     <Compile Include="DistributionTests\Multivariate\WishartTests.cs" />
-    <Compile Include="FinancialTests\CompoundMonthlyReturnTests.cs" />
+    <Compile Include="FinancialTests\CompoundReturnTests.cs" />
     <Compile Include="FinancialTests\DownsideDeviationTests.cs" />
     <Compile Include="FinancialTests\GainLossRatioTests.cs" />
     <Compile Include="FinancialTests\GainStandardDeviationTests.cs" />
@@ -150,13 +150,12 @@
     <Compile Include="InterpolationTests\NevillePolynomialTest.cs" />
     <Compile Include="InterpolationTests\LinearInterpolationCase.cs" />
     <Compile Include="FitTests.cs" />
+    <Compile Include="InterpolationTests\StepInterpolationTest.cs" />
     <Compile Include="LinearAlgebraProviderTests\Complex32\LinearAlgebraProviderTests.cs" />
     <Compile Include="LinearAlgebraProviderTests\Complex\LinearAlgebraProviderTests.cs" />
     <Compile Include="LinearAlgebraProviderTests\Double\LinearAlgebraProviderTests.cs" />
     <Compile Include="LinearAlgebraProviderTests\Single\LinearAlgebraProviderTests.cs" />
     <Compile Include="LinearAlgebraTests\Complex32\DenseMatrixTests.cs" />
-    <Compile Include="LinearAlgebraTests\Complex32\DenseVectorArithmeticTheory.cs" />
-    <Compile Include="LinearAlgebraTests\Complex32\DenseVectorTest.TextHandling.cs" />
     <Compile Include="LinearAlgebraTests\Complex32\DenseVectorTests.cs" />
     <Compile Include="LinearAlgebraTests\Complex32\DiagonalMatrixTests.cs" />
     <Compile Include="LinearAlgebraTests\Complex32\Factorization\CholeskyTests.cs" />
@@ -187,14 +186,13 @@
     <Compile Include="LinearAlgebraTests\Complex32\Solvers\Preconditioners\IncompleteLUTest.cs" />
     <Compile Include="LinearAlgebraTests\Complex32\Solvers\Preconditioners\PreConditionerTest.cs" />
     <Compile Include="LinearAlgebraTests\Complex32\Solvers\Preconditioners\UnitPreconditionerTest.cs" />
-    <Compile Include="LinearAlgebraTests\Complex32\Solvers\StopCriterium\DivergenceStopCriteriumTest.cs" />
-    <Compile Include="LinearAlgebraTests\Complex32\Solvers\StopCriterium\FailureStopCriteriumTest.cs" />
-    <Compile Include="LinearAlgebraTests\Complex32\Solvers\StopCriterium\IterationCountStopCriteriumTest.cs" />
-    <Compile Include="LinearAlgebraTests\Complex32\Solvers\StopCriterium\ResidualStopCriteriumTest.cs" />
+    <Compile Include="LinearAlgebraTests\Complex32\Solvers\StopCriterion\DivergenceStopCriteriumTest.cs" />
+    <Compile Include="LinearAlgebraTests\Complex32\Solvers\StopCriterion\FailureStopCriteriumTest.cs" />
+    <Compile Include="LinearAlgebraTests\Complex32\Solvers\StopCriterion\IterationCountStopCriteriumTest.cs" />
+    <Compile Include="LinearAlgebraTests\Complex32\Solvers\StopCriterion\ResidualStopCriteriumTest.cs" />
     <Compile Include="LinearAlgebraTests\Complex32\SparseMatrixTests.cs" />
-    <Compile Include="LinearAlgebraTests\Complex32\SparseVectorArithmeticTheory.cs" />
     <Compile Include="LinearAlgebraTests\Complex32\SparseVectorTest.cs" />
-    <Compile Include="LinearAlgebraTests\Complex32\SparseVectorTest.TextHandling.cs" />
+    <Compile Include="LinearAlgebraTests\Complex32\TestData.cs" />
     <Compile Include="LinearAlgebraTests\Complex32\UserDefinedMatrix.cs" />
     <Compile Include="LinearAlgebraTests\Complex32\UserDefinedMatrixTests.cs" />
     <Compile Include="LinearAlgebraTests\Complex32\UserDefinedVector.cs" />
@@ -204,8 +202,6 @@
     <Compile Include="LinearAlgebraTests\Complex32\VectorTests.cs" />
     <Compile Include="LinearAlgebraTests\Complex32\VectorTests.Norm.cs" />
     <Compile Include="LinearAlgebraTests\Complex\DenseMatrixTests.cs" />
-    <Compile Include="LinearAlgebraTests\Complex\DenseVectorArithmeticTheory.cs" />
-    <Compile Include="LinearAlgebraTests\Complex\DenseVectorTest.TextHandling.cs" />
     <Compile Include="LinearAlgebraTests\Complex\DenseVectorTests.cs" />
     <Compile Include="LinearAlgebraTests\Complex\DiagonalMatrixTests.cs" />
     <Compile Include="LinearAlgebraTests\Complex\Factorization\CholeskyTests.cs" />
@@ -236,14 +232,13 @@
     <Compile Include="LinearAlgebraTests\Complex\Solvers\Preconditioners\IncompleteLUTest.cs" />
     <Compile Include="LinearAlgebraTests\Complex\Solvers\Preconditioners\PreConditionerTest.cs" />
     <Compile Include="LinearAlgebraTests\Complex\Solvers\Preconditioners\UnitPreconditionerTest.cs" />
-    <Compile Include="LinearAlgebraTests\Complex\Solvers\StopCriterium\DivergenceStopCriteriumTest.cs" />
-    <Compile Include="LinearAlgebraTests\Complex\Solvers\StopCriterium\FailureStopCriteriumTest.cs" />
-    <Compile Include="LinearAlgebraTests\Complex\Solvers\StopCriterium\IterationCountStopCriteriumTest.cs" />
-    <Compile Include="LinearAlgebraTests\Complex\Solvers\StopCriterium\ResidualStopCriteriumTest.cs" />
+    <Compile Include="LinearAlgebraTests\Complex\Solvers\StopCriterion\DivergenceStopCriteriumTest.cs" />
+    <Compile Include="LinearAlgebraTests\Complex\Solvers\StopCriterion\FailureStopCriteriumTest.cs" />
+    <Compile Include="LinearAlgebraTests\Complex\Solvers\StopCriterion\IterationCountStopCriteriumTest.cs" />
+    <Compile Include="LinearAlgebraTests\Complex\Solvers\StopCriterion\ResidualStopCriteriumTest.cs" />
     <Compile Include="LinearAlgebraTests\Complex\SparseMatrixTests.cs" />
-    <Compile Include="LinearAlgebraTests\Complex\SparseVectorArithmeticTheory.cs" />
     <Compile Include="LinearAlgebraTests\Complex\SparseVectorTest.cs" />
-    <Compile Include="LinearAlgebraTests\Complex\SparseVectorTest.TextHandling.cs" />
+    <Compile Include="LinearAlgebraTests\Complex\TestData.cs" />
     <Compile Include="LinearAlgebraTests\Complex\UserDefinedMatrix.cs" />
     <Compile Include="LinearAlgebraTests\Complex\UserDefinedMatrixTests.cs" />
     <Compile Include="LinearAlgebraTests\Complex\UserDefinedVector.cs" />
@@ -254,11 +249,12 @@
     <Compile Include="LinearAlgebraTests\Complex\VectorTests.Norm.cs" />
     <Compile Include="LinearAlgebraTests\Double\MatrixStructureTheory.cs" />
     <Compile Include="LinearAlgebraTests\Double\ReturnTypeTests.cs" />
-    <Compile Include="LinearAlgebraTests\Double\SparseVectorArithmeticTheory.cs" />
+    <Compile Include="LinearAlgebraTests\Double\Solvers\StopCriterion\DivergenceStopCriteriumTest.cs" />
+    <Compile Include="LinearAlgebraTests\Double\Solvers\StopCriterion\FailureStopCriteriumTest.cs" />
+    <Compile Include="LinearAlgebraTests\Double\Solvers\StopCriterion\IterationCountStopCriteriumTest.cs" />
+    <Compile Include="LinearAlgebraTests\Double\Solvers\StopCriterion\ResidualStopCriteriumTest.cs" />
     <Compile Include="LinearAlgebraTests\Double\DenseMatrixTests.cs" />
-    <Compile Include="LinearAlgebraTests\Double\DenseVectorTest.TextHandling.cs" />
     <Compile Include="LinearAlgebraTests\Double\DenseVectorTests.cs" />
-    <Compile Include="LinearAlgebraTests\Double\DenseVectorArithmeticTheory.cs" />
     <Compile Include="LinearAlgebraTests\Double\DiagonalMatrixTests.cs" />
     <Compile Include="LinearAlgebraTests\Double\Factorization\CholeskyTests.cs" />
     <Compile Include="LinearAlgebraTests\Double\Factorization\EvdTests.cs" />
@@ -286,13 +282,9 @@
     <Compile Include="LinearAlgebraTests\Double\Solvers\Preconditioners\IncompleteLUTest.cs" />
     <Compile Include="LinearAlgebraTests\Double\Solvers\Preconditioners\PreConditionerTest.cs" />
     <Compile Include="LinearAlgebraTests\Double\Solvers\Preconditioners\UnitPreconditionerTest.cs" />
-    <Compile Include="LinearAlgebraTests\Double\Solvers\StopCriterium\DivergenceStopCriteriumTest.cs" />
-    <Compile Include="LinearAlgebraTests\Double\Solvers\StopCriterium\FailureStopCriteriumTest.cs" />
-    <Compile Include="LinearAlgebraTests\Double\Solvers\StopCriterium\IterationCountStopCriteriumTest.cs" />
-    <Compile Include="LinearAlgebraTests\Double\Solvers\StopCriterium\ResidualStopCriteriumTest.cs" />
     <Compile Include="LinearAlgebraTests\Double\SparseMatrixTests.cs" />
     <Compile Include="LinearAlgebraTests\Double\SparseVectorTest.cs" />
-    <Compile Include="LinearAlgebraTests\Double\SparseVectorTest.TextHandling.cs" />
+    <Compile Include="LinearAlgebraTests\Double\TestData.cs" />
     <Compile Include="LinearAlgebraTests\Double\UserDefinedMatrix.cs" />
     <Compile Include="LinearAlgebraTests\Double\UserDefinedMatrixTests.cs" />
     <Compile Include="LinearAlgebraTests\Double\UserDefinedVector.cs" />
@@ -300,12 +292,12 @@
     <Compile Include="LinearAlgebraTests\Double\VectorTests.Arithmetic.cs" />
     <Compile Include="LinearAlgebraTests\Double\VectorTests.cs" />
     <Compile Include="LinearAlgebraTests\Double\VectorTests.Norm.cs" />
+    <Compile Include="GenericMath.cs" />
     <Compile Include="LinearAlgebraTests\MatrixStructureTheory.Access.cs" />
     <Compile Include="LinearAlgebraTests\MatrixStructureTheory.cs" />
+    <Compile Include="LinearAlgebraTests\MatrixStructureTheory.Functional.cs" />
     <Compile Include="LinearAlgebraTests\MatrixStructureTheory.Reform.cs" />
     <Compile Include="LinearAlgebraTests\Single\DenseMatrixTests.cs" />
-    <Compile Include="LinearAlgebraTests\Single\DenseVectorArithmeticTheory.cs" />
-    <Compile Include="LinearAlgebraTests\Single\DenseVectorTest.TextHandling.cs" />
     <Compile Include="LinearAlgebraTests\Single\DenseVectorTests.cs" />
     <Compile Include="LinearAlgebraTests\Single\DiagonalMatrixTests.cs" />
     <Compile Include="LinearAlgebraTests\Single\Factorization\CholeskyTests.cs" />
@@ -336,14 +328,13 @@
     <Compile Include="LinearAlgebraTests\Single\Solvers\Preconditioners\IncompleteLUTest.cs" />
     <Compile Include="LinearAlgebraTests\Single\Solvers\Preconditioners\PreConditionerTest.cs" />
     <Compile Include="LinearAlgebraTests\Single\Solvers\Preconditioners\UnitPreconditionerTest.cs" />
-    <Compile Include="LinearAlgebraTests\Single\Solvers\StopCriterium\DivergenceStopCriteriumTest.cs" />
-    <Compile Include="LinearAlgebraTests\Single\Solvers\StopCriterium\FailureStopCriteriumTest.cs" />
-    <Compile Include="LinearAlgebraTests\Single\Solvers\StopCriterium\IterationCountStopCriteriumTest.cs" />
-    <Compile Include="LinearAlgebraTests\Single\Solvers\StopCriterium\ResidualStopCriteriumTest.cs" />
+    <Compile Include="LinearAlgebraTests\Single\Solvers\StopCriterion\DivergenceStopCriteriumTest.cs" />
+    <Compile Include="LinearAlgebraTests\Single\Solvers\StopCriterion\FailureStopCriteriumTest.cs" />
+    <Compile Include="LinearAlgebraTests\Single\Solvers\StopCriterion\IterationCountStopCriteriumTest.cs" />
+    <Compile Include="LinearAlgebraTests\Single\Solvers\StopCriterion\ResidualStopCriteriumTest.cs" />
     <Compile Include="LinearAlgebraTests\Single\SparseMatrixTests.cs" />
-    <Compile Include="LinearAlgebraTests\Single\SparseVectorArithmeticTheory.cs" />
     <Compile Include="LinearAlgebraTests\Single\SparseVectorTest.cs" />
-    <Compile Include="LinearAlgebraTests\Single\SparseVectorTest.TextHandling.cs" />
+    <Compile Include="LinearAlgebraTests\Single\TestData.cs" />
     <Compile Include="LinearAlgebraTests\Single\UserDefinedMatrix.cs" />
     <Compile Include="LinearAlgebraTests\Single\UserDefinedMatrixTests.cs" />
     <Compile Include="LinearAlgebraTests\Single\UserDefinedVector.cs" />
@@ -353,11 +344,14 @@
     <Compile Include="LinearAlgebraTests\Single\VectorTests.cs" />
     <Compile Include="LinearAlgebraTests\Single\VectorTests.Norm.cs" />
     <Compile Include="LinearAlgebraTests\Double\VectorArithmeticTheory.cs" />
+    <Compile Include="LinearAlgebraTests\TestData.cs" />
     <Compile Include="LinearAlgebraTests\VectorArithmeticTheory.cs" />
-    <Compile Include="MatrixHelpers.cs" />
+    <Compile Include="LinearAlgebraTests\MatrixHelpers.cs" />
     <Compile Include="EuclidTests\GcdRelatedTest.cs" />
     <Compile Include="EuclidTests\GcdRelatedTestBigInteger.cs" />
     <Compile Include="EuclidTests\IntegerTheoryTest.cs" />
+    <Compile Include="LinearAlgebraTests\MatrixStorageCombinatorsTests.cs" />
+    <Compile Include="LinearAlgebraTests\VectorStorageCombinatorsTests.cs" />
     <Compile Include="Random\SystemRandomSourceTests.cs" />
     <Compile Include="RootFindingTests\BisectionTest.cs" />
     <Compile Include="PermutationTest.cs" />
@@ -376,10 +370,14 @@
     <Compile Include="Random\XorshiftTests.cs" />
     <Compile Include="RootFindingTests\BrentTest.cs" />
     <Compile Include="RootFindingTests\BroydenTest.cs" />
+    <Compile Include="RootFindingTests\CubicTest.cs" />
     <Compile Include="RootFindingTests\FindRootsTest.cs" />
     <Compile Include="RootFindingTests\RobustNewtonRaphsonTest.cs" />
     <Compile Include="RootFindingTests\NewtonRaphsonTest.cs" />
+    <Compile Include="RootFindingTests\SecantTest.cs" />
     <Compile Include="SortingTests.cs" />
+    <Compile Include="ExcelTests.cs" />
+    <Compile Include="SpecialFunctionsTests\ExponentialIntegralTests.cs" />
     <Compile Include="SpecialFunctionsTests\ModifiedStruveTests.cs" />
     <Compile Include="SpecialFunctionsTests\ModifiedBesselTests.cs" />
     <Compile Include="SpecialFunctionsTests\ErfTests.cs" />
@@ -387,6 +385,8 @@
     <Compile Include="SpecialFunctionsTests\GammaTests.cs" />
     <Compile Include="SpecialFunctionsTests\SpecialFunctionsTests.cs" />
     <Compile Include="StatisticsTests\CorrelationTests.cs" />
+    <Compile Include="StatisticsTests\MovingStatisticsTests.cs" />
+    <Compile Include="StatisticsTests\RunningStatisticsTests.cs" />
     <Compile Include="StatisticsTests\DescriptiveStatisticsTests.cs" />
     <Compile Include="StatisticsTests\HistogramTests.cs" />
     <Compile Include="StatisticsTests\MCMCTests\HybridMCTest.cs" />
@@ -403,284 +403,19 @@
     <Compile Include="UseLinearAlgebraProvider.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\data\Codeplex-5667.csv">
-      <Link>data\Codeplex-5667.csv</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\Github-Cureos-1.csv">
-      <Link>data\Github-Cureos-1.csv</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\Matlab\A.mat">
-      <Link>data\Matlab\A.mat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\Matlab\collection-nocompress.mat">
-      <Link>data\Matlab\collection-nocompress.mat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\Matlab\collection.mat">
-      <Link>data\Matlab\collection.mat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\Matlab\complex.mat">
-      <Link>data\Matlab\complex.mat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\Matlab\sparse-large.mat">
-      <Link>data\Matlab\sparse-large.mat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\Matlab\sparse-small.mat">
-      <Link>data\Matlab\sparse-small.mat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\Matlab\sparse_complex.mat">
-      <Link>data\Matlab\sparse_complex.mat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\Matlab\v.mat">
-      <Link>data\Matlab\v.mat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\AtmWtAgt.dat">
-      <Link>data\NIST\AtmWtAgt.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Bennett5.dat">
-      <Link>data\NIST\Bennett5.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\BoxBOD.dat">
-      <Link>data\NIST\BoxBOD.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Chwirut1.dat">
-      <Link>data\NIST\Chwirut1.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Chwirut2.dat">
-      <Link>data\NIST\Chwirut2.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\DanWood.dat">
-      <Link>data\NIST\DanWood.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Eckerle4.dat">
-      <Link>data\NIST\Eckerle4.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\ENSO.dat">
-      <Link>data\NIST\ENSO.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Filip.dat">
-      <Link>data\NIST\Filip.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Gauss1.dat">
-      <Link>data\NIST\Gauss1.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Gauss2.dat">
-      <Link>data\NIST\Gauss2.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Gauss3.dat">
-      <Link>data\NIST\Gauss3.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Hahn1.dat">
-      <Link>data\NIST\Hahn1.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Kirby2.dat">
-      <Link>data\NIST\Kirby2.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Lanczos1.dat">
-      <Link>data\NIST\Lanczos1.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Lanczos2.dat">
-      <Link>data\NIST\Lanczos2.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Lanczos3.dat">
-      <Link>data\NIST\Lanczos3.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Lew.dat">
-      <Link>data\NIST\Lew.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Longley.dat">
-      <Link>data\NIST\Longley.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Lottery.dat">
-      <Link>data\NIST\Lottery.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Mavro.dat">
-      <Link>data\NIST\Mavro.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\MGH09.dat">
-      <Link>data\NIST\MGH09.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\MGH10.dat">
-      <Link>data\NIST\MGH10.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\MGH17.dat">
-      <Link>data\NIST\MGH17.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Michelso.dat">
-      <Link>data\NIST\Michelso.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Misra1a.dat">
-      <Link>data\NIST\Misra1a.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Misra1b.dat">
-      <Link>data\NIST\Misra1b.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Misra1c.dat">
-      <Link>data\NIST\Misra1c.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Misra1d.dat">
-      <Link>data\NIST\Misra1d.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Nelson.dat">
-      <Link>data\NIST\Nelson.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\NoInt1.dat">
-      <Link>data\NIST\NoInt1.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\NoInt2.dat">
-      <Link>data\NIST\NoInt2.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Norris.dat">
-      <Link>data\NIST\Norris.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\NumAcc1.dat">
-      <Link>data\NIST\NumAcc1.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\NumAcc2.dat">
-      <Link>data\NIST\NumAcc2.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\NumAcc3.dat">
-      <Link>data\NIST\NumAcc3.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\NumAcc4.dat">
-      <Link>data\NIST\NumAcc4.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Pontius.dat">
-      <Link>data\NIST\Pontius.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Rat42.dat">
-      <Link>data\NIST\Rat42.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Rat43.dat">
-      <Link>data\NIST\Rat43.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Roszman1.dat">
-      <Link>data\NIST\Roszman1.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\SiRstvt.dat">
-      <Link>data\NIST\SiRstvt.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\SmLs01t.dat">
-      <Link>data\NIST\SmLs01t.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\SmLs02t.dat">
-      <Link>data\NIST\SmLs02t.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\SmLs03t.dat">
-      <Link>data\NIST\SmLs03t.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\SmLs04t.dat">
-      <Link>data\NIST\SmLs04t.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\SmLs05t.dat">
-      <Link>data\NIST\SmLs05t.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\SmLs06t.dat">
-      <Link>data\NIST\SmLs06t.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\SmLs07t.dat">
-      <Link>data\NIST\SmLs07t.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\SmLs08t.dat">
-      <Link>data\NIST\SmLs08t.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\SmLs09t.dat">
-      <Link>data\NIST\SmLs09t.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Thurber.dat">
-      <Link>data\NIST\Thurber.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Wampler1.dat">
-      <Link>data\NIST\Wampler1.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Wampler2.dat">
-      <Link>data\NIST\Wampler2.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Wampler3.dat">
-      <Link>data\NIST\Wampler3.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Wampler4.dat">
-      <Link>data\NIST\Wampler4.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\data\NIST\Wampler5.dat">
-      <Link>data\NIST\Wampler5.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Include="App.config" />
-    <None Include="..\..\data\NIST\Meixner.dat">
-      <Link>data\NIST\Meixner.dat</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="packages.config" />
+    <None Include="paket.references" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <Reference Include="nunit.framework">
+      <HintPath>..\..\packages\NUnit\lib\nunit.framework.dll</HintPath>
+      <Private>True</Private>
+      <Paket>True</Paket>
+    </Reference>
+  </ItemGroup>
 </Project>

@@ -31,8 +31,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using MathNet.Numerics.Properties;
 
-namespace MathNet.Numerics.Statistics.Mcmc.Diagnostics
+namespace MathNet.Numerics.Statistics.Mcmc
 {
     /// <summary>
     /// Provides utilities to analysis the convergence of a set of samples from
@@ -53,13 +54,13 @@ namespace MathNet.Numerics.Statistics.Mcmc.Diagnostics
         {
             if (lag < 0)
             {
-                throw new ArgumentOutOfRangeException("lag", "Lag must be positive");
+                throw new ArgumentOutOfRangeException("lag", Resources.LagMustBePositive);
             }
 
             int length = series.Count();
             if (lag >= length)
             {
-                throw new ArgumentOutOfRangeException("lag", "Lag must be smaller than the sample size");
+                throw new ArgumentOutOfRangeException("lag", Resources.LagMustBeSmallerThanTheSampleSize);
             }
 
             var transformedSeries = series.Select(f);

@@ -24,7 +24,6 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
-using System;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Single;
 using NUnit.Framework;
@@ -69,7 +68,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Factorization
         {
             var matrixI = DenseMatrix.CreateIdentity(10);
             matrixI[3, 3] = -4.0f;
-            Assert.Throws<ArgumentException>(() => matrixI.Cholesky());
+            Assert.That(() => matrixI.Cholesky(), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -79,7 +78,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Factorization
         public void CholeskyFailsWithNonSquareMatrix()
         {
             var matrix = new DenseMatrix(3, 2);
-            Assert.Throws<ArgumentException>(() => matrix.Cholesky());
+            Assert.That(() => matrix.Cholesky(), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -162,7 +161,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Factorization
             // Check the reconstruction.
             for (var i = 0; i < order; i++)
             {
-                Assert.AreEqual(matrixB[i], matrixBReconstruct[i], 1e-3);
+                Assert.AreEqual(matrixB[i], matrixBReconstruct[i], 0.5f);
             }
 
             // Make sure A didn't change.
@@ -204,7 +203,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Factorization
             {
                 for (var j = 0; j < matrixB.ColumnCount; j++)
                 {
-                    Assert.AreEqual(matrixB[i, j], matrixBReconstruct[i, j], 1e-2);
+                    Assert.AreEqual(matrixB[i, j], matrixBReconstruct[i, j], 1f);
                 }
             }
 
@@ -245,7 +244,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Factorization
             // Check the reconstruction.
             for (var i = 0; i < order; i++)
             {
-                Assert.AreEqual(matrixB[i], matrixBReconstruct[i], 1e-3);
+                Assert.AreEqual(matrixB[i], matrixBReconstruct[i], 0.5f);
             }
 
             // Make sure A didn't change.
@@ -295,7 +294,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Single.Factorization
             {
                 for (var j = 0; j < matrixB.ColumnCount; j++)
                 {
-                    Assert.AreEqual(matrixB[i, j], matrixBReconstruct[i, j], 1e-2);
+                    Assert.AreEqual(matrixB[i, j], matrixBReconstruct[i, j], 1f);
                 }
             }
 

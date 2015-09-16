@@ -28,7 +28,6 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
-using System;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Complex32;
 using MathNet.Numerics.LinearAlgebra.Solvers;
@@ -126,7 +125,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Solvers.Precon
             preconditioner.Initialize(newMatrix);
 
             var result = new DenseVector(vector.Count + 10);
-            Assert.Throws<ArgumentException>(() => preconditioner.Approximate(vector, result));
+            Assert.That(() => preconditioner.Approximate(vector, result), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -139,7 +138,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Solvers.Precon
             var vector = CreateStandardBcVector(Size);
             var preconditioner = CreatePreconditioner();
             var result = new DenseVector(vector.Count);
-            Assert.Throws<ArgumentException>(() => preconditioner.Approximate(vector, result));
+            Assert.That(() => preconditioner.Approximate(vector, result), Throws.ArgumentException);
         }
     }
 }

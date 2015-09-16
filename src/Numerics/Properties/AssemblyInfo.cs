@@ -1,4 +1,4 @@
-﻿// <copyright file="AssemblyInfo.cs" company="Math.NET">
+// <copyright file="AssemblyInfo.cs" company="Math.NET">
 // Math.NET Numerics, part of the Math.NET Project
 // http://mathnet.opensourcedotnet.info
 //
@@ -39,20 +39,25 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Math.NET Project")]
 [assembly: AssemblyProduct("Math.NET Numerics")]
-[assembly: AssemblyCopyright("Copyright © Math.NET Project")]
+[assembly: AssemblyCopyright("Copyright (c) Math.NET Project")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 [assembly: CLSCompliant(true)]
 [assembly: NeutralResourcesLanguage("en")]
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+
+[assembly: AssemblyVersion("3.7.0.0")]
+[assembly: AssemblyFileVersion("3.7.0.0")]
+[assembly: AssemblyInformationalVersion("3.7.0")]
 
 #if PORTABLE
 
 [assembly: AssemblyTitle("Math.NET Numerics - Portable Edition")]
 [assembly: InternalsVisibleTo("MathNet.Numerics.UnitTests")]
+[assembly: InternalsVisibleTo("MathNet.Numerics.UnitTests7")]
 [assembly: InternalsVisibleTo("MathNet.Numerics.UnitTests47")]
-[assembly: InternalsVisibleTo("MathNet.Numerics.UnitTests136")]
+[assembly: InternalsVisibleTo("MathNet.Numerics.UnitTests78")]
+[assembly: InternalsVisibleTo("MathNet.Numerics.UnitTests259")]
+[assembly: InternalsVisibleTo("MathNet.Numerics.UnitTests328")]
 
 #elif NET35
 
@@ -71,6 +76,9 @@ using System.Runtime.InteropServices;
 #else
 [assembly: InternalsVisibleTo("MathNet.Numerics.UnitTests")]
 [assembly: InternalsVisibleTo("MathNet.Numerics.UnitTestsMKL")]
+[assembly: InternalsVisibleTo("MathNet.Numerics.UnitTestsCUDA")]
+[assembly: InternalsVisibleTo("MathNet.Numerics.UnitTestsOpenBLAS")]
+[assembly: InternalsVisibleTo("Performance")]
 #endif
 
 #endif

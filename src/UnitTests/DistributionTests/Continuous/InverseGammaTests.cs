@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2014 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -37,15 +41,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
     [TestFixture, Category("Distributions")]
     public class InverseGammaTests
     {
-        /// <summary>
-        /// Set-up parameters.
-        /// </summary>
-        [SetUp]
-        public void SetUp()
-        {
-            Control.CheckDistributionParameters = true;
-        }
-
         /// <summary>
         /// Can create inverse gamma.
         /// </summary>
@@ -78,7 +73,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [TestCase(1.0, Double.NaN)]
         public void InverseGammaCreateFailsWithBadParameters(double a, double b)
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new InverseGamma(a, b));
+            Assert.That(() => new InverseGamma(a, b), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -89,64 +84,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         {
             var n = new InverseGamma(1.1d, 2.1d);
             Assert.AreEqual("InverseGamma(α = 1.1, β = 2.1)", n.ToString());
-        }
-
-        /// <summary>
-        /// Can set A.
-        /// </summary>
-        /// <param name="a">A parameter.</param>
-        [TestCase(0.1)]
-        [TestCase(1.0)]
-        [TestCase(10.0)]
-        [TestCase(Double.PositiveInfinity)]
-        public void CanSetA(double a)
-        {
-            new InverseGamma(1.0, 1.0)
-            {
-                Shape = a
-            };
-        }
-
-        /// <summary>
-        /// Set A fails with non-positive value.
-        /// </summary>
-        /// <param name="a">A parameter.</param>
-        [TestCase(-1.0)]
-        [TestCase(-0.0)]
-        [TestCase(0.0)]
-        public void SetAFailsWithNonPositiveA(double a)
-        {
-            var n = new InverseGamma(1.0, 1.0);
-            Assert.Throws<ArgumentOutOfRangeException>(() => n.Shape = a);
-        }
-
-        /// <summary>
-        /// Can set B.
-        /// </summary>
-        /// <param name="b">B parameter.</param>
-        [TestCase(0.1)]
-        [TestCase(1.0)]
-        [TestCase(10.0)]
-        [TestCase(Double.PositiveInfinity)]
-        public void CanSetB(double b)
-        {
-            new InverseGamma(1.0, 1.0)
-            {
-                Scale = b
-            };
-        }
-
-        /// <summary>
-        /// Set B fails with non-positive value.
-        /// </summary>
-        /// <param name="b">B parameter.</param>
-        [TestCase(-1.0)]
-        [TestCase(-0.0)]
-        [TestCase(0.0)]
-        public void SetBFailsWithNonPositiveB(double b)
-        {
-            var n = new InverseGamma(1.0, 1.0);
-            Assert.Throws<ArgumentOutOfRangeException>(() => n.Scale = b);
         }
 
         /// <summary>
@@ -308,7 +245,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         {
             var n = new InverseGamma(1.0, 1.0);
             var ied = n.Samples();
-            ied.Take(5).ToArray();
+            GC.KeepAlive(ied.Take(5).ToArray());
         }
 
         /// <summary>

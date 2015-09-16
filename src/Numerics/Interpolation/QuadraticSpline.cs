@@ -56,6 +56,11 @@ namespace MathNet.Numerics.Interpolation
                 throw new ArgumentException(Resources.ArgumentVectorsSameLength);
             }
 
+            if (x.Length < 2)
+            {
+                throw new ArgumentException(string.Format(Resources.ArrayTooSmall, 2), "x");
+            }
+
             _x = x;
             _c0 = c0;
             _c1 = c1;
@@ -66,7 +71,7 @@ namespace MathNet.Numerics.Interpolation
         /// <summary>
         /// Gets a value indicating whether the algorithm supports differentiation (interpolated derivative).
         /// </summary>
-        public bool SupportsDifferentiation
+        bool IInterpolation.SupportsDifferentiation
         {
             get { return true; }
         }
@@ -74,7 +79,7 @@ namespace MathNet.Numerics.Interpolation
         /// <summary>
         /// Gets a value indicating whether the algorithm supports integration (interpolated quadrature).
         /// </summary>
-        public bool SupportsIntegration
+        bool IInterpolation.SupportsIntegration
         {
             get { return true; }
         }
@@ -86,8 +91,8 @@ namespace MathNet.Numerics.Interpolation
         /// <returns>Interpolated value x(t).</returns>
         public double Interpolate(double t)
         {
-            int k = LeftBracketIndex(t);
-            var x = (t - _x[k]);
+            int k = LeftSegmentIndex(t);
+            var x = t - _x[k];
             return _c0[k] + x*(_c1[k] + x*_c2[k]);
         }
 
@@ -98,7 +103,7 @@ namespace MathNet.Numerics.Interpolation
         /// <returns>Interpolated first derivative at point t.</returns>
         public double Differentiate(double t)
         {
-            int k = LeftBracketIndex(t);
+            int k = LeftSegmentIndex(t);
             return _c1[k] + (t - _x[k])*2*_c2[k];
         }
 
@@ -109,7 +114,7 @@ namespace MathNet.Numerics.Interpolation
         /// <returns>Interpolated second derivative at point t.</returns>
         public double Differentiate2(double t)
         {
-            int k = LeftBracketIndex(t);
+            int k = LeftSegmentIndex(t);
             return 2*_c2[k];
         }
 
@@ -119,8 +124,8 @@ namespace MathNet.Numerics.Interpolation
         /// <param name="t">Point t to integrate at.</param>
         public double Integrate(double t)
         {
-            int k = LeftBracketIndex(t);
-            var x = (t - _x[k]);
+            int k = LeftSegmentIndex(t);
+            var x = t - _x[k];
             return _indefiniteIntegral.Value[k] + x*(_c0[k] + x*(_c1[k]/2 + x*_c2[k]/3));
         }
 
@@ -142,31 +147,23 @@ namespace MathNet.Numerics.Interpolation
                 double w = _x[i + 1] - _x[i];
                 integral[i + 1] = integral[i] + w*(_c0[i] + w*(_c1[i]/2 + w*_c2[i]/3));
             }
+
             return integral;
         }
 
         /// <summary>
-        /// Find the index of the greatest sample point smaller than t.
+        /// Find the index of the greatest sample point smaller than t,
+        /// or the left index of the closest segment for extrapolation.
         /// </summary>
-        int LeftBracketIndex(double t)
+        int LeftSegmentIndex(double t)
         {
-            // Binary search in the [ t[0], ..., t[n-2] ] (t[n-1] is not included)
-            int low = 0;
-            int high = _x.Length - 1;
-            while (low != high - 1)
+            int index = Array.BinarySearch(_x, t);
+            if (index < 0)
             {
-                int middle = (low + high)/2;
-                if (_x[middle] > t)
-                {
-                    high = middle;
-                }
-                else
-                {
-                    low = middle;
-                }
+                index = ~index - 1;
             }
 
-            return low;
+            return Math.Min(Math.Max(index, 0), _x.Length - 2);
         }
     }
 }

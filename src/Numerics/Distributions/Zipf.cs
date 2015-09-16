@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2013 Math.NET
+// Copyright (c) 2009-2014 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -37,17 +37,12 @@ namespace MathNet.Numerics.Distributions
 {
     /// <summary>
     /// Discrete Univariate Zipf distribution.
-    /// Zipf's law, an empirical law formulated using mathematical statistics, refers to the fact 
-    /// that many types of data studied in the physical and social sciences can be approximated with 
+    /// Zipf's law, an empirical law formulated using mathematical statistics, refers to the fact
+    /// that many types of data studied in the physical and social sciences can be approximated with
     /// a Zipfian distribution, one of a family of related discrete power law probability distributions.
-    /// For details about this distribution, see 
+    /// For details about this distribution, see
     /// <a href="http://en.wikipedia.org/wiki/Zipf%27s_law">Wikipedia - Zipf distribution</a>.
     /// </summary>
-    /// <remarks><para>The distribution will use the <see cref="System.Random"/> by default. 
-    /// Users can get/set the random number generator by using the <see cref="RandomSource"/> property.</para>
-    /// <para>The statistics classes will check all the incoming parameters whether they are in the allowed
-    /// range. This might involve heavy computation. Optionally, by setting Control.CheckDistributionParameters
-    /// to <c>false</c>, all parameter checks can be turned off.</para></remarks>
     public class Zipf : IDiscreteDistribution
     {
         System.Random _random;
@@ -55,34 +50,46 @@ namespace MathNet.Numerics.Distributions
         /// <summary>
         /// The s parameter of the distribution.
         /// </summary>
-        double _s;
+        readonly double _s;
 
         /// <summary>
         /// The n parameter of the distribution.
         /// </summary>
-        int _n;
+        readonly int _n;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Zipf"/> class. 
+        /// Initializes a new instance of the <see cref="Zipf"/> class.
         /// </summary>
         /// <param name="s">The s parameter of the distribution.</param>
         /// <param name="n">The n parameter of the distribution.</param>
         public Zipf(double s, int n)
         {
-            _random = MersenneTwister.Default;
-            SetParameters(s, n);
+            if (!IsValidParameterSet(s, n))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            _random = SystemRandomSource.Default;
+            _s = s;
+            _n = n;
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Zipf"/> class. 
+        /// Initializes a new instance of the <see cref="Zipf"/> class.
         /// </summary>
         /// <param name="s">The s parameter of the distribution.</param>
         /// <param name="n">The n parameter of the distribution.</param>
         /// <param name="randomSource">The random number generator which is used to draw random samples.</param>
         public Zipf(double s, int n, System.Random randomSource)
         {
-            _random = randomSource ?? MersenneTwister.Default;
-            SetParameters(s, n);
+            if (!IsValidParameterSet(s, n))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            _random = randomSource ?? SystemRandomSource.Default;
+            _s = s;
+            _n = n;
         }
 
         /// <summary>
@@ -95,31 +102,13 @@ namespace MathNet.Numerics.Distributions
         }
 
         /// <summary>
-        /// Checks whether the parameters of the distribution are valid. 
+        /// Tests whether the provided values are valid parameters for this distribution.
         /// </summary>
         /// <param name="s">The s parameter of the distribution.</param>
         /// <param name="n">The n parameter of the distribution.</param>
-        /// <returns><c>true</c> when the parameters are valid, <c>false</c> otherwise.</returns>
-        static bool IsValidParameterSet(double s, int n)
+        public static bool IsValidParameterSet(double s, int n)
         {
             return n > 0 && s > 0.0;
-        }
-
-        /// <summary>
-        /// Sets the parameters of the distribution after checking their validity.
-        /// </summary>
-        /// <param name="s">The s parameter of the distribution.</param>
-        /// <param name="n">The n parameter of the distribution.</param>
-        /// <exception cref="ArgumentOutOfRangeException">When the parameters are out of range.</exception>
-        void SetParameters(double s, int n)
-        {
-            if (Control.CheckDistributionParameters && !IsValidParameterSet(s, n))
-            {
-                throw new ArgumentOutOfRangeException(Resources.InvalidDistributionParameters);
-            }
-
-            _s = s;
-            _n = n;
         }
 
         /// <summary>
@@ -128,7 +117,6 @@ namespace MathNet.Numerics.Distributions
         public double S
         {
             get { return _s; }
-            set { SetParameters(value, _n); }
         }
 
         /// <summary>
@@ -137,7 +125,6 @@ namespace MathNet.Numerics.Distributions
         public int N
         {
             get { return _n; }
-            set { SetParameters(_s, value); }
         }
 
         /// <summary>
@@ -146,7 +133,7 @@ namespace MathNet.Numerics.Distributions
         public System.Random RandomSource
         {
             get { return _random; }
-            set { _random = value ?? MersenneTwister.Default; }
+            set { _random = value ?? SystemRandomSource.Default; }
         }
 
         /// <summary>
@@ -227,7 +214,7 @@ namespace MathNet.Numerics.Distributions
         /// <summary>
         /// Gets the median of the distribution.
         /// </summary>
-        public int Median
+        public double Median
         {
             get { throw new NotSupportedException(); }
         }
@@ -275,12 +262,69 @@ namespace MathNet.Numerics.Distributions
         /// <returns>the cumulative distribution at location <paramref name="x"/>.</returns>
         public double CumulativeDistribution(double x)
         {
-            if (x <= 1)
+            if (x < 1)
             {
                 return 0.0;
             }
 
-            return SpecialFunctions.GeneralHarmonic((int) x, _s)/SpecialFunctions.GeneralHarmonic(_n, _s);
+            return SpecialFunctions.GeneralHarmonic((int)x, _s)/SpecialFunctions.GeneralHarmonic(_n, _s);
+        }
+
+        /// <summary>
+        /// Computes the probability mass (PMF) at k, i.e. P(X = k).
+        /// </summary>
+        /// <param name="k">The location in the domain where we want to evaluate the probability mass function.</param>
+        /// <param name="s">The s parameter of the distribution.</param>
+        /// <param name="n">The n parameter of the distribution.</param>
+        /// <returns>the probability mass at location <paramref name="k"/>.</returns>
+        public static double PMF(double s, int n, int k)
+        {
+            if (!(n > 0 && s > 0.0))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            return (1.0/Math.Pow(k, s))/SpecialFunctions.GeneralHarmonic(n, s);
+        }
+
+        /// <summary>
+        /// Computes the log probability mass (lnPMF) at k, i.e. ln(P(X = k)).
+        /// </summary>
+        /// <param name="k">The location in the domain where we want to evaluate the log probability mass function.</param>
+        /// <param name="s">The s parameter of the distribution.</param>
+        /// <param name="n">The n parameter of the distribution.</param>
+        /// <returns>the log probability mass at location <paramref name="k"/>.</returns>
+        public static double PMFLn(double s, int n, int k)
+        {
+            if (!(n > 0 && s > 0.0))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            return Math.Log(PMF(s, n, k));
+        }
+
+        /// <summary>
+        /// Computes the cumulative distribution (CDF) of the distribution at x, i.e. P(X ≤ x).
+        /// </summary>
+        /// <param name="x">The location at which to compute the cumulative distribution function.</param>
+        /// <param name="s">The s parameter of the distribution.</param>
+        /// <param name="n">The n parameter of the distribution.</param>
+        /// <returns>the cumulative distribution at location <paramref name="x"/>.</returns>
+        /// <seealso cref="CumulativeDistribution"/>
+        public static double CDF(double s, int n, double x)
+        {
+            if (!(n > 0 && s > 0.0))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            if (x < 1)
+            {
+                return 0.0;
+            }
+
+            return SpecialFunctions.GeneralHarmonic((int)x, s)/SpecialFunctions.GeneralHarmonic(n, s);
         }
 
         /// <summary>
@@ -313,6 +357,22 @@ namespace MathNet.Numerics.Distributions
             return i;
         }
 
+        static void SamplesUnchecked(System.Random rnd, int[] values, double s, int n)
+        {
+            for (int i = 0; i < values.Length; i++)
+            {
+                values[i] = SampleUnchecked(rnd, s, n);
+            }
+        }
+
+        static IEnumerable<int> SamplesUnchecked(System.Random rnd, double s, int n)
+        {
+            while (true)
+            {
+                yield return SampleUnchecked(rnd, s, n);
+            }
+        }
+
         /// <summary>
         /// Draws a random sample from the distribution.
         /// </summary>
@@ -323,15 +383,20 @@ namespace MathNet.Numerics.Distributions
         }
 
         /// <summary>
+        /// Fills an array with samples generated from the distribution.
+        /// </summary>
+        public void Samples(int[] values)
+        {
+            SamplesUnchecked(_random, values, _s, _n);
+        }
+
+        /// <summary>
         /// Samples an array of zipf distributed random variables.
         /// </summary>
         /// <returns>a sequence of samples from the distribution.</returns>
         public IEnumerable<int> Samples()
         {
-            while (true)
-            {
-                yield return SampleUnchecked(_random, _s, _n);
-            }
+            return SamplesUnchecked(_random, _s, _n);
         }
 
         /// <summary>
@@ -342,9 +407,9 @@ namespace MathNet.Numerics.Distributions
         /// <param name="n">The n parameter of the distribution.</param>
         public static int Sample(System.Random rnd, double s, int n)
         {
-            if (Control.CheckDistributionParameters && !IsValidParameterSet(s, n))
+            if (!(n > 0 && s > 0.0))
             {
-                throw new ArgumentOutOfRangeException(Resources.InvalidDistributionParameters);
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
             }
 
             return SampleUnchecked(rnd, s, n);
@@ -358,15 +423,75 @@ namespace MathNet.Numerics.Distributions
         /// <param name="n">The n parameter of the distribution.</param>
         public static IEnumerable<int> Samples(System.Random rnd, double s, int n)
         {
-            if (Control.CheckDistributionParameters && !IsValidParameterSet(s, n))
+            if (!(n > 0 && s > 0.0))
             {
-                throw new ArgumentOutOfRangeException(Resources.InvalidDistributionParameters);
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
             }
 
-            while (true)
+            return SamplesUnchecked(rnd, s, n);
+        }
+
+        /// <summary>
+        /// Fills an array with samples generated from the distribution.
+        /// </summary>
+        /// <param name="rnd">The random number generator to use.</param>
+        /// <param name="values">The array to fill with the samples.</param>
+        /// <param name="s">The s parameter of the distribution.</param>
+        /// <param name="n">The n parameter of the distribution.</param>
+        public static void Samples(System.Random rnd, int[] values, double s, int n)
+        {
+            if (!(n > 0 && s > 0.0))
             {
-                yield return SampleUnchecked(rnd, s, n);
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
             }
+
+            SamplesUnchecked(rnd, values, s, n);
+        }
+
+        /// <summary>
+        /// Samples a random variable.
+        /// </summary>
+        /// <param name="s">The s parameter of the distribution.</param>
+        /// <param name="n">The n parameter of the distribution.</param>
+        public static int Sample(double s, int n)
+        {
+            if (!(n > 0 && s > 0.0))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            return SampleUnchecked(SystemRandomSource.Default, s, n);
+        }
+
+        /// <summary>
+        /// Samples a sequence of this random variable.
+        /// </summary>
+        /// <param name="s">The s parameter of the distribution.</param>
+        /// <param name="n">The n parameter of the distribution.</param>
+        public static IEnumerable<int> Samples(double s, int n)
+        {
+            if (!(n > 0 && s > 0.0))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            return SamplesUnchecked(SystemRandomSource.Default, s, n);
+        }
+
+        /// <summary>
+        /// Fills an array with samples generated from the distribution.
+        /// </summary>
+        /// <param name="values">The array to fill with the samples.</param>
+        /// <param name="s">The s parameter of the distribution.</param>
+        /// <param name="n">The n parameter of the distribution.</param>
+        public static void Samples(int[] values, double s, int n)
+        {
+            if (!(n > 0 && s > 0.0))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            SamplesUnchecked(SystemRandomSource.Default, values, s, n);
         }
     }
 }

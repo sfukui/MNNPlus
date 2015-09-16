@@ -155,7 +155,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         {
             return OfColumnArrays(data.Select(v => v.ToArray()).ToArray());
         }
-        
+
         /// <summary>
         /// Create a new sparse matrix as a copy of the given enumerable of enumerable columns.
         /// Each enumerable in the master enumerable specifies a column.
@@ -333,7 +333,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         public static SparseMatrix Create(int rows, int columns, float value)
         {
             if (value == 0f) return new SparseMatrix(rows, columns);
-            return new SparseMatrix(SparseCompressedRowMatrixStorage<float>.OfInit(rows, columns, (i, j) => value));
+            return new SparseMatrix(SparseCompressedRowMatrixStorage<float>.OfValue(rows, columns, value));
         }
 
         /// <summary>
@@ -641,45 +641,6 @@ namespace MathNet.Numerics.LinearAlgebra.Single
             DoMultiply(-1, result);
         }
 
-        /// <summary>
-        /// Returns the transpose of this matrix.
-        /// </summary>
-        /// <returns>The transpose of this matrix.</returns>
-        public override Matrix<float> Transpose()
-        {
-            var rowPointers = _storage.RowPointers;
-            var columnIndices = _storage.ColumnIndices;
-            var values = _storage.Values;
-
-            var ret = new SparseCompressedRowMatrixStorage<float>(ColumnCount, RowCount)
-                {
-                    ColumnIndices = new int[_storage.ValueCount],
-                    Values = new float[_storage.ValueCount]
-                };
-
-            // Do an 'inverse' CopyTo iterate over the rows
-            for (var i = 0; i < RowCount; i++)
-            {
-                // Get the begin / end index for the current row
-                var startIndex = rowPointers[i];
-                var endIndex = rowPointers[i + 1];
-
-                // Get the values for the current row
-                if (startIndex == endIndex)
-                {
-                    // Begin and end are equal. There are no values in the row, Move to the next row
-                    continue;
-                }
-
-                for (var j = startIndex; j < endIndex; j++)
-                {
-                    ret.At(columnIndices[j], i, values[j]);
-                }
-            }
-
-            return new SparseMatrix(ret);
-        }
-
         /// <summary>Calculates the induced infinity norm of this matrix.</summary>
         /// <returns>The maximum absolute row sum of the matrix.</returns>
         public override double InfinityNorm()
@@ -764,7 +725,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single
                     CopyTo(result);
                 }
 
-                Control.LinearAlgebraProvider.ScaleArray(2.0f, _storage.Values, _storage.Values);
+                Control.LinearAlgebraProvider.ScaleArray(2.0f, sparseResult._storage.Values, sparseResult._storage.Values);
                 return;
             }
 
@@ -924,6 +885,30 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         /// <param name="result">The result of the multiplication.</param>
         protected override void DoMultiply(Matrix<float> other, Matrix<float> result)
         {
+            var sparseOther = other as SparseMatrix;
+            var sparseResult = result as SparseMatrix;
+            if (sparseOther != null && sparseResult != null)
+            {
+                DoMultiplySparse(sparseOther, sparseResult);
+                return;
+            }
+
+            var diagonalOther = other.Storage as DiagonalMatrixStorage<float>;
+            if (diagonalOther != null && sparseResult != null)
+            {
+                var diagonal = diagonalOther.Data;
+                if (other.ColumnCount == other.RowCount)
+                {
+                    Storage.MapIndexedTo(result.Storage, (i, j, x) => x*diagonal[j], Zeros.AllowSkip, ExistingData.Clear);
+                }
+                else
+                {
+                    result.Storage.Clear();
+                    Storage.MapSubMatrixIndexedTo(result.Storage, (i, j, x) => x*diagonal[j], 0, 0, RowCount, 0, 0, ColumnCount, Zeros.AllowSkip, ExistingData.AssumeZeros);
+                }
+                return;
+            }
+
             result.Clear();
             var columnVector = new DenseVector(other.RowCount);
 
@@ -955,6 +940,92 @@ namespace MathNet.Numerics.LinearAlgebra.Single
                     result.At(row, column, sum);
                 }
             }
+        }
+
+        void DoMultiplySparse(SparseMatrix other, SparseMatrix result)
+        {
+            result.Clear();
+
+            var ax = _storage.Values;
+            var ap = _storage.RowPointers;
+            var ai = _storage.ColumnIndices;
+
+            var bx = other._storage.Values;
+            var bp = other._storage.RowPointers;
+            var bi = other._storage.ColumnIndices;
+
+            int rows = RowCount;
+            int cols = other.ColumnCount;
+
+            int[] cp = result._storage.RowPointers;
+
+            var marker = new int[cols];
+            for (int ib = 0; ib < cols; ib++)
+            {
+                marker[ib] = -1;
+            }
+
+            int count = 0;
+            for (int i = 0; i < rows; i++)
+            {
+                // For each row of A
+                for (int j = ap[i]; j < ap[i + 1]; j++)
+                {
+                    // Row number to be added
+                    int a = ai[j];
+                    for (int k = bp[a]; k < bp[a + 1]; k++)
+                    {
+                        int b = bi[k];
+                        if (marker[b] != i)
+                        {
+                            marker[b] = i;
+                            count++;
+                        }
+                    }
+                }
+
+                // Record non-zero count.
+                cp[i + 1] = count;
+            }
+
+            var ci = new int[count];
+            var cx = new float[count];
+
+            for (int ib = 0; ib < cols; ib++)
+            {
+                marker[ib] = -1;
+            }
+
+            count = 0;
+            for (int i = 0; i < rows; i++)
+            {
+                int rowStart = cp[i];
+                for (int j = ap[i]; j < ap[i + 1]; j++)
+                {
+                    int a = ai[j];
+                    float aEntry = ax[j];
+                    for (int k = bp[a]; k < bp[a + 1]; k++)
+                    {
+                        int b = bi[k];
+                        float bEntry = bx[k];
+                        if (marker[b] < rowStart)
+                        {
+                            marker[b] = count;
+                            ci[marker[b]] = b;
+                            cx[marker[b]] = aEntry * bEntry;
+                            count++;
+                        }
+                        else
+                        {
+                            cx[marker[b]] += aEntry * bEntry;
+                        }
+                    }
+                }
+            }
+
+            result._storage.Values = cx;
+            result._storage.ColumnIndices = ci;
+            result._storage.Normalize();
         }
 
         /// <summary>
@@ -1024,7 +1095,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single
                 for (var i = 0; i < RowCount; i++)
                 {
                     // Multiply row of matrix A on row of matrix B
- 
+
                     var startIndexThis = rowPointers[i];
                     var endIndexThis = rowPointers[i + 1];
 
@@ -1136,9 +1207,10 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         }
 
         /// <summary>
-        /// Computes the modulus for each element of the matrix.
+        /// Computes the canonical modulus, where the result has the sign of the divisor,
+        /// for the given divisor each element of the matrix.
         /// </summary>
-        /// <param name="divisor">The divisor to use.</param>
+        /// <param name="divisor">The scalar denominator to use.</param>
         /// <param name="result">Matrix to store the results in.</param>
         protected override void DoModulus(float divisor, Matrix<float> result)
         {
@@ -1157,63 +1229,70 @@ namespace MathNet.Numerics.LinearAlgebra.Single
             var resultStorage = sparseResult._storage;
             for (var index = 0; index < resultStorage.Values.Length; index++)
             {
+                resultStorage.Values[index] = Euclid.Modulus(resultStorage.Values[index], divisor);
+            }
+        }
+
+        /// <summary>
+        /// Computes the remainder (% operator), where the result has the sign of the dividend,
+        /// for the given divisor each element of the matrix.
+        /// </summary>
+        /// <param name="divisor">The scalar denominator to use.</param>
+        /// <param name="result">Matrix to store the results in.</param>
+        protected override void DoRemainder(float divisor, Matrix<float> result)
+        {
+            var sparseResult = result as SparseMatrix;
+            if (sparseResult == null)
+            {
+                base.DoRemainder(divisor, result);
+                return;
+            }
+
+            if (!ReferenceEquals(this, result))
+            {
+                CopyTo(result);
+            }
+
+            var resultStorage = sparseResult._storage;
+            for (var index = 0; index < resultStorage.Values.Length; index++)
+            {
                 resultStorage.Values[index] %= divisor;
             }
         }
 
         /// <summary>
-        /// Gets a value indicating whether this matrix is symmetric.
+        /// Evaluates whether this matrix is symmetric.
         /// </summary>
-        public override bool IsSymmetric
+        public override bool IsSymmetric()
         {
-            get
+            if (RowCount != ColumnCount)
             {
-                if (RowCount != ColumnCount)
-                {
-                    return false;
-                }
-
-                // todo: we might be able to speed this up by caching one half of the matrix
-                var rowPointers = _storage.RowPointers;
-                for (var row = 0; row < RowCount; row++)
-                {
-                    var start = rowPointers[row];
-                    var end = rowPointers[row + 1];
-
-                    if (start == end)
-                    {
-                        continue;
-                    }
-
-                    if (!CheckIfOppositesAreEqual(start, end, row))
-                    {
-                        return false;
-                    }
-                }
-
-                return true;
+                return false;
             }
-        }
 
-        /// <summary>
-        /// Checks if opposites in a range are equal.
-        /// </summary>
-        /// <param name="start">The start of the range.</param>
-        /// <param name="end">The end of the range.</param>
-        /// <param name="row">The row the row to check.</param>
-        /// <returns>If the values are equal or not.</returns>
-        private bool CheckIfOppositesAreEqual(int start, int end, int row)
-        {
+            // todo: we might be able to speed this up by caching one half of the matrix
+            var rowPointers = _storage.RowPointers;
             var columnIndices = _storage.ColumnIndices;
             var values = _storage.Values;
 
-            for (var index = start; index < end; index++)
+            for (var row = 0; row < RowCount; row++)
             {
-                var column = columnIndices[index];
-                var opposite = At(column, row);
-                if (!values[index].Equals(opposite))
+                var start = rowPointers[row];
+                var end = rowPointers[row + 1];
+
+                if (start == end)
                 {
-                    return false;
+                    continue;
+                }
+
+                for (var index = start; index < end; index++)
+                {
+                    var column = columnIndices[index];
+                    var opposite = At(column, row);
+                    if (!values[index].Equals(opposite))
+                    {
+                        return false;
+                    }
                 }
             }
 
@@ -1427,7 +1506,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single
                 throw new ArgumentNullException("leftSide");
             }
 
-            return (SparseMatrix)leftSide.Modulus(rightSide);
+            return (SparseMatrix)leftSide.Remainder(rightSide);
         }
 
         public override string ToTypeString()

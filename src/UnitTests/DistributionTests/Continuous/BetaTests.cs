@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2014 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -39,15 +43,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
     [TestFixture, Category("Distributions")]
     public class BetaTests
     {
-        /// <summary>
-        /// Set-up parameters.
-        /// </summary>
-        [SetUp]
-        public void SetUp()
-        {
-            Control.CheckDistributionParameters = true;
-        }
-
         /// <summary>
         /// Can create Beta distribution.
         /// </summary>
@@ -76,12 +71,12 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [Test]
         public void BetaCreateFailsWithBadParameters()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new Beta(Double.NaN, 1.0));
-            Assert.Throws<ArgumentOutOfRangeException>(() => new Beta(1.0, Double.NaN));
-            Assert.Throws<ArgumentOutOfRangeException>(() => new Beta(Double.NaN, Double.NaN));
-            Assert.Throws<ArgumentOutOfRangeException>(() => new Beta(1.0, -1.0));
-            Assert.Throws<ArgumentOutOfRangeException>(() => new Beta(-1.0, 1.0));
-            Assert.Throws<ArgumentOutOfRangeException>(() => new Beta(-1.0, -1.0));
+            Assert.That(() => new Beta(Double.NaN, 1.0), Throws.ArgumentException);
+            Assert.That(() => new Beta(1.0, Double.NaN), Throws.ArgumentException);
+            Assert.That(() => new Beta(Double.NaN, Double.NaN), Throws.ArgumentException);
+            Assert.That(() => new Beta(1.0, -1.0), Throws.ArgumentException);
+            Assert.That(() => new Beta(-1.0, 1.0), Throws.ArgumentException);
+            Assert.That(() => new Beta(-1.0, -1.0), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -92,62 +87,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         {
             var n = new Beta(1d, 2d);
             Assert.AreEqual("Beta(α = 1, β = 2)", n.ToString());
-        }
-
-        /// <summary>
-        /// Can Set Shape A
-        /// </summary>
-        /// <param name="a">New A value.</param>
-        [TestCase(-0.0)]
-        [TestCase(0.0)]
-        [TestCase(0.1)]
-        [TestCase(1.0)]
-        [TestCase(10.0)]
-        [TestCase(Double.PositiveInfinity)]
-        public void CanSetShapeA(double a)
-        {
-            new Beta(1.0, 1.0)
-            {
-                A = a
-            };
-        }
-
-        /// <summary>
-        /// Set A fails with negative A.
-        /// </summary>
-        [Test]
-        public void SetShapeAFailsWithNegativeA()
-        {
-            var n = new Beta(1.0, 1.0);
-            Assert.Throws<ArgumentOutOfRangeException>(() => n.A = -1.0);
-        }
-
-        /// <summary>
-        /// Can set shape B.
-        /// </summary>
-        /// <param name="b">New B value.</param>
-        [TestCase(-0.0)]
-        [TestCase(0.0)]
-        [TestCase(0.1)]
-        [TestCase(1.0)]
-        [TestCase(10.0)]
-        [TestCase(Double.PositiveInfinity)]
-        public void CanSetShapeB(double b)
-        {
-            new Beta(1.0, 1.0)
-            {
-                B = b
-            };
-        }
-
-        /// <summary>
-        /// Set shape B fails with negative B.
-        /// </summary>
-        [Test]
-        public void SetShapeBFailsWithNegativeB()
-        {
-            var n = new Beta(1.0, 1.0);
-            Assert.Throws<ArgumentOutOfRangeException>(() => n.B = -1.0);
         }
 
         /// <summary>
@@ -284,7 +223,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void CanSampleSequenceStatic()
         {
             var ied = Beta.Samples(new Random(0), 2.0, 3.0);
-            ied.Take(5).ToArray();
+            GC.KeepAlive(ied.Take(5).ToArray());
         }
 
         /// <summary>
@@ -293,7 +232,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [Test]
         public void FailSampleStatic()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => Beta.Sample(new Random(0), 1.0, -1.0));
+            Assert.That(() => Beta.Sample(new Random(0), 1.0, -1.0), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -302,7 +241,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [Test]
         public void FailSampleSequenceStatic()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => Beta.Samples(new Random(0), 1.0, -1.0).First());
+            Assert.That(() => Beta.Samples(new Random(0), 1.0, -1.0).First(), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -323,7 +262,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         {
             var n = new Beta(2.0, 3.0);
             var ied = n.Samples();
-            ied.Take(5).ToArray();
+            GC.KeepAlive(ied.Take(5).ToArray());
         }
 
         /// <summary>
@@ -418,13 +357,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
             AssertHelpers.AlmostEqualRelative(pdfln, Beta.PDFLn(a, b, x), 13);
         }
 
-        /// <summary>
-        /// Validate cumulative distribution.
-        /// </summary>
-        /// <param name="a">Parameter A.</param>
-        /// <param name="b">Parameter B.</param>
-        /// <param name="x">Input value X.</param>
-        /// <param name="cdf">Cumulative distribution value.</param>
         [TestCase(0.0, 0.0, 0.0, 0.5)]
         [TestCase(0.0, 0.0, 0.5, 0.5)]
         [TestCase(0.0, 0.0, 1.0, 1.0)]
@@ -455,11 +387,23 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [TestCase(Double.PositiveInfinity, 0.0, 0.0, 0.0)]
         [TestCase(Double.PositiveInfinity, 0.0, 0.5, 0.0)]
         [TestCase(Double.PositiveInfinity, 0.0, 1.0, 1.0)]
-        public void ValidateCumulativeDistribution(double a, double b, double x, double cdf)
+        public void ValidateCumulativeDistribution(double a, double b, double x, double p)
         {
-            var n = new Beta(a, b);
-            AssertHelpers.AlmostEqualRelative(cdf, n.CumulativeDistribution(x), 13);
-            AssertHelpers.AlmostEqualRelative(cdf, Beta.CDF(a, b, x), 13);
+            var dist = new Beta(a, b);
+            Assert.That(dist.CumulativeDistribution(x), Is.EqualTo(p).Within(1e-13));
+            Assert.That(Beta.CDF(a, b, x), Is.EqualTo(p).Within(1e-13));
+        }
+
+        [TestCase(1.0, 1.0, 1.0, 1.0)]
+        [TestCase(9.0, 1.0, 0.0, 0.0)]
+        [TestCase(9.0, 1.0, 0.5, 0.001953125)]
+        [TestCase(9.0, 1.0, 1.0, 1.0)]
+        [TestCase(5.0, 100, 0.0, 0.0)]
+        public void ValidateInverseCumulativeDistribution(double a, double b, double x, double p)
+        {
+            var dist = new Beta(a, b);
+            Assert.That(dist.InverseCumulativeDistribution(p), Is.EqualTo(x).Within(1e-6));
+            Assert.That(Beta.InvCDF(a, b, p), Is.EqualTo(x).Within(1e-6));
         }
     }
 }

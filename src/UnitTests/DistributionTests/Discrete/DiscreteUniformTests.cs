@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2014 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -37,15 +41,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
     [TestFixture, Category("Distributions")]
     public class DiscreteUniformTests
     {
-        /// <summary>
-        /// Set-up tests parameters.
-        /// </summary>
-        [SetUp]
-        public void SetUp()
-        {
-            Control.CheckDistributionParameters = true;
-        }
-
         /// <summary>
         /// Can create discrete uniform.
         /// </summary>
@@ -71,7 +66,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         [TestCase(6, 5)]
         public void DiscreteUniformCreateFailsWithBadParameters(int l, int u)
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new DiscreteUniform(l, u));
+            Assert.That(() => new DiscreteUniform(l, u), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -85,65 +80,11 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         }
 
         /// <summary>
-        /// Can set lower bound.
-        /// </summary>
-        /// <param name="p">Lower bound.</param>
-        [TestCase(0)]
-        [TestCase(3)]
-        [TestCase(10)]
-        public void CanSetLowerBound(int p)
-        {
-            new DiscreteUniform(0, 10)
-            {
-                LowerBound = p
-            };
-        }
-
-        /// <summary>
-        /// Can set upper bound.
-        /// </summary>
-        /// <param name="p">Upper bound.</param>
-        [TestCase(0)]
-        [TestCase(3)]
-        [TestCase(10)]
-        public void CanSetUpperBound(int p)
-        {
-            new DiscreteUniform(0, 10)
-            {
-                UpperBound = p
-            };
-        }
-
-        /// <summary>
-        /// Set lower bound with bad values fails.
-        /// </summary>
-        /// <param name="p">Lower bound.</param>
-        [TestCase(11)]
-        [TestCase(20)]
-        public void SetLowerBoundFails(int p)
-        {
-            var b = new DiscreteUniform(0, 10);
-            Assert.Throws<ArgumentOutOfRangeException>(() => b.LowerBound = p);
-        }
-
-        /// <summary>
-        /// Set upper bound with bad values fails
-        /// </summary>
-        /// <param name="p">Upper bound.</param>
-        [TestCase(-11)]
-        [TestCase(-20)]
-        public void SetUpperBoundFails(int p)
-        {
-            var b = new DiscreteUniform(0, 10);
-            Assert.Throws<ArgumentOutOfRangeException>(() => b.UpperBound = p);
-        }
-
-        /// <summary>
         /// Validate entropy.
         /// </summary>
         /// <param name="l">Lower bound.</param>
         /// <param name="u">Upper bound.</param>
-        /// <param name="e">Expceted value.</param>
+        /// <param name="e">Expected value.</param>
         [TestCase(-10, 10, 3.0445224377234229965005979803657054342845752874046093)]
         [TestCase(0, 4, 1.6094379124341003746007593332261876395256013542685181)]
         [TestCase(10, 20, 2.3978952727983705440619435779651292998217068539374197)]
@@ -174,7 +115,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         /// </summary>
         /// <param name="l">Lower bound.</param>
         /// <param name="u">Upper bound.</param>
-        /// <param name="m">Expceted value.</param>
+        /// <param name="m">Expected value.</param>
         [TestCase(-10, 10, 0)]
         [TestCase(0, 4, 2)]
         [TestCase(10, 20, 15)]
@@ -190,7 +131,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         /// </summary>
         /// <param name="l">Lower bound.</param>
         /// <param name="u">Upper bound.</param>
-        /// <param name="m">Expceted value.</param>
+        /// <param name="m">Expected value.</param>
         [TestCase(-10, 10, 0)]
         [TestCase(0, 4, 2)]
         [TestCase(10, 20, 15)]
@@ -206,7 +147,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         /// </summary>
         /// <param name="l">Lower bound.</param>
         /// <param name="u">Upper bound.</param>
-        /// <param name="m">Expceted value.</param>
+        /// <param name="m">Expected value.</param>
         [TestCase(-10, 10, 0)]
         [TestCase(0, 4, 2)]
         [TestCase(10, 20, 15)]
@@ -243,7 +184,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         /// <param name="l">Lower bound.</param>
         /// <param name="u">Upper bound.</param>
         /// <param name="x">Input X value.</param>
-        /// <param name="p">Expceted value.</param>
+        /// <param name="p">Expected value.</param>
         [TestCase(-10, 10, -5, 1 / 21.0)]
         [TestCase(-10, 10, 1, 1 / 21.0)]
         [TestCase(-10, 10, 10, 1 / 21.0)]
@@ -261,7 +202,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         /// <param name="l">Lower bound.</param>
         /// <param name="u">Upper bound.</param>
         /// <param name="x">Input X value.</param>
-        /// <param name="dln">Expceted value.</param>
+        /// <param name="dln">Expected value.</param>
         [TestCase(-10, 10, -5, -3.0445224377234229965005979803657054342845752874046093)]
         [TestCase(-10, 10, 1, -3.0445224377234229965005979803657054342845752874046093)]
         [TestCase(-10, 10, 10, -3.0445224377234229965005979803657054342845752874046093)]
@@ -289,7 +230,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         public void CanSampleSequenceStatic()
         {
             var ied = DiscreteUniform.Samples(new Random(0), 0, 10);
-            ied.Take(5).ToArray();
+            GC.KeepAlive(ied.Take(5).ToArray());
         }
 
         /// <summary>
@@ -298,7 +239,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         [Test]
         public void FailSampleStatic()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => DiscreteUniform.Sample(new Random(0), 20, 10));
+            Assert.That(() => DiscreteUniform.Sample(new Random(0), 20, 10), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -307,7 +248,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         [Test]
         public void FailSampleSequenceStatic()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => DiscreteUniform.Samples(new Random(0), 20, 10).First());
+            Assert.That(() => DiscreteUniform.Samples(new Random(0), 20, 10).First(), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -328,7 +269,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         {
             var n = new DiscreteUniform(0, 10);
             var ied = n.Samples();
-            ied.Take(5).ToArray();
+            GC.KeepAlive(ied.Take(5).ToArray());
         }
 
         /// <summary>
@@ -337,7 +278,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         /// <param name="l">Lower bound.</param>
         /// <param name="u">Upper bound.</param>
         /// <param name="x">Input X value.</param>
-        /// <param name="cdf">Expceted value.</param>
+        /// <param name="cdf">Expected value.</param>
         [TestCase(-10, 10, -5, 6.0 / 21.0)]
         [TestCase(-10, 10, 1, 12.0 / 21.0)]
         [TestCase(-10, 10, 10, 1.0)]

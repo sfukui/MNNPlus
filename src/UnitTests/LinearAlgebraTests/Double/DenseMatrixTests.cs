@@ -70,11 +70,11 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         {
             var testData = new Dictionary<string, Matrix<double>>
                 {
-                    {"Singular3x3", new DenseMatrix(3, 3, new[] {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0})},
-                    {"Square3x3", new DenseMatrix(3, 3, new[] {-1.1, 0.0, -4.4, -2.2, 1.1, 5.5, -3.3, 2.2, 6.6})},
-                    {"Square4x4", new DenseMatrix(4, 4, new[] {-1.1, 0.0, 1.0, -4.4, -2.2, 1.1, 2.1, 5.5, -3.3, 2.2, 6.2, 6.6, -4.4, 3.3, 4.3, -7.7})},
-                    {"Tall3x2", new DenseMatrix(3, 2, new[] {-1.1, 0.0, -4.4, -2.2, 1.1, 5.5})},
-                    {"Wide2x3", new DenseMatrix(2, 3, new[] {-1.1, 0.0, -2.2, 1.1, -3.3, 2.2})}
+                    {"Singular3x3", Matrix<double>.Build.Dense(3, 3, new[] {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0})},
+                    {"Square3x3", Matrix<double>.Build.Dense(3, 3, new[] {-1.1, 0.0, -4.4, -2.2, 1.1, 5.5, -3.3, 2.2, 6.6})},
+                    {"Square4x4", Matrix<double>.Build.Dense(4, 4, new[] {-1.1, 0.0, 1.0, -4.4, -2.2, 1.1, 2.1, 5.5, -3.3, 2.2, 6.2, 6.6, -4.4, 3.3, 4.3, -7.7})},
+                    {"Tall3x2", Matrix<double>.Build.Dense(3, 2, new[] {-1.1, 0.0, -4.4, -2.2, 1.1, 5.5})},
+                    {"Wide2x3", Matrix<double>.Build.Dense(2, 3, new[] {-1.1, 0.0, -2.2, 1.1, -3.3, 2.2})}
                 };
 
             foreach (var name in testData.Keys)
@@ -90,7 +90,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         public void MatrixFrom1DArrayIsReference()
         {
             var data = new double[] {1, 1, 1, 1, 1, 1, 2, 2, 2};
-            var matrix = new DenseMatrix(3, 3, data);
+            var matrix = Matrix<double>.Build.Dense(3, 3, data);
             matrix[0, 0] = 10.0;
             Assert.AreEqual(10.0, data[0]);
         }
@@ -136,7 +136,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         [Test]
         public void CanCreateMatrixWithUniformValues()
         {
-            var matrix = Matrix<double>.Build.Dense(10, 10, (i, j) => 10.0);
+            var matrix = Matrix<double>.Build.Dense(10, 10, 10.0);
             Assert.That(matrix, Is.TypeOf<DenseMatrix>());
             for (var i = 0; i < matrix.RowCount; i++)
             {
@@ -171,7 +171,43 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
         [TestCase(-1)]
         public void IdentityWithWrongOrderThrowsArgumentOutOfRangeException(int order)
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => Matrix<double>.Build.DenseIdentity(order));
+            Assert.That(() => Matrix<double>.Build.DenseIdentity(order), Throws.TypeOf<ArgumentOutOfRangeException>());
+        }
+
+        [Test]
+        public void MatrixPower()
+        {
+            var d = Matrix<double>.Build.Random(3, 3, 1);
+            var d2 = d*d;
+            var d3 = d2*d;
+            var d4 = d3*d;
+            var d5 = d4*d;
+            var d6 = d5*d;
+            var d7 = d6*d;
+            var d8 = d7*d;
+
+            AssertHelpers.AlmostEqual(Matrix<double>.Build.DiagonalIdentity(3), d.Power(0), 10);
+            AssertHelpers.AlmostEqual(d, d.Power(1), 10);
+            AssertHelpers.AlmostEqual(d2, d.Power(2), 10);
+            AssertHelpers.AlmostEqual(d3, d.Power(3), 10);
+            AssertHelpers.AlmostEqual(d4, d.Power(4), 10);
+            AssertHelpers.AlmostEqual(d5, d.Power(5), 10);
+            AssertHelpers.AlmostEqual(d6, d.Power(6), 10);
+            AssertHelpers.AlmostEqual(d7, d.Power(7), 10);
+            AssertHelpers.AlmostEqual(d8, d.Power(8), 10);
+        }
+
+        [Test]
+        public void MatrixToMatrixString()
+        {
+            var m = Matrix<double>.Build.Dense(20, 10);
+            for (int i = 1; i < 25; i++)
+            {
+                for (int j = 1; j < 25; j++)
+                {
+                    GC.KeepAlive(m.ToMatrixString(i, j));
+                }
+            }
         }
     }
 }

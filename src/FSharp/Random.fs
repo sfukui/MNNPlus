@@ -37,13 +37,13 @@ module Random =
     let shared = SystemRandomSource.Default :> System.Random
 
     /// Default sampling, efficient but without custom seed (uses robust seeds internally)
-    let inline doubles (length:int) = SystemRandomSource.Doubles(length)
+    let inline doubles (length:int) = SystemRandomSource.FastDoubles(length)
     let inline doubleSeq () = SystemRandomSource.DoubleSequence()
-    let inline doubleFill (values:double[]) = SystemRandomSource.Doubles(values)
+    let inline doubleFill (values:float[]) = SystemRandomSource.FastDoubles(values)
 
     let inline doublesSeed (seed:int) (length:int) = SystemRandomSource.Doubles(length, seed)
     let inline doubleSeqSeed (seed:int) = SystemRandomSource.DoubleSequence(seed)
-    let inline doubleFillSeed (seed:int) (values:double[]) = SystemRandomSource.Doubles(values, seed)
+    let inline doubleFillSeed (seed:int) (values:float[]) = SystemRandomSource.Doubles(values, seed)
 
     /// Creates a default .Net system pRNG with a robust seed
     let systemShared = shared
@@ -55,7 +55,7 @@ module Random =
     /// Creates a default .Net cryptographic system pRNG
     let inline crypto () = new CryptoRandomSource() :> System.Random
     let inline cryptoWith (threadSafe:bool) = new CryptoRandomSource(threadSafe) :> System.Random
-    let inline cryptoDoubles length = CryptoRandomSource.Doubles(length)
+    let inline cryptoDoubles (length:int) = CryptoRandomSource.Doubles(length)
     let inline cryptoDoubleSeq () = CryptoRandomSource.DoubleSequence()
 #endif
 

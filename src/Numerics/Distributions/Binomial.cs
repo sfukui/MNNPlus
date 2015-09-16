@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2013 Math.NET
+// Copyright (c) 2009-2014 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -32,26 +32,24 @@ using System;
 using System.Collections.Generic;
 using MathNet.Numerics.Properties;
 using MathNet.Numerics.Random;
+using MathNet.Numerics.Threading;
 
 namespace MathNet.Numerics.Distributions
 {
     /// <summary>
     /// Discrete Univariate Binomial distribution.
-    /// For details about this distribution, see 
+    /// For details about this distribution, see
     /// <a href="http://en.wikipedia.org/wiki/Binomial_distribution">Wikipedia - Binomial distribution</a>.
     /// </summary>
-    /// <remarks><para>The distribution is parameterized by a probability (between 0.0 and 1.0).</para>
-    /// <para>The distribution will use the <see cref="System.Random"/> by default. 
-    /// Users can set the random number generator by using the <see cref="RandomSource"/> property.</para>
-    /// <para>The statistics classes will check all the incoming parameters whether they are in the allowed
-    /// range. This might involve heavy computation. Optionally, by setting Control.CheckDistributionParameters
-    /// to <c>false</c>, all parameter checks can be turned off.</para></remarks>
+    /// <remarks>
+    /// The distribution is parameterized by a probability (between 0.0 and 1.0).
+    /// </remarks>
     public class Binomial : IDiscreteDistribution
     {
         System.Random _random;
 
-        double _p;
-        int _trials;
+        readonly double _p;
+        readonly int _trials;
 
         /// <summary>
         /// Initializes a new instance of the Binomial class.
@@ -62,8 +60,14 @@ namespace MathNet.Numerics.Distributions
         /// <exception cref="ArgumentOutOfRangeException">If <paramref name="n"/> is negative.</exception>
         public Binomial(double p, int n)
         {
-            _random = MersenneTwister.Default;
-            SetParameters(p, n);
+            if (!IsValidParameterSet(p, n))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            _random = SystemRandomSource.Default;
+            _p = p;
+            _trials = n;
         }
 
         /// <summary>
@@ -76,8 +80,14 @@ namespace MathNet.Numerics.Distributions
         /// <exception cref="ArgumentOutOfRangeException">If <paramref name="n"/> is negative.</exception>
         public Binomial(double p, int n, System.Random randomSource)
         {
-            _random = randomSource ?? MersenneTwister.Default;
-            SetParameters(p, n);
+            if (!IsValidParameterSet(p, n))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            _random = randomSource ?? SystemRandomSource.Default;
+            _p = p;
+            _trials = n;
         }
 
         /// <summary>
@@ -90,32 +100,13 @@ namespace MathNet.Numerics.Distributions
         }
 
         /// <summary>
-        /// Checks whether the parameters of the distribution are valid. 
+        /// Tests whether the provided values are valid parameters for this distribution.
         /// </summary>
         /// <param name="p">The success probability (p) in each trial. Range: 0 ≤ p ≤ 1.</param>
         /// <param name="n">The number of trials (n). Range: n ≥ 0.</param>
-        /// <returns><c>false</c> <paramref name="p"/> is not in the interval [0.0,1.0] or <paramref name="n"/> is negative, <c>true</c> otherwise.</returns>
-        static bool IsValidParameterSet(double p, int n)
+        public static bool IsValidParameterSet(double p, int n)
         {
             return p >= 0.0 && p <= 1.0 && n >= 0;
-        }
-
-        /// <summary>
-        /// Sets the parameters of the distribution after checking their validity.
-        /// </summary>
-        /// <param name="p">The success probability (p) in each trial. Range: 0 ≤ p ≤ 1.</param>
-        /// <param name="n">The number of trials (n). Range: n ≥ 0.</param>
-        /// <exception cref="ArgumentOutOfRangeException">If <paramref name="p"/> is not in the interval [0.0,1.0].</exception>
-        /// <exception cref="ArgumentOutOfRangeException">If <paramref name="n"/> is negative.</exception>
-        void SetParameters(double p, int n)
-        {
-            if (Control.CheckDistributionParameters && !IsValidParameterSet(p, n))
-            {
-                throw new ArgumentOutOfRangeException(Resources.InvalidDistributionParameters);
-            }
-
-            _p = p;
-            _trials = n;
         }
 
         /// <summary>
@@ -124,7 +115,6 @@ namespace MathNet.Numerics.Distributions
         public double P
         {
             get { return _p; }
-            set { SetParameters(value, _trials); }
         }
 
         /// <summary>
@@ -133,7 +123,6 @@ namespace MathNet.Numerics.Distributions
         public int N
         {
             get { return _trials; }
-            set { SetParameters(_p, value); }
         }
 
         /// <summary>
@@ -142,7 +131,7 @@ namespace MathNet.Numerics.Distributions
         public System.Random RandomSource
         {
             get { return _random; }
-            set { _random = value ?? MersenneTwister.Default; }
+            set { _random = value ?? SystemRandomSource.Default; }
         }
 
         /// <summary>
@@ -176,7 +165,10 @@ namespace MathNet.Numerics.Distributions
         {
             get
             {
-                if (_p == 0.0 || _p == 1.0) return 0.0;
+                if (_p == 0.0 || _p == 1.0)
+                {
+                    return 0.0;
+                }
 
                 var e = 0.0;
                 for (var i = 0; i <= _trials; i++)
@@ -220,19 +212,49 @@ namespace MathNet.Numerics.Distributions
         {
             get
             {
-                if (_p == 1.0) return _trials;
-                if (_p == 0.0) return 0;
+                if (_p == 1.0)
+                {
+                    return _trials;
+                }
 
-                return (int) Math.Floor((_trials + 1)*_p);
+                if (_p == 0.0)
+                {
+                    return 0;
+                }
+
+                return (int)Math.Floor((_trials + 1)*_p);
+            }
+        }
+
+        /// <summary>
+        /// Gets all modes of the distribution.
+        /// </summary>
+        public int[] Modes
+        {
+            get
+            {
+                if (_p == 1.0)
+                {
+                    return new[] { _trials };
+                }
+
+                if (_p == 0.0)
+                {
+                    return new[] { 0 };
+                }
+
+                double td = (_trials + 1)*_p;
+                int t = (int)Math.Floor(td);
+                return t != td ? new[] { t } : new[] { t, t - 1 };
             }
         }
 
         /// <summary>
         /// Gets the median of the distribution.
         /// </summary>
-        public int Median
+        public double Median
         {
-            get { return (int) Math.Floor(_p*_trials); }
+            get { return Math.Floor(_p*_trials); }
         }
 
         /// <summary>
@@ -242,14 +264,7 @@ namespace MathNet.Numerics.Distributions
         /// <returns>the probability mass at location <paramref name="k"/>.</returns>
         public double Probability(int k)
         {
-            if (k < 0) return 0.0;
-            if (k > _trials) return 0.0;
-            if (_p == 0.0 && k == 0) return 1.0;
-            if (_p == 0.0) return 0.0;
-            if (_p == 1.0 && k == _trials) return 1.0;
-            if (_p == 1.0) return 0.0;
-
-            return SpecialFunctions.Binomial(_trials, k)*Math.Pow(_p, k)*Math.Pow(1.0 - _p, _trials - k);
+            return PMF(_p, _trials, k);
         }
 
         /// <summary>
@@ -259,14 +274,7 @@ namespace MathNet.Numerics.Distributions
         /// <returns>the log probability mass at location <paramref name="k"/>.</returns>
         public double ProbabilityLn(int k)
         {
-            if (k < 0) return Double.NegativeInfinity;
-            if (k > _trials) return Double.NegativeInfinity;
-            if (_p == 0.0 && k == 0) return 0.0;
-            if (_p == 0.0) return Double.NegativeInfinity;
-            if (_p == 1.0 && k == _trials) return 0.0;
-            if (_p == 1.0) return Double.NegativeInfinity;
-
-            return SpecialFunctions.BinomialLn(_trials, k) + (k*Math.Log(_p)) + ((_trials - k)*Math.Log(1.0 - _p));
+            return PMFLn(_p, _trials, k);
         }
 
         /// <summary>
@@ -276,16 +284,100 @@ namespace MathNet.Numerics.Distributions
         /// <returns>the cumulative distribution at location <paramref name="x"/>.</returns>
         public double CumulativeDistribution(double x)
         {
-            if (x < 0.0) return 0.0;
-            if (x > _trials) return 1.0;
+            return CDF(_p, _trials, x);
+        }
 
-            var cdf = 0.0;
-            for (var i = 0; i <= (int) Math.Floor(x); i++)
+        /// <summary>
+        /// Computes the probability mass (PMF) at k, i.e. P(X = k).
+        /// </summary>
+        /// <param name="k">The location in the domain where we want to evaluate the probability mass function.</param>
+        /// <param name="p">The success probability (p) in each trial. Range: 0 ≤ p ≤ 1.</param>
+        /// <param name="n">The number of trials (n). Range: n ≥ 0.</param>
+        /// <returns>the probability mass at location <paramref name="k"/>.</returns>
+        public static double PMF(double p, int n, int k)
+        {
+            if (!(p >= 0.0 && p <= 1.0 && n >= 0))
             {
-                cdf += Combinatorics.Combinations(_trials, i)*Math.Pow(_p, i)*Math.Pow(1.0 - _p, _trials - i);
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
             }
 
-            return cdf;
+            if (k < 0 || k > n)
+            {
+                return 0.0;
+            }
+
+            if (p == 0.0)
+            {
+                return k == 0 ? 1.0 : 0.0;
+            }
+
+            if (p == 1.0)
+            {
+                return k == n ? 1.0 : 0.0;
+            }
+
+            return Math.Exp(SpecialFunctions.BinomialLn(n, k) + (k*Math.Log(p)) + ((n - k)*Math.Log(1.0 - p)));
+        }
+
+        /// <summary>
+        /// Computes the log probability mass (lnPMF) at k, i.e. ln(P(X = k)).
+        /// </summary>
+        /// <param name="k">The location in the domain where we want to evaluate the log probability mass function.</param>
+        /// <param name="p">The success probability (p) in each trial. Range: 0 ≤ p ≤ 1.</param>
+        /// <param name="n">The number of trials (n). Range: n ≥ 0.</param>
+        /// <returns>the log probability mass at location <paramref name="k"/>.</returns>
+        public static double PMFLn(double p, int n, int k)
+        {
+            if (!(p >= 0.0 && p <= 1.0 && n >= 0))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            if (k < 0 || k > n)
+            {
+                return double.NegativeInfinity;
+            }
+
+            if (p == 0.0)
+            {
+                return k == 0 ? 0.0 : double.NegativeInfinity;
+            }
+
+            if (p == 1.0)
+            {
+                return k == n ? 0.0 : double.NegativeInfinity;
+            }
+
+            return SpecialFunctions.BinomialLn(n, k) + (k*Math.Log(p)) + ((n - k)*Math.Log(1.0 - p));
+        }
+
+        /// <summary>
+        /// Computes the cumulative distribution (CDF) of the distribution at x, i.e. P(X ≤ x).
+        /// </summary>
+        /// <param name="x">The location at which to compute the cumulative distribution function.</param>
+        /// <param name="p">The success probability (p) in each trial. Range: 0 ≤ p ≤ 1.</param>
+        /// <param name="n">The number of trials (n). Range: n ≥ 0.</param>
+        /// <returns>the cumulative distribution at location <paramref name="x"/>.</returns>
+        /// <seealso cref="CumulativeDistribution"/>
+        public static double CDF(double p, int n, double x)
+        {
+            if (!(p >= 0.0 && p <= 1.0 && n >= 0))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            if (x < 0.0)
+            {
+                return 0.0;
+            }
+
+            if (x > n)
+            {
+                return 1.0;
+            }
+
+            double k = Math.Floor(x);
+            return SpecialFunctions.BetaRegularized(n - k, k + 1, 1 - p);
         }
 
         /// <summary>
@@ -306,6 +398,33 @@ namespace MathNet.Numerics.Distributions
             return k;
         }
 
+        static void SamplesUnchecked(System.Random rnd, int[] values, double p, int n)
+        {
+            var uniform = rnd.NextDoubles(values.Length*n);
+            CommonParallel.For(0, values.Length, 4096, (a, b) =>
+            {
+                for (int i = a; i < b; i++)
+                {
+                    int k = i*n;
+                    int sum = 0;
+                    for (int j = 0; j < n; j++)
+                    {
+                        sum += uniform[k + j] < p ? 1 : 0;
+                    }
+
+                    values[i] = sum;
+                }
+            });
+        }
+
+        static IEnumerable<int> SamplesUnchecked(System.Random rnd, double p, int n)
+        {
+            while (true)
+            {
+                yield return SampleUnchecked(rnd, p, n);
+            }
+        }
+
         /// <summary>
         /// Samples a Binomially distributed random variable.
         /// </summary>
@@ -316,15 +435,20 @@ namespace MathNet.Numerics.Distributions
         }
 
         /// <summary>
+        /// Fills an array with samples generated from the distribution.
+        /// </summary>
+        public void Samples(int[] values)
+        {
+            SamplesUnchecked(_random, values, _p, _trials);
+        }
+
+        /// <summary>
         /// Samples an array of Binomially distributed random variables.
         /// </summary>
         /// <returns>a sequence of successes in N trials.</returns>
         public IEnumerable<int> Samples()
         {
-            while (true)
-            {
-                yield return SampleUnchecked(_random, _p, _trials);
-            }
+            return SamplesUnchecked(_random, _p, _trials);
         }
 
         /// <summary>
@@ -336,9 +460,9 @@ namespace MathNet.Numerics.Distributions
         /// <returns>The number of successes in <paramref name="n"/> trials.</returns>
         public static int Sample(System.Random rnd, double p, int n)
         {
-            if (Control.CheckDistributionParameters && !IsValidParameterSet(p, n))
+            if (!(p >= 0.0 && p <= 1.0 && n >= 0))
             {
-                throw new ArgumentOutOfRangeException(Resources.InvalidDistributionParameters);
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
             }
 
             return SampleUnchecked(rnd, p, n);
@@ -353,15 +477,79 @@ namespace MathNet.Numerics.Distributions
         /// <returns>a sequence of successes in <paramref name="n"/> trials.</returns>
         public static IEnumerable<int> Samples(System.Random rnd, double p, int n)
         {
-            if (Control.CheckDistributionParameters && !IsValidParameterSet(p, n))
+            if (!(p >= 0.0 && p <= 1.0 && n >= 0))
             {
-                throw new ArgumentOutOfRangeException(Resources.InvalidDistributionParameters);
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
             }
 
-            while (true)
+            return SamplesUnchecked(rnd, p, n);
+        }
+
+        /// <summary>
+        /// Fills an array with samples generated from the distribution.
+        /// </summary>
+        /// <param name="rnd">The random number generator to use.</param>
+        /// <param name="values">The array to fill with the samples.</param>
+        /// <param name="p">The success probability (p) in each trial. Range: 0 ≤ p ≤ 1.</param>
+        /// <param name="n">The number of trials (n). Range: n ≥ 0.</param>
+        /// <returns>a sequence of successes in <paramref name="n"/> trials.</returns>
+        public static void Samples(System.Random rnd, int[] values, double p, int n)
+        {
+            if (!(p >= 0.0 && p <= 1.0 && n >= 0))
             {
-                yield return SampleUnchecked(rnd, p, n);
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
             }
+
+            SamplesUnchecked(rnd, values, p, n);
+        }
+
+        /// <summary>
+        /// Samples a binomially distributed random variable.
+        /// </summary>
+        /// <param name="p">The success probability (p) in each trial. Range: 0 ≤ p ≤ 1.</param>
+        /// <param name="n">The number of trials (n). Range: n ≥ 0.</param>
+        /// <returns>The number of successes in <paramref name="n"/> trials.</returns>
+        public static int Sample(double p, int n)
+        {
+            if (!(p >= 0.0 && p <= 1.0 && n >= 0))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            return SampleUnchecked(SystemRandomSource.Default, p, n);
+        }
+
+        /// <summary>
+        /// Samples a sequence of binomially distributed random variable.
+        /// </summary>
+        /// <param name="p">The success probability (p) in each trial. Range: 0 ≤ p ≤ 1.</param>
+        /// <param name="n">The number of trials (n). Range: n ≥ 0.</param>
+        /// <returns>a sequence of successes in <paramref name="n"/> trials.</returns>
+        public static IEnumerable<int> Samples(double p, int n)
+        {
+            if (!(p >= 0.0 && p <= 1.0 && n >= 0))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            return SamplesUnchecked(SystemRandomSource.Default, p, n);
+        }
+
+        /// <summary>
+        /// Fills an array with samples generated from the distribution.
+        /// </summary>
+        /// <param name="values">The array to fill with the samples.</param>
+        /// <param name="p">The success probability (p) in each trial. Range: 0 ≤ p ≤ 1.</param>
+        /// <param name="n">The number of trials (n). Range: n ≥ 0.</param>
+        /// <returns>a sequence of successes in <paramref name="n"/> trials.</returns>
+        public static void Samples(int[] values, double p, int n)
+        {
+            if (!(p >= 0.0 && p <= 1.0 && n >= 0))
+            {
+                throw new ArgumentException(Resources.InvalidDistributionParameters);
+            }
+
+            SamplesUnchecked(SystemRandomSource.Default, values, p, n);
         }
     }
 }

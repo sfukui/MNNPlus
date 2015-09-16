@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2013 Math.NET
+// Copyright (c) 2009-2014 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -30,6 +30,10 @@
 
 namespace MathNet.Numerics.LinearAlgebra
 
+open System
+open MathNet.Numerics
+open MathNet.Numerics.LinearAlgebra
+
 
 /// A module which implements functional vector operations.
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -43,135 +47,134 @@ module Vector =
 
 
     /// Transform a vector into a sequence.
-    let inline toSeq (v: #Vector<_>) = v.Enumerate()
+    let inline toSeq (v: #Vector<_>) = v.Enumerate(Zeros.Include)
 
     /// Transform a vector into an indexed sequence.
-    let inline toSeqi (v: #Vector<_>) = v.EnumerateIndexed()
+    let inline toSeqi (v: #Vector<_>) = v.EnumerateIndexed(Zeros.Include) |> properTuple2Seq
 
     /// Transform a vector into a sequence where zero-values are skipped. Skipping zeros is efficient on sparse data.
-    let inline toSeqSkipZeros (v: #Vector<_>) = v.EnumerateNonZero()
+    let inline toSeqSkipZeros (v: #Vector<_>) = v.Enumerate(Zeros.AllowSkip)
 
     /// Transform a vector into an indexed sequence where zero-values are skipped. Skipping zeros is efficient on sparse data.
-    let inline toSeqiSkipZeros (v: #Vector<_>) = v.EnumerateNonZeroIndexed()
+    let inline toSeqiSkipZeros (v: #Vector<_>) = v.EnumerateIndexed(Zeros.AllowSkip) |> properTuple2Seq
 
 
     /// Applies a function to all elements of the vector.
-    let inline iter f (v: #Vector<_>) = v.Enumerate() |> Seq.iter f
+    let inline iter f (v: #Vector<_>) = v |> toSeq |> Seq.iter f
 
     /// Applies a function to all indexed elements of the vector.
-    let inline iteri f (v: #Vector<_>) = v.Enumerate() |> Seq.iteri f
+    let inline iteri f (v: #Vector<_>) = v |> toSeq |> Seq.iteri f
 
     /// Applies a function to all non-zero elements of the vector. Skipping zeros is efficient on sparse data.
-    let inline iterSkipZeros f (v: #Vector<_>) = v.EnumerateNonZero() |> Seq.iter f
+    let inline iterSkipZeros f (v: #Vector<_>) = v |> toSeqSkipZeros |> Seq.iter f
 
     /// Applies a function to all non-zero indexed elements of the vector. Skipping zeros is efficient on sparse data.
-    let inline iteriSkipZeros f (v: #Vector<_>) = v.EnumerateNonZeroIndexed() |> Seq.iter (fun (i,x) -> f i x)
+    let inline iteriSkipZeros f (v: #Vector<_>) = v |> toSeqiSkipZeros |> Seq.iter (fun (i,x) -> f i x)
 
 
     /// Fold all entries of a vector.
-    let inline fold f state (v: #Vector<_>) = v.Enumerate() |> Seq.fold f state
+    let inline fold f state (v: #Vector<_>) = v |> toSeq |> Seq.fold f state
 
     /// Fold all entries of a vector using a position dependent folding function.
-    let inline foldi f state (v: #Vector<_>) = v.EnumerateIndexed() |> Seq.fold (fun s (i,x) -> f i s x) state
+    let inline foldi f state (v: #Vector<_>) = v |> toSeqi |> Seq.fold (fun s (i,x) -> f i s x) state
 
     /// Fold all non-zero entries of a vector. Skipping zeros is efficient on sparse data.
-    let inline foldSkipZeros f state (v: #Vector<_>) = v.EnumerateNonZero() |> Seq.fold f state
+    let inline foldSkipZeros f state (v: #Vector<_>) = v |> toSeqSkipZeros |> Seq.fold f state
 
     /// Fold all non-zero entries of a vector using a position dependent folding function. Skipping zeros is efficient on sparse data.
-    let inline foldiSkipZeros f state (v: #Vector<_>) = v.EnumerateNonZeroIndexed() |> Seq.fold (fun s (i,x) -> f i s x) state
+    let inline foldiSkipZeros f state (v: #Vector<_>) = v |> toSeqiSkipZeros |> Seq.fold (fun s (i,x) -> f i s x) state
 
 
     /// Scan all entries of a vector.
-    let inline scan f state (v: #Vector<_>) = v.Enumerate() |> Seq.scan f state
+    let inline scan f state (v: #Vector<_>) = v |> toSeq |> Seq.scan f state
 
     /// Scan all entries of a vector using a position dependent folding function.
-    let inline scani f state (v: #Vector<_>) = v.EnumerateIndexed() |> Seq.scan (fun s (i,x) -> f i s x) state
+    let inline scani f state (v: #Vector<_>) = v |> toSeqi |> Seq.scan (fun s (i,x) -> f i s x) state
 
     /// Scan all non-zero entries of a vector. Skipping zeros is efficient on sparse data.
-    let inline scanSkipZeros f state (v: #Vector<_>) = v.EnumerateNonZero() |> Seq.scan f state
+    let inline scanSkipZeros f state (v: #Vector<_>) = v |> toSeqSkipZeros |> Seq.scan f state
 
     /// Scan all non-zero entries of a vector using a position dependent folding function. Skipping zeros is efficient on sparse data.
-    let inline scaniSkipZeros f state (v: #Vector<_>) = v.EnumerateNonZeroIndexed() |> Seq.scan (fun s (i,x) -> f i s x) state
+    let inline scaniSkipZeros f state (v: #Vector<_>) = v |> toSeqiSkipZeros |> Seq.scan (fun s (i,x) -> f i s x) state
 
 
     /// Reduce all entries of a vector.
-    let inline reduce f (v: #Vector<_>) = v.Enumerate() |> Seq.reduce f
+    let inline reduce f (v: #Vector<_>) = v |> toSeq |> Seq.reduce f
 
     /// Reduce all non-zero entries of a vector. Skipping zeros is efficient on sparse data.
-    let inline reduceSkipZeros f (v: #Vector<_>) = v.EnumerateNonZero() |> Seq.reduce f
+    let inline reduceSkipZeros f (v: #Vector<_>) = v |> toSeqSkipZeros |> Seq.reduce f
 
 
     /// Checks whether there is an entry in the vector that satisfies a predicate.
-    let inline exists p (v: #Vector<_>) = v.Enumerate() |> Seq.exists p
+    let inline exists p (v: #Vector<_>) = v |> toSeq |> Seq.exists p
 
     /// Checks whether there is an entry in the vector that satisfies a position dependent predicate.
-    let inline existsi p (v: #Vector<_>) = v.EnumerateIndexed() |> Seq.exists (fun (i,x) -> p i x)
+    let inline existsi p (v: #Vector<_>) = v |> toSeqi |> Seq.exists (fun (i,x) -> p i x)
 
     /// Checks whether there is a non-zero entry in the vector that satisfies a predicate. Skipping zeros is efficient on sparse data.
-    let inline existsSkipZeros p (v: #Vector<_>) = v.EnumerateNonZero() |> Seq.exists p
+    let inline existsSkipZeros p (v: #Vector<_>) = v |> toSeqSkipZeros |> Seq.exists p
 
     /// Checks whether there is a non-zero entry in the vector that satisfies a position dependent predicate. Skipping zeros is efficient on sparse data.
-    let inline existsiSkipZeros p (v: #Vector<_>) = v.EnumerateNonZeroIndexed() |> Seq.exists (fun (i,x) -> p i x)
+    let inline existsiSkipZeros p (v: #Vector<_>) = v |> toSeqiSkipZeros |> Seq.exists (fun (i,x) -> p i x)
 
 
     /// Checks whether all entries in the vector that satisfies a given predicate.
-    let inline forall p (v: #Vector<_>) = v.Enumerate() |> Seq.forall p
+    let inline forall p (v: #Vector<_>) = v |> toSeq |> Seq.forall p
 
     /// Checks whether all entries in the vector that satisfies a given position dependent predicate.
-    let inline foralli p (v: #Vector<_>) = v.EnumerateIndexed() |> Seq.forall (fun (i,x) -> p i x)
+    let inline foralli p (v: #Vector<_>) = v |> toSeqi |> Seq.forall (fun (i,x) -> p i x)
 
     /// Checks whether all non-zero entries in the vector that satisfies a given predicate. Skipping zeros is efficient on sparse data.
-    let inline forallSkipZeros p (v: #Vector<_>) = v.EnumerateNonZero() |> Seq.forall p
+    let inline forallSkipZeros p (v: #Vector<_>) = v |> toSeqSkipZeros |> Seq.forall p
 
     /// Checks whether all non-zero entries in the vector that satisfies a given position dependent predicate. Skipping zeros is efficient on sparse data.
-    let inline foralliSkipZeros p (v: #Vector<_>) = v.EnumerateNonZeroIndexed() |> Seq.forall (fun (i,x) -> p i x)
+    let inline foralliSkipZeros p (v: #Vector<_>) = v |> toSeqiSkipZeros |> Seq.forall (fun (i,x) -> p i x)
 
 
 
     /// In-place mutation by applying a function to every element of the vector.
-    let inline mapInPlace f (v: #Vector<_>) =
-        v.MapInplace((fun x -> f x), true)
+    let inline mapInPlace f (v: #Vector<_>) = v.MapInplace((fun x -> f x), Zeros.Include)
 
     /// In-place mutation by applying a function to every element of the vector.
-    let inline mapiInPlace f (v: #Vector<_>) =
-        v.MapIndexedInplace((fun i x -> f i x), true)
+    let inline mapiInPlace f (v: #Vector<_>) = v.MapIndexedInplace((fun i x -> f i x), Zeros.Include)
 
     /// In-place mutation by applying a function to every element of the vector.
     /// Zero-values may be skipped (relevant mostly for sparse vectors).
-    let inline mapSkipZerosInPlace f (v: #Vector<_>) =
-        v.MapInplace((fun x -> f x), false)
+    let inline mapSkipZerosInPlace f (v: #Vector<_>) = v.MapInplace((fun x -> f x), Zeros.AllowSkip)
 
     /// In-place mutation by applying a function to every element of the vector.
     /// Zero-values may be skipped (relevant mostly for sparse vectors).
-    let inline mapiSkipZerosInPlace (f: int -> float -> float) (v: #Vector<float>) =
-        v.MapIndexedInplace((fun i x -> f i x), false)
+    let inline mapiSkipZerosInPlace f (v: #Vector<_>) = v.MapIndexedInplace((fun i x -> f i x), Zeros.AllowSkip)
 
 
     /// Maps a vector to a new vector by applying a function to every element.
-    let inline map f (v: #Vector<_>) =
-        let w = v.Clone()
-        w.MapInplace((fun x -> f x), true)
-        w
+    let inline map f (v: #Vector<_>) = v.Map((fun x -> f x), Zeros.Include)
 
     /// Maps a vector to a new vector by applying a function to every element.
     /// Zero-values may be skipped (relevant mostly for sparse vectors).
-    let inline mapSkipZeros f (v: #Vector<_>) =
-        let w = v.Clone()
-        w.MapInplace((fun x -> f x), false)
-        w
+    let inline mapSkipZeros f (v: #Vector<_>) = v.Map((fun x -> f x), Zeros.AllowSkip)
 
     /// Maps a vector to a new vector by applying a function to every element.
-    let inline mapi f (v: #Vector<_>) =
-        let w = v.Clone()
-        w.MapIndexedInplace((fun i x -> f i x), true)
-        w
+    let inline mapi f (v: #Vector<_>) = v.MapIndexed((fun i x -> f i x), Zeros.Include)
 
     /// Maps a vector to a new vector by applying a function to every element.
     /// Zero-values may be skipped (relevant mostly for sparse vectors).
-    let inline mapiSkipZeros f (v: #Vector<_>) =
-        let w = v.Clone()
-        w.MapIndexedInplace((fun i x -> f i x), false)
-        w
+    let inline mapiSkipZeros f (v: #Vector<_>) = v.MapIndexed((fun i x -> f i x), Zeros.AllowSkip)
+
+
+    /// Maps two vectors to a new vector by applying a function to every element pair.
+    let inline map2 f (u: #Vector<_>) (v: #Vector<_>) = u.Map2((fun x y -> f x y), v, Zeros.Include)
+
+    /// Maps two vectors to a new vector by applying a function to every element pair.
+    /// Zero-Zero value-pairs may be skipped (relevant mostly for sparse vectors).
+    let inline map2SkipZeros f (u: #Vector<_>) (v: #Vector<_>) = u.Map2((fun x y -> f x y), v, Zeros.AllowSkip)
+
+    /// Folds two vectors by applying a function to update the status for each element pair.
+    let inline fold2 f status (u: #Vector<_>) (v: #Vector<_>) = u.Fold2((fun s x y -> f s x y), status, v, Zeros.Include)
+
+    /// Folds two vectors by applying a function to update the status for each element pair.
+    /// Zero-Zero value-pairs may be skipped (relevant mostly for sparse vectors).
+    let inline fold2SkipZeros f status (u: #Vector<_>) (v: #Vector<_>) = u.Fold2((fun s x y -> f s x y), status, v, Zeros.AllowSkip)
 
 
 
@@ -216,6 +219,22 @@ module Vector =
     let inline subInPlace (v: #Vector<_>) (w: #Vector<_>) = v.Subtract(w, v)
 
 
+    let inline length (A: #Vector<_>) = A.Count
+
+    let inline conjugate (A: #Vector<_>) = A.Conjugate()
+    let inline norm (A: #Vector<_>) = A.L2Norm()
+    let inline sum (A: #Vector<_>) = A.Sum()
+
+    let inline min (A: #Vector<_>) = A.Minimum()
+    let inline max (A: #Vector<_>) = A.Maximum()
+    let inline minIndex (A: #Vector<_>) = A.MinimumIndex()
+    let inline maxIndex (A: #Vector<_>) = A.MaximumIndex()
+    let inline minAbs (A: #Vector<_>) = A.AbsoluteMinimum()
+    let inline maxAbs (A: #Vector<_>) = A.AbsoluteMaximum()
+    let inline minAbsIndex (A: #Vector<_>) = A.AbsoluteMinimumIndex()
+    let inline maxAbsIndex (A: #Vector<_>) = A.AbsoluteMaximumIndex()
+
+
 
 /// A module which helps constructing generic dense vectors.
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -230,16 +249,20 @@ module DenseVector =
     let inline raw (raw: 'T[]) = Vector<'T>.Build.Dense(raw)
 
     /// Initialize an all-zero vector with the given dimension.
-    let inline zero (n: int) = Vector<'T>.Build.Dense(n)
+    let inline zero<'T when 'T:struct and 'T :> ValueType and 'T: (new: unit ->'T) and 'T :> IEquatable<'T> and 'T :> IFormattable>
+        (n: int) = Vector<'T>.Build.Dense(n)
 
     /// Initialize a random vector with the given dimension and distribution.
-    let inline random (n: int) (dist: IContinuousDistribution) = Vector<'T>.Build.Random(n, dist)
+    let inline random<'T when 'T:struct and 'T :> ValueType and 'T: (new: unit ->'T) and 'T :> IEquatable<'T> and 'T :> IFormattable>
+        (n: int) (dist: IContinuousDistribution) = Vector<'T>.Build.Random(n, dist)
 
     /// Initialize a random vector with the given dimension and standard distributed values.
-    let inline randomStandard (n: int) = Vector<'T>.Build.Random(n)
+    let inline randomStandard<'T when 'T:struct and 'T :> ValueType and 'T: (new: unit ->'T) and 'T :> IEquatable<'T> and 'T :> IFormattable>
+        (n: int) = Vector<'T>.Build.Random(n)
 
     /// Initialize a random vector with the given dimension and standard distributed values using the provided seed.
-    let inline randomSeed (n: int) (seed: int) = Vector<'T>.Build.Random(n, seed)
+    let inline randomSeed<'T when 'T:struct and 'T :> ValueType and 'T: (new: unit ->'T) and 'T :> IEquatable<'T> and 'T :> IFormattable>
+        (n: int) (seed: int) = Vector<'T>.Build.Random(n, seed)
 
     /// Initialize an x-valued vector with the given dimension.
     let inline create (n: int) (x: 'T) = Vector<'T>.Build.Dense(n, x)
@@ -257,10 +280,10 @@ module DenseVector =
     let inline ofSeq (fs: #seq<'T>) = Vector<'T>.Build.DenseOfEnumerable(fs)
 
     /// Create a vector with a given dimension from an indexed list of index, value pairs.
-    let inline ofListi (n: int) (fl: list<int * 'T>) = Vector<'T>.Build.DenseOfIndexed(n, Seq.ofList fl)
+    let inline ofListi (n: int) (fl: list<int * 'T>) = Vector<'T>.Build.DenseOfIndexed(n, Seq.ofList fl |> internalTuple2Seq)
 
     /// Create a vector with a given dimension from an indexed sequences of index, value pairs.
-    let inline ofSeqi (n: int) (fs: #seq<int * 'T>) = Vector<'T>.Build.DenseOfIndexed(n, fs)
+    let inline ofSeqi (n: int) (fs: #seq<int * 'T>) = Vector<'T>.Build.DenseOfIndexed(n, fs |> internalTuple2Seq)
 
     /// Create a vector with integer entries in the given range.
     let inline range (start: int) (step: int) (stop: int) = raw [| for i in start..step..stop -> float i |]
@@ -277,7 +300,8 @@ module SparseVector =
     let inline ofStorage (storage: Storage.SparseVectorStorage<'T>) = Vector<'T>.Build.Sparse(storage)
 
     /// Initialize an all-zero vector with the given dimension.
-    let inline zero (n: int) = Vector<'T>.Build.Sparse(n)
+    let inline zero<'T when 'T:struct and 'T :> ValueType and 'T: (new: unit ->'T) and 'T :> IEquatable<'T> and 'T :> IFormattable>
+        (n: int) = Vector<'T>.Build.Sparse(n)
 
     /// Initialize an x-valued vector with the given dimension.
     let inline create (n: int) (x: 'T) = Vector<'T>.Build.Sparse(n, x)
@@ -295,10 +319,10 @@ module SparseVector =
     let inline ofSeq (fs: #seq<'T>) = Vector<'T>.Build.SparseOfEnumerable(fs)
 
     /// Create a sparse vector with a given dimension from an indexed list of index, value pairs.
-    let inline ofListi (n: int) (fl: list<int * 'T>) = Vector<'T>.Build.SparseOfIndexed(n, Seq.ofList fl)
+    let inline ofListi (n: int) (fl: list<int * 'T>) = Vector<'T>.Build.SparseOfIndexed(n, Seq.ofList fl |> internalTuple2Seq)
 
     /// Create a sparse vector with a given dimension from an indexed sequence of index, value pairs.
-    let inline ofSeqi (n: int) (fs: #seq<int * 'T>) = Vector<'T>.Build.SparseOfIndexed(n, fs)
+    let inline ofSeqi (n: int) (fs: #seq<int * 'T>) = Vector<'T>.Build.SparseOfIndexed(n, fs |> internalTuple2Seq)
 
 
 /// Module that contains implementation of useful F#-specific extension members for generic vectors

@@ -77,9 +77,9 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Multivariate
         [Test]
         public void NormalGammaConstructorFailsWithInvalidParams()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new NormalGamma(1.0, -1.3, 2.0, 2.0));
-            Assert.Throws<ArgumentOutOfRangeException>(() => new NormalGamma(1.0, 1.0, -1.0, 1.0));
-            Assert.Throws<ArgumentOutOfRangeException>(() => new NormalGamma(1.0, 1.0, 1.0, -1.0));
+            Assert.That(() => new NormalGamma(1.0, -1.3, 2.0, 2.0), Throws.ArgumentException);
+            Assert.That(() => new NormalGamma(1.0, 1.0, -1.0, 1.0), Throws.ArgumentException);
+            Assert.That(() => new NormalGamma(1.0, 1.0, 1.0, -1.0), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -98,28 +98,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Multivariate
         }
 
         /// <summary>
-        /// Can set mean location.
-        /// </summary>
-        /// <param name="meanLocation">Mean location.</param>
-        /// <param name="meanScale">Mean scale.</param>
-        /// <param name="precShape">Precision shape.</param>
-        /// <param name="precInvScale">Precision inverse scale.</param>
-        [TestCase(0.0, 1.0, 1.0, 1.0)]
-        [TestCase(10.0, 2.0, 2.0, 2.0)]
-        public void CanSetMeanLocation(double meanLocation, double meanScale, double precShape, double precInvScale)
-        {
-            var ng = new NormalGamma(meanLocation, meanScale, precShape, precInvScale)
-                     {
-                         MeanLocation = -5.0
-                     };
-
-            Assert.AreEqual(-5.0, ng.MeanLocation);
-            Assert.AreEqual(meanScale, ng.MeanScale);
-            Assert.AreEqual(precShape, ng.PrecisionShape);
-            Assert.AreEqual(precInvScale, ng.PrecisionInverseScale);
-        }
-
-        /// <summary>
         /// Can get mean scale.
         /// </summary>
         /// <param name="meanLocation">Mean location.</param>
@@ -132,27 +110,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Multivariate
         {
             var ng = new NormalGamma(meanLocation, meanScale, precShape, precInvScale);
             Assert.AreEqual(meanScale, ng.MeanScale);
-        }
-
-        /// <summary>
-        /// Can set mean scale.
-        /// </summary>
-        /// <param name="meanLocation">Mean location.</param>
-        /// <param name="meanScale">Mean scale.</param>
-        /// <param name="precShape">Precision shape.</param>
-        /// <param name="precInvScale">Precision inverse scale.</param>
-        [TestCase(0.0, 1.0, 1.0, 1.0)]
-        [TestCase(10.0, 2.0, 2.0, 2.0)]
-        public void CanSetMeanScale(double meanLocation, double meanScale, double precShape, double precInvScale)
-        {
-            var ng = new NormalGamma(meanLocation, meanScale, precShape, precInvScale)
-                     {
-                         MeanScale = 5.0
-                     };
-            Assert.AreEqual(meanLocation, ng.MeanLocation);
-            Assert.AreEqual(5.0, ng.MeanScale);
-            Assert.AreEqual(precShape, ng.PrecisionShape);
-            Assert.AreEqual(precInvScale, ng.PrecisionInverseScale);
         }
 
         /// <summary>
@@ -171,27 +128,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Multivariate
         }
 
         /// <summary>
-        /// Can set precision shape.
-        /// </summary>
-        /// <param name="meanLocation">Mean location.</param>
-        /// <param name="meanScale">Mean scale.</param>
-        /// <param name="precShape">Precision shape.</param>
-        /// <param name="precInvScale">Precision inverse scale.</param>
-        [TestCase(0.0, 1.0, 1.0, 1.0)]
-        [TestCase(10.0, 2.0, 2.0, 2.0)]
-        public void CanSetPrecisionShape(double meanLocation, double meanScale, double precShape, double precInvScale)
-        {
-            var ng = new NormalGamma(meanLocation, meanScale, precShape, precInvScale)
-                     {
-                         PrecisionShape = 5.0
-                     };
-            Assert.AreEqual(meanLocation, ng.MeanLocation);
-            Assert.AreEqual(meanScale, ng.MeanScale);
-            Assert.AreEqual(5.0, ng.PrecisionShape);
-            Assert.AreEqual(precInvScale, ng.PrecisionInverseScale);
-        }
-
-        /// <summary>
         /// Can get precision inverse scale.
         /// </summary>
         /// <param name="meanLocation">Mean location.</param>
@@ -204,27 +140,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Multivariate
         {
             var ng = new NormalGamma(meanLocation, meanScale, precShape, precInvScale);
             Assert.AreEqual(precInvScale, ng.PrecisionInverseScale);
-        }
-
-        /// <summary>
-        /// Can set precision inverse scale.
-        /// </summary>
-        /// <param name="meanLocation">Mean location.</param>
-        /// <param name="meanScale">Mean scale.</param>
-        /// <param name="precShape">Precision shape.</param>
-        /// <param name="precInvScale">Precision inverse scale.</param>
-        [TestCase(0.0, 1.0, 1.0, 1.0)]
-        [TestCase(10.0, 2.0, 2.0, 2.0)]
-        public void CanSetPrecisionPrecisionInverseScale(double meanLocation, double meanScale, double precShape, double precInvScale)
-        {
-            var ng = new NormalGamma(meanLocation, meanScale, precShape, precInvScale)
-                     {
-                         PrecisionInverseScale = 5.0
-                     };
-            Assert.AreEqual(meanLocation, ng.MeanLocation);
-            Assert.AreEqual(meanScale, ng.MeanScale);
-            Assert.AreEqual(precShape, ng.PrecisionShape);
-            Assert.AreEqual(5.0, ng.PrecisionInverseScale);
         }
 
         /// <summary>
@@ -302,10 +217,10 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Multivariate
         [Test]
         public void CanSetRandomSource()
         {
-            new NormalGamma(0.0, 1.0, 1.0, 1.0)
+            GC.KeepAlive(new NormalGamma(0.0, 1.0, 1.0, 1.0)
             {
                 RandomSource = new Random(0)
-            };
+            });
         }
 
         /// <summary>
@@ -343,21 +258,21 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Multivariate
             }
 
             // Extract the mean and precisions.
-            var means = samples.Select(mp => mp.Mean);
-            var precs = samples.Select(mp => mp.Precision);
+            var means = samples.Select(mp => mp.Mean).ToArray();
+            var precs = samples.Select(mp => mp.Precision).ToArray();
             var meanMarginal = cd.MeanMarginal();
             var precMarginal = cd.PrecisionMarginal();
 
             // Check the precision distribution.
-            CommonDistributionTests.VapnikChervonenkisTest(
-                CommonDistributionTests.Error,
+            CommonDistributionTests.ContinuousVapnikChervonenkisTest(
+                CommonDistributionTests.ErrorTolerance,
                 CommonDistributionTests.ErrorProbability,
                 precs,
                 precMarginal);
 
             // Check the mean distribution.
-            CommonDistributionTests.VapnikChervonenkisTest(
-                CommonDistributionTests.Error,
+            CommonDistributionTests.ContinuousVapnikChervonenkisTest(
+                CommonDistributionTests.ErrorTolerance,
                 CommonDistributionTests.ErrorProbability,
                 means,
                 meanMarginal);
@@ -375,21 +290,21 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Multivariate
             var samples = cd.Samples().Take(CommonDistributionTests.NumberOfTestSamples).ToArray();
 
             // Extract the mean and precisions.
-            var means = samples.Select(mp => mp.Mean);
-            var precs = samples.Select(mp => mp.Precision);
+            var means = samples.Select(mp => mp.Mean).ToArray();
+            var precs = samples.Select(mp => mp.Precision).ToArray();
             var meanMarginal = cd.MeanMarginal();
             var precMarginal = cd.PrecisionMarginal();
 
             // Check the precision distribution.
-            CommonDistributionTests.VapnikChervonenkisTest(
-                CommonDistributionTests.Error,
+            CommonDistributionTests.ContinuousVapnikChervonenkisTest(
+                CommonDistributionTests.ErrorTolerance,
                 CommonDistributionTests.ErrorProbability,
                 precs,
                 precMarginal);
 
             // Check the mean distribution.
-            CommonDistributionTests.VapnikChervonenkisTest(
-                CommonDistributionTests.Error,
+            CommonDistributionTests.ContinuousVapnikChervonenkisTest(
+                CommonDistributionTests.ErrorTolerance,
                 CommonDistributionTests.ErrorProbability,
                 means,
                 meanMarginal);

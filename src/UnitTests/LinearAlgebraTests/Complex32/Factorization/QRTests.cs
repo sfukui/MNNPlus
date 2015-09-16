@@ -24,7 +24,6 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
-using System;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Complex32;
 using MathNet.Numerics.LinearAlgebra.Complex32.Factorization;
@@ -47,7 +46,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
         [Test]
         public void ConstructorWideMatrixThrowsInvalidMatrixOperationException()
         {
-            Assert.Throws<ArgumentException>(() => UserQR.Create(new DenseMatrix(3, 4)));
+            Assert.That(() => UserQR.Create(new DenseMatrix(3, 4)), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -486,7 +485,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
             // Check the reconstruction.
             for (var i = 0; i < order; i++)
             {
-                AssertHelpers.AlmostEqualRelative(vectorb[i], matrixBReconstruct[i], 3);
+                AssertHelpers.AlmostEqualRelative(vectorb[i], matrixBReconstruct[i], 2);
             }
 
             // Make sure A didn't change.
@@ -573,7 +572,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
             // Check the reconstruction.
             for (var i = 0; i < vectorb.Count; i++)
             {
-                AssertHelpers.AlmostEqualRelative(vectorb[i], matrixBReconstruct[i], 3);
+                AssertHelpers.AlmostEqualRelative(vectorb[i], matrixBReconstruct[i], 2);
             }
 
             // Make sure A didn't change.
@@ -678,7 +677,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
             {
                 for (var j = 0; j < matrixX.ColumnCount; j++)
                 {
-                    AssertHelpers.AlmostEqual(test[i, j], matrixX[i, j], 6);
+                    AssertHelpers.AlmostEqual(test[i, j], matrixX[i, j], 5);
                 }
             }
 
@@ -714,7 +713,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
 
             for (var i = 0; i < vectorX.Count; i++)
             {
-                AssertHelpers.AlmostEqual(test[i], vectorX[i], 6);
+                AssertHelpers.AlmostEqual(test[i], vectorX[i], 5);
             }
 
             // Make sure A didn't change.

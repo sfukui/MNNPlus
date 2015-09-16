@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2014 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -37,15 +41,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
     [TestFixture, Category("Distributions")]
     public class NegativeBinomialTests
     {
-        /// <summary>
-        /// Set-up parameters.
-        /// </summary>
-        [SetUp]
-        public void SetUp()
-        {
-            Control.CheckDistributionParameters = true;
-        }
-
         /// <summary>
         /// Can create Negative Binomial.
         /// </summary>
@@ -76,7 +71,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         [TestCase(Double.NaN, Double.NaN)]
         public void NegativeBinomialCreateFailsWithBadParameters(double r, double p)
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new NegativeBinomial(r, p));
+            Assert.That(() => new NegativeBinomial(r, p), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -87,62 +82,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         {
             var d = new NegativeBinomial(1.0, 0.3);
             Assert.AreEqual(String.Format("NegativeBinomial(R = {0}, P = {1})", d.R, d.P), d.ToString());
-        }
-
-        /// <summary>
-        /// Can set R.
-        /// </summary>
-        /// <param name="r">Number of trials.</param>
-        [TestCase(0.0)]
-        [TestCase(0.1)]
-        [TestCase(1.0)]
-        public void CanSetR(double r)
-        {
-            new NegativeBinomial(1.0, 0.5)
-            {
-                R = r
-            };
-        }
-
-        /// <summary>
-        /// Set R fails with bad values.
-        /// </summary>
-        /// <param name="r">Number of trials.</param>
-        [TestCase(Double.NaN)]
-        [TestCase(-1.0)]
-        [TestCase(Double.NegativeInfinity)]
-        public void SetRFails(double r)
-        {
-            var d = new NegativeBinomial(1.0, 0.5);
-            Assert.Throws<ArgumentOutOfRangeException>(() => d.R = r);
-        }
-
-        /// <summary>
-        /// Can set probability of one.
-        /// </summary>
-        /// <param name="p">Probability of success.</param>
-        [TestCase(0.0)]
-        [TestCase(0.3)]
-        [TestCase(1.0)]
-        public void CanSetProbabilityOfOne(double p)
-        {
-            new NegativeBinomial(1.0, 0.5)
-            {
-                P = p
-            };
-        }
-
-        /// <summary>
-        /// Set probability of one fails with bad values.
-        /// </summary>
-        /// <param name="p">Probability of success.</param>
-        [TestCase(Double.NaN)]
-        [TestCase(-1.0)]
-        [TestCase(2.0)]
-        public void SetProbabilityOfOneFails(double p)
-        {
-            var d = new NegativeBinomial(1.0, 0.5);
-            Assert.Throws<ArgumentOutOfRangeException>(() => d.P = p);
         }
 
         /// <summary>
@@ -289,7 +228,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         {
             var d = new NegativeBinomial(1.0, 0.5);
             var ied = d.Samples();
-            ied.Take(5).ToArray();
+            GC.KeepAlive(ied.Take(5).ToArray());
         }
     }
 }

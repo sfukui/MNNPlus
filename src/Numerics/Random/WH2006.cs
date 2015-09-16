@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2013 Math.NET
+// Copyright (c) 2009-2014 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -29,6 +29,10 @@
 // </copyright>
 
 using System.Collections.Generic;
+
+#if !PORTABLE
+using System.Runtime;
+#endif
 
 namespace MathNet.Numerics.Random
 {
@@ -83,6 +87,7 @@ namespace MathNet.Numerics.Random
             {
                 seed = 1;
             }
+
             _xn = (uint)seed%Modx;
         }
 
@@ -98,6 +103,7 @@ namespace MathNet.Numerics.Random
             {
                 seed = 1;
             }
+
             _xn = (uint)seed%Modx;
         }
 
@@ -120,22 +126,22 @@ namespace MathNet.Numerics.Random
         }
 
         /// <summary>
-        /// Returns an array of random numbers greater than or equal to 0.0 and less than 1.0.
+        /// Fills an array with random numbers greater than or equal to 0.0 and less than 1.0.
         /// </summary>
         /// <remarks>Supports being called in parallel from multiple threads.</remarks>
-        public static double[] Doubles(int length, int seed)
+        public static void Doubles(double[] values, int seed)
         {
             if (seed == 0)
             {
                 seed = 1;
             }
+
             ulong wn = 1;
             ulong xn = (uint)seed%Modx;
             ulong yn = 1;
             ulong zn = 1;
 
-            var data = new double[length];
-            for (int i = 0; i < data.Length; i++)
+            for (int i = 0; i < values.Length; i++)
             {
                 xn = 11600*xn%Modx;
                 yn = 47003*yn%Mody;
@@ -143,8 +149,19 @@ namespace MathNet.Numerics.Random
                 wn = 33000*wn%Modw;
 
                 double u = xn*ModxRecip + yn*ModyRecip + zn*ModzRecip + wn*ModwRecip;
-                data[i] = u - (int)u;
+                values[i] = u - (int)u;
             }
+        }
+
+        /// <summary>
+        /// Returns an array of random numbers greater than or equal to 0.0 and less than 1.0.
+        /// </summary>
+        /// <remarks>Supports being called in parallel from multiple threads.</remarks>
+        [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
+        public static double[] Doubles(int length, int seed)
+        {
+            var data = new double[length];
+            Doubles(data, seed);
             return data;
         }
 
@@ -158,6 +175,7 @@ namespace MathNet.Numerics.Random
             {
                 seed = 1;
             }
+
             ulong wn = 1;
             ulong xn = (uint)seed%Modx;
             ulong yn = 1;

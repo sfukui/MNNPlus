@@ -31,7 +31,7 @@
 using System;
 using MathNet.Numerics.Distributions;
 using MathNet.Numerics.Statistics;
-using MathNet.Numerics.Statistics.Mcmc.Diagnostics;
+using MathNet.Numerics.Statistics.Mcmc;
 using NUnit.Framework;
 
 namespace MathNet.Numerics.UnitTests.StatisticsTests.McmcTests
@@ -98,7 +98,7 @@ namespace MathNet.Numerics.UnitTests.StatisticsTests.McmcTests
         {
             const int length = 10;
             var series = new double[length];
-            Assert.Throws<ArgumentOutOfRangeException>(() => MCMCDiagnostics.ACF(series, 11, x=>x));
+            Assert.That(() => MCMCDiagnostics.ACF(series, 11, x=>x), Throws.TypeOf<ArgumentOutOfRangeException>());
 
         }
         /// <summary>
@@ -107,7 +107,7 @@ namespace MathNet.Numerics.UnitTests.StatisticsTests.McmcTests
         [Test]
         public void LagNegative()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => MCMCDiagnostics.ACF(new double[10], -1, x=>x));
+            Assert.That(() => MCMCDiagnostics.ACF(new double[10], -1, x=>x), Throws.TypeOf<ArgumentOutOfRangeException>());
         }
 
         /// <summary>

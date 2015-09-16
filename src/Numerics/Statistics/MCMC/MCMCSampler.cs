@@ -107,7 +107,7 @@ namespace MathNet.Numerics.Statistics.Mcmc
         {
             Accepts = 0;
             Samples = 0;
-            RandomSource = MersenneTwister.Default;
+            RandomSource = SystemRandomSource.Default;
         }
 
         /// <summary>
@@ -121,7 +121,7 @@ namespace MathNet.Numerics.Statistics.Mcmc
             {
                 if (value == null)
                 {
-                    throw new ArgumentNullException();
+                    throw new ArgumentNullException("value");
                 }
                 _randomNumberGenerator = value;
             }

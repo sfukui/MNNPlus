@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2013 Math.NET
+// Copyright (c) 2009-2014 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -30,12 +30,16 @@
 
 using System.Collections.Generic;
 
+#if !PORTABLE
+using System.Runtime;
+#endif
+
 namespace MathNet.Numerics.Random
 {
     /// <summary>
     /// A 32-bit combined multiple recursive generator with 2 components of order 3.
     /// </summary>
-    ///<remarks>Based off of P. L'Ecuyer, "Combined Multiple Recursive Random Number Generators," Operations Research, 44, 5 (1996), 816--822. </remarks>
+    /// <remarks>Based off of P. L'Ecuyer, "Combined Multiple Recursive Random Number Generators," Operations Research, 44, 5 (1996), 816--822. </remarks>
     public class Mrg32k3a : RandomSource
     {
         const double A12 = 1403580;
@@ -86,6 +90,7 @@ namespace MathNet.Numerics.Random
             {
                 seed = 1;
             }
+
             _xn3 = (uint)seed;
         }
 
@@ -100,9 +105,9 @@ namespace MathNet.Numerics.Random
             {
                 seed = 1;
             }
+
             _xn3 = (uint)seed;
         }
-
 
         /// <summary>
         /// Returns a random number between 0.0 and 1.0.
@@ -127,6 +132,7 @@ namespace MathNet.Numerics.Random
             {
                 yn += Modulus2;
             }
+
             _xn3 = _xn2;
             _xn2 = _xn1;
             _xn1 = xn;
@@ -138,14 +144,15 @@ namespace MathNet.Numerics.Random
             {
                 return (xn - yn + Modulus1)*Reciprocal;
             }
+
             return (xn - yn)*Reciprocal;
         }
 
         /// <summary>
-        /// Returns an array of random numbers greater than or equal to 0.0 and less than 1.0.
+        /// Fills an array with random numbers greater than or equal to 0.0 and less than 1.0.
         /// </summary>
         /// <remarks>Supports being called in parallel from multiple threads.</remarks>
-        public static double[] Doubles(int length, int seed)
+        public static void Doubles(double[] values, int seed)
         {
             double x1 = 1;
             double x2 = 1;
@@ -154,8 +161,7 @@ namespace MathNet.Numerics.Random
             double y2 = 1;
             double y3 = 1;
 
-            var data = new double[length];
-            for (int i = 0; i < data.Length; i++)
+            for (int i = 0; i < values.Length; i++)
             {
                 double xn = A12*x2 - A13*x3;
                 double k = (long)(xn/Modulus1);
@@ -172,6 +178,7 @@ namespace MathNet.Numerics.Random
                 {
                     yn += Modulus2;
                 }
+
                 x3 = x2;
                 x2 = x1;
                 x1 = xn;
@@ -179,8 +186,19 @@ namespace MathNet.Numerics.Random
                 y2 = y1;
                 y1 = yn;
 
-                data[i] = xn <= yn ? (xn - yn + Modulus1)*Reciprocal : (xn - yn)*Reciprocal;
+                values[i] = xn <= yn ? (xn - yn + Modulus1)*Reciprocal : (xn - yn)*Reciprocal;
             }
+        }
+
+        /// <summary>
+        /// Returns an array of random numbers greater than or equal to 0.0 and less than 1.0.
+        /// </summary>
+        /// <remarks>Supports being called in parallel from multiple threads.</remarks>
+        [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
+        public static double[] Doubles(int length, int seed)
+        {
+            var data = new double[length];
+            Doubles(data, seed);
             return data;
         }
 
@@ -214,6 +232,7 @@ namespace MathNet.Numerics.Random
                 {
                     yn += Modulus2;
                 }
+
                 x3 = x2;
                 x2 = x1;
                 x1 = xn;

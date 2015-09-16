@@ -1,0 +1,68 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Matlab", "src\Data\Matlab\Matlab.csproj", "{550FB330-C86F-4C9D-9B4C-6D830CEB7520}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTests", "src\DataUnitTests\UnitTests.csproj", "{6B0247F6-B332-41BC-B100-C0E5509EE612}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Text", "src\Data\Text\Text.csproj", "{9D3A08E1-6B96-4552-A535-412E589B3264}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Readme", "Readme", "{F510F04E-7503-4F87-A1EC-3A5FBA1DF7B8}"
+	ProjectSection(SolutionItems) = preProject
+		CONTRIBUTING.md = CONTRIBUTING.md
+		CONTRIBUTORS.md = CONTRIBUTORS.md
+		LICENSE.md = LICENSE.md
+		README.md = README.md
+		RELEASENOTES-Data.md = RELEASENOTES-Data.md
+		RELEASENOTES.md = RELEASENOTES.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{D954831A-F51A-436A-9F17-0DFC7AEC7113}"
+	ProjectSection(SolutionItems) = preProject
+		build.fsx = build.fsx
+		build\MathNet.Numerics.Extension.nuspec = build\MathNet.Numerics.Extension.nuspec
+		build\MathNet.Numerics.nuspec = build\MathNet.Numerics.nuspec
+		paket.dependencies = paket.dependencies
+		paket.lock = paket.lock
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestData", "src\TestData\TestData.csproj", "{AF3253C9-4DB5-45A0-98CF-C105FDA9DA47}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+		Release-Signed|Any CPU = Release-Signed|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{550FB330-C86F-4C9D-9B4C-6D830CEB7520}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{550FB330-C86F-4C9D-9B4C-6D830CEB7520}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{550FB330-C86F-4C9D-9B4C-6D830CEB7520}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{550FB330-C86F-4C9D-9B4C-6D830CEB7520}.Release|Any CPU.Build.0 = Release|Any CPU
+		{550FB330-C86F-4C9D-9B4C-6D830CEB7520}.Release-Signed|Any CPU.ActiveCfg = Release|Any CPU
+		{550FB330-C86F-4C9D-9B4C-6D830CEB7520}.Release-Signed|Any CPU.Build.0 = Release|Any CPU
+		{6B0247F6-B332-41BC-B100-C0E5509EE612}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B0247F6-B332-41BC-B100-C0E5509EE612}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B0247F6-B332-41BC-B100-C0E5509EE612}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B0247F6-B332-41BC-B100-C0E5509EE612}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6B0247F6-B332-41BC-B100-C0E5509EE612}.Release-Signed|Any CPU.ActiveCfg = Release|Any CPU
+		{6B0247F6-B332-41BC-B100-C0E5509EE612}.Release-Signed|Any CPU.Build.0 = Release|Any CPU
+		{9D3A08E1-6B96-4552-A535-412E589B3264}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9D3A08E1-6B96-4552-A535-412E589B3264}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9D3A08E1-6B96-4552-A535-412E589B3264}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9D3A08E1-6B96-4552-A535-412E589B3264}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9D3A08E1-6B96-4552-A535-412E589B3264}.Release-Signed|Any CPU.ActiveCfg = Release|Any CPU
+		{9D3A08E1-6B96-4552-A535-412E589B3264}.Release-Signed|Any CPU.Build.0 = Release|Any CPU
+		{AF3253C9-4DB5-45A0-98CF-C105FDA9DA47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF3253C9-4DB5-45A0-98CF-C105FDA9DA47}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AF3253C9-4DB5-45A0-98CF-C105FDA9DA47}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AF3253C9-4DB5-45A0-98CF-C105FDA9DA47}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AF3253C9-4DB5-45A0-98CF-C105FDA9DA47}.Release-Signed|Any CPU.ActiveCfg = Release-Signed|Any CPU
+		{AF3253C9-4DB5-45A0-98CF-C105FDA9DA47}.Release-Signed|Any CPU.Build.0 = Release-Signed|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

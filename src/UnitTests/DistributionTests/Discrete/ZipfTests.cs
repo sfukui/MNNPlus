@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2014 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -38,15 +42,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
     public class ZipfTests
     {
         /// <summary>
-        /// Set-up parameters.
-        /// </summary>
-        [SetUp]
-        public void SetUp()
-        {
-            Control.CheckDistributionParameters = true;
-        }
-
-        /// <summary>
         /// Can create zipf.
         /// </summary>
         /// <param name="s">S parameter.</param>
@@ -70,7 +65,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         [TestCase(0.0, 0)]
         public void ZipfCreateFailsWithBadParameters(double s, int n)
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new Zipf(s, n));
+            Assert.That(() => new Zipf(s, n), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -81,61 +76,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Discrete
         {
             var d = new Zipf(1.0, 5);
             Assert.AreEqual("Zipf(S = 1, N = 5)", d.ToString());
-        }
-
-        /// <summary>
-        /// Can set S.
-        /// </summary>
-        /// <param name="s">S parameter.</param>
-        [TestCase(0.1)]
-        [TestCase(1.0)]
-        [TestCase(5.0)]
-        public void CanSetS(double s)
-        {
-            new Zipf(1.0, 5)
-            {
-                S = s
-            };
-        }
-
-        /// <summary>
-        /// Set S fails with bad values.
-        /// </summary>
-        /// <param name="s">S parameter.</param>
-        [TestCase(Double.NaN)]
-        [TestCase(-1.0)]
-        [TestCase(Double.NegativeInfinity)]
-        public void SetSFails(double s)
-        {
-            var d = new Zipf(1.0, 5);
-            Assert.Throws<ArgumentOutOfRangeException>(() => d.S = s);
-        }
-
-        /// <summary>
-        /// Can set N.
-        /// </summary>
-        /// <param name="n">N parameter.</param>
-        [TestCase(1)]
-        [TestCase(20)]
-        [TestCase(50)]
-        public void CanSetN(int n)
-        {
-            new Zipf(1.0, 5)
-            {
-                N = n
-            };
-        }
-
-        /// <summary>
-        /// Set N fails with bad values.
-        /// </summary>
-        /// <param name="n">N parameter.</param>
-        [TestCase(-1)]
-        [TestCase(0)]
-        public void SetNFails(int n)
-        {
-            var d = new Zipf(1.0, 5);
-            Assert.Throws<ArgumentOutOfRangeException>(() => d.N = n);
         }
 
         /// <summary>

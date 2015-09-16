@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2013 Math.NET
+// Copyright (c) 2009-2014 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -50,6 +50,11 @@ namespace MathNet.Numerics
         {
             double root;
 
+            if (!ZeroCrossingBracketing.Expand(f, ref lowerBound, ref upperBound, 1.6, 100))
+            {
+                throw new NonConvergenceException(Resources.RootFindingFailed);
+            }
+
             if (Brent.TryFindRoot(f, lowerBound, upperBound, accuracy, maxIterations, out root))
             {
                 return root;
@@ -79,12 +84,7 @@ namespace MathNet.Numerics
                 return root;
             }
 
-            if (Bisection.TryFindRoot(f, lowerBound, upperBound, accuracy, maxIterations, out root))
-            {
-                return root;
-            }
-
-            throw new NonConvergenceException(Resources.RootFindingFailed);
+            return OfFunction(f, lowerBound, upperBound, accuracy, maxIterations);
         }
 
         /// <summary>
@@ -104,6 +104,15 @@ namespace MathNet.Numerics
                 : -0.5*(b - new Complex(b*b - 4*a*c, 0d).SquareRoot());
 
             return new Tuple<Complex, Complex>(q/a, c/q);
+        }
+
+        /// <summary>
+        /// Find all three complex roots of the cubic equation d + c*x + b*x^2 + a*x^3 = 0.
+        /// Note the special coefficient order ascending by exponent (consistent with polynomials).
+        /// </summary>
+        public static Tuple<Complex, Complex, Complex> Cubic(double d, double c, double b, double a)
+        {
+            return RootFinding.Cubic.Roots(d, c, b, a);
         }
 
         /// <summary>

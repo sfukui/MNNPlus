@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2013 Math.NET
+// Copyright (c) 2009-2014 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -52,6 +52,7 @@ namespace MathNet.Numerics.Statistics
                 ? ArrayStatistics.Minimum(array)
                 : StreamingStatistics.Minimum(data);
         }
+
         /// <summary>
         /// Returns the minimum value in the sample data.
         /// Returns NaN if data is empty or if any entry is NaN.
@@ -91,7 +92,7 @@ namespace MathNet.Numerics.Statistics
         }
 
         /// <summary>
-        /// Estimates the sample mean.
+        /// Evaluates the sample mean, an estimate of the population mean.
         /// Returns NaN if data is empty or if any entry is NaN.
         /// </summary>
         /// <param name="data">The data to calculate the mean of.</param>
@@ -105,7 +106,7 @@ namespace MathNet.Numerics.Statistics
         }
 
         /// <summary>
-        /// Estimates the sample mean.
+        /// Evaluates the sample mean, an estimate of the population mean.
         /// Returns NaN if data is empty or if any entry is NaN.
         /// Null-entries are ignored.
         /// </summary>
@@ -143,7 +144,7 @@ namespace MathNet.Numerics.Statistics
         }
 
         /// <summary>
-        /// Evaluates the population variance from the provided full population.
+        /// Evaluates the variance from the provided full population.
         /// On a dataset of size N will use an N normalizer and would thus be biased if applied to a subset.
         /// Returns NaN if data is empty or if any entry is NaN.
         /// </summary>
@@ -157,7 +158,7 @@ namespace MathNet.Numerics.Statistics
         }
 
         /// <summary>
-        /// Evaluates the population variance from the provided full population.
+        /// Evaluates the variance from the provided full population.
         /// On a dataset of size N will use an N normalize and would thus be biased if applied to a subsetr.
         /// Returns NaN if data is empty or if any entry is NaN.
         /// Null-entries are ignored.
@@ -195,7 +196,7 @@ namespace MathNet.Numerics.Statistics
         }
 
         /// <summary>
-        /// Evaluates the population standard deviation from the provided full population.
+        /// Evaluates the standard deviation from the provided full population.
         /// On a dataset of size N will use an N normalizer and would thus be biased if applied to a subset.
         /// Returns NaN if data is empty or if any entry is NaN.
         /// </summary>
@@ -209,7 +210,7 @@ namespace MathNet.Numerics.Statistics
         }
 
         /// <summary>
-        /// Evaluates the population standard deviation from the provided full population.
+        /// Evaluates the standard deviation from the provided full population.
         /// On a dataset of size N will use an N normalizer and would thus be biased if applied to a subset.
         /// Returns NaN if data is empty or if any entry is NaN.
         /// Null-entries are ignored.
@@ -218,6 +219,98 @@ namespace MathNet.Numerics.Statistics
         public static double PopulationStandardDeviation(this IEnumerable<double?> population)
         {
             return StreamingStatistics.PopulationStandardDeviation(population.Where(d => d.HasValue).Select(d => d.Value));
+        }
+
+        /// <summary>
+        /// Estimates the unbiased population skewness from the provided samples.
+        /// Uses a normalizer (Bessel's correction; type 2).
+        /// Returns NaN if data has less than three entries or if any entry is NaN.
+        /// </summary>
+        /// <param name="samples">A subset of samples, sampled from the full population.</param>
+        public static double Skewness(this IEnumerable<double> samples)
+        {
+            return new RunningStatistics(samples).Skewness;
+        }
+
+        /// <summary>
+        /// Estimates the unbiased population skewness from the provided samples.
+        /// Uses a normalizer (Bessel's correction; type 2).
+        /// Returns NaN if data has less than three entries or if any entry is NaN.
+        /// Null-entries are ignored.
+        /// </summary>
+        /// <param name="samples">A subset of samples, sampled from the full population.</param>
+        public static double Skewness(this IEnumerable<double?> samples)
+        {
+            return new RunningStatistics(samples.Where(d => d.HasValue).Select(d => d.Value)).Skewness;
+        }
+
+        /// <summary>
+        /// Evaluates the skewness from the full population.
+        /// Does not use a normalizer and would thus be biased if applied to a subset (type 1).
+        /// Returns NaN if data has less than two entries or if any entry is NaN.
+        /// </summary>
+        /// <param name="population">The full population data.</param>
+        public static double PopulationSkewness(this IEnumerable<double> population)
+        {
+            return new RunningStatistics(population).PopulationSkewness;
+        }
+
+        /// <summary>
+        /// Evaluates the skewness from the full population.
+        /// Does not use a normalizer and would thus be biased if applied to a subset (type 1).
+        /// Returns NaN if data has less than two entries or if any entry is NaN.
+        /// Null-entries are ignored.
+        /// </summary>
+        /// <param name="population">The full population data.</param>
+        public static double PopulationSkewness(this IEnumerable<double?> population)
+        {
+            return new RunningStatistics(population.Where(d => d.HasValue).Select(d => d.Value)).PopulationSkewness;
+        }
+
+        /// <summary>
+        /// Estimates the unbiased population kurtosis from the provided samples.
+        /// Uses a normalizer (Bessel's correction; type 2).
+        /// Returns NaN if data has less than four entries or if any entry is NaN.
+        /// </summary>
+        /// <param name="samples">A subset of samples, sampled from the full population.</param>
+        public static double Kurtosis(this IEnumerable<double> samples)
+        {
+            return new RunningStatistics(samples).Kurtosis;
+        }
+
+        /// <summary>
+        /// Estimates the unbiased population kurtosis from the provided samples.
+        /// Uses a normalizer (Bessel's correction; type 2).
+        /// Returns NaN if data has less than four entries or if any entry is NaN.
+        /// Null-entries are ignored.
+        /// </summary>
+        /// <param name="samples">A subset of samples, sampled from the full population.</param>
+        public static double Kurtosis(this IEnumerable<double?> samples)
+        {
+            return new RunningStatistics(samples.Where(d => d.HasValue).Select(d => d.Value)).Kurtosis;
+        }
+
+        /// <summary>
+        /// Evaluates the kurtosis from the full population.
+        /// Does not use a normalizer and would thus be biased if applied to a subset (type 1).
+        /// Returns NaN if data has less than three entries or if any entry is NaN.
+        /// </summary>
+        /// <param name="population">The full population data.</param>
+        public static double PopulationKurtosis(this IEnumerable<double> population)
+        {
+            return new RunningStatistics(population).PopulationKurtosis;
+        }
+
+        /// <summary>
+        /// Evaluates the kurtosis from the full population.
+        /// Does not use a normalizer and would thus be biased if applied to a subset (type 1).
+        /// Returns NaN if data has less than three entries or if any entry is NaN.
+        /// Null-entries are ignored.
+        /// </summary>
+        /// <param name="population">The full population data.</param>
+        public static double PopulationKurtosis(this IEnumerable<double?> population)
+        {
+            return new RunningStatistics(population.Where(d => d.HasValue).Select(d => d.Value)).PopulationKurtosis;
         }
 
         /// <summary>
@@ -233,6 +326,43 @@ namespace MathNet.Numerics.Statistics
             return array != null
                 ? ArrayStatistics.MeanVariance(array)
                 : StreamingStatistics.MeanVariance(samples);
+        }
+
+        /// <summary>
+        /// Estimates the sample mean and the unbiased population standard deviation from the provided samples.
+        /// On a dataset of size N will use an N-1 normalizer (Bessel's correction).
+        /// Returns NaN for mean if data is empty or if any entry is NaN and NaN for standard deviation if data has less than two entries or if any entry is NaN.
+        /// </summary>
+        /// <param name="samples">The data to calculate the mean of.</param>
+        /// <returns>The mean of the sample.</returns>
+        public static Tuple<double, double> MeanStandardDeviation(this IEnumerable<double> samples)
+        {
+            var array = samples as double[];
+            return array != null
+                ? ArrayStatistics.MeanStandardDeviation(array)
+                : StreamingStatistics.MeanStandardDeviation(samples);
+        }
+
+        /// <summary>
+        /// Estimates the unbiased population skewness and kurtosis from the provided samples in a single pass.
+        /// Uses a normalizer (Bessel's correction; type 2).
+        /// </summary>
+        /// <param name="samples">A subset of samples, sampled from the full population.</param>
+        public static Tuple<double, double> SkewnessKurtosis(this IEnumerable<double> samples)
+        {
+            var stats = new RunningStatistics(samples);
+            return new Tuple<double, double>(stats.Skewness, stats.Kurtosis);
+        }
+
+        /// <summary>
+        /// Evaluates the skewness and kurtosis from the full population.
+        /// Does not use a normalizer and would thus be biased if applied to a subset (type 1).
+        /// </summary>
+        /// <param name="population">The full population data.</param>
+        public static Tuple<double, double> PopulationSkewnessKurtosis(this IEnumerable<double> population)
+        {
+            var stats = new RunningStatistics(population);
+            return new Tuple<double, double>(stats.PopulationSkewness, stats.PopulationKurtosis);
         }
 
         /// <summary>
@@ -282,7 +412,7 @@ namespace MathNet.Numerics.Statistics
 
         /// <summary>
         /// Evaluates the population covariance from the provided full populations.
-        /// On a dataset of size N will use an N normalize and would thus be biased if applied to a subsetr.
+        /// On a dataset of size N will use an N normalize and would thus be biased if applied to a subset.
         /// Returns NaN if data is empty or if any entry is NaN.
         /// Null-entries are ignored.
         /// </summary>
@@ -291,6 +421,30 @@ namespace MathNet.Numerics.Statistics
         public static double PopulationCovariance(this IEnumerable<double?> population1, IEnumerable<double?> population2)
         {
             return StreamingStatistics.PopulationCovariance(population1.Where(d => d.HasValue).Select(d => d.Value), population2.Where(d => d.HasValue).Select(d => d.Value));
+        }
+
+        /// <summary>
+        /// Evaluates the root mean square (RMS) also known as quadratic mean.
+        /// Returns NaN if data is empty or if any entry is NaN.
+        /// </summary>
+        /// <param name="data">The data to calculate the RMS of.</param>
+        public static double RootMeanSquare(this IEnumerable<double> data)
+        {
+            var array = data as double[];
+            return array != null
+                ? ArrayStatistics.RootMeanSquare(array)
+                : StreamingStatistics.RootMeanSquare(data);
+        }
+
+        /// <summary>
+        /// Evaluates the root mean square (RMS) also known as quadratic mean.
+        /// Returns NaN if data is empty or if any entry is NaN.
+        /// Null-entries are ignored.
+        /// </summary>
+        /// <param name="data">The data to calculate the mean of.</param>
+        public static double RootMeanSquare(this IEnumerable<double?> data)
+        {
+            return StreamingStatistics.RootMeanSquare(data.Where(d => d.HasValue).Select(d => d.Value));
         }
 
         /// <summary>
@@ -348,7 +502,7 @@ namespace MathNet.Numerics.Statistics
         /// Approximately median-unbiased regardless of the sample distribution (R8).
         /// </summary>
         /// <param name="data">The data sample sequence.</param>
-        public static Func<double,double> QuantileFunc(this IEnumerable<double> data)
+        public static Func<double, double> QuantileFunc(this IEnumerable<double> data)
         {
             var array = data.ToArray();
             Array.Sort(array);
@@ -370,53 +524,9 @@ namespace MathNet.Numerics.Statistics
         }
 
         /// <summary>
-        /// Estimates the empirical inverse CDF at tau from the provided samples.
-        /// </summary>
-        /// <param name="data">The data sample sequence.</param>
-        /// <param name="tau">Quantile selector, between 0.0 and 1.0 (inclusive).</param>
-        public static double InverseCDF(this IEnumerable<double> data, double tau)
-        {
-            var array = data.ToArray();
-            return ArrayStatistics.QuantileCustomInplace(array, tau, QuantileDefinition.InverseCDF);
-        }
-
-        /// <summary>
-        /// Estimates the empirical inverse CDF at tau from the provided samples.
-        /// </summary>
-        /// <param name="data">The data sample sequence.</param>
-        /// <param name="tau">Quantile selector, between 0.0 and 1.0 (inclusive).</param>
-        public static double InverseCDF(this IEnumerable<double?> data, double tau)
-        {
-            var array = data.Where(d => d.HasValue).Select(d => d.Value).ToArray();
-            return ArrayStatistics.QuantileCustomInplace(array, tau, QuantileDefinition.InverseCDF);
-        }
-
-        /// <summary>
-        /// Estimates the empirical inverse CDF at tau from the provided samples.
-        /// </summary>
-        /// <param name="data">The data sample sequence.</param>
-        public static Func<double, double> InverseCDFFunc(this IEnumerable<double> data)
-        {
-            var array = data.ToArray();
-            Array.Sort(array);
-            return tau => SortedArrayStatistics.QuantileCustom(array, tau, QuantileDefinition.InverseCDF);
-        }
-
-        /// <summary>
-        /// Estimates the empirical inverse CDF at tau from the provided samples.
-        /// </summary>
-        /// <param name="data">The data sample sequence.</param>
-        public static Func<double, double> InverseCDFFunc(this IEnumerable<double?> data)
-        {
-            var array = data.Where(d => d.HasValue).Select(d => d.Value).ToArray();
-            Array.Sort(array);
-            return tau => SortedArrayStatistics.QuantileCustom(array, tau, QuantileDefinition.InverseCDF);
-        }
-
-        /// <summary>
-        /// stimates the tau-th quantile from the provided samples.
+        /// Estimates the tau-th quantile from the provided samples.
         /// The tau-th quantile is the data value where the cumulative distribution
-        /// function crosses tau. The quantile definition can be specificed to be compatible
+        /// function crosses tau. The quantile definition can be specified to be compatible
         /// with an existing system.
         /// </summary>
         /// <param name="data">The data sample sequence.</param>
@@ -429,9 +539,9 @@ namespace MathNet.Numerics.Statistics
         }
 
         /// <summary>
-        /// stimates the tau-th quantile from the provided samples.
+        /// Estimates the tau-th quantile from the provided samples.
         /// The tau-th quantile is the data value where the cumulative distribution
-        /// function crosses tau. The quantile definition can be specificed to be compatible
+        /// function crosses tau. The quantile definition can be specified to be compatible
         /// with an existing system.
         /// </summary>
         /// <param name="data">The data sample sequence.</param>
@@ -444,9 +554,9 @@ namespace MathNet.Numerics.Statistics
         }
 
         /// <summary>
-        /// stimates the tau-th quantile from the provided samples.
+        /// Estimates the tau-th quantile from the provided samples.
         /// The tau-th quantile is the data value where the cumulative distribution
-        /// function crosses tau. The quantile definition can be specificed to be compatible
+        /// function crosses tau. The quantile definition can be specified to be compatible
         /// with an existing system.
         /// </summary>
         /// <param name="data">The data sample sequence.</param>
@@ -459,9 +569,9 @@ namespace MathNet.Numerics.Statistics
         }
 
         /// <summary>
-        /// stimates the tau-th quantile from the provided samples.
+        /// Estimates the tau-th quantile from the provided samples.
         /// The tau-th quantile is the data value where the cumulative distribution
-        /// function crosses tau. The quantile definition can be specificed to be compatible
+        /// function crosses tau. The quantile definition can be specified to be compatible
         /// with an existing system.
         /// </summary>
         /// <param name="data">The data sample sequence.</param>
@@ -633,6 +743,209 @@ namespace MathNet.Numerics.Statistics
             var array = data.ToArray();
             Array.Sort(array);
             return order => SortedArrayStatistics.OrderStatistic(array, order);
+        }
+
+        /// <summary>
+        /// Evaluates the rank of each entry of the provided samples.
+        /// The rank definition can be specified to be compatible
+        /// with an existing system.
+        /// </summary>
+        /// <param name="data">The data sample sequence.</param>
+        /// <param name="definition">Rank definition, to choose how ties should be handled and what product/definition it should be consistent with</param>
+        public static double[] Ranks(this IEnumerable<double> data, RankDefinition definition = RankDefinition.Default)
+        {
+            var array = data.ToArray();
+            return ArrayStatistics.RanksInplace(array, definition);
+        }
+
+        /// <summary>
+        /// Evaluates the rank of each entry of the provided samples.
+        /// The rank definition can be specified to be compatible
+        /// with an existing system.
+        /// </summary>
+        /// <param name="data">The data sample sequence.</param>
+        /// <param name="definition">Rank definition, to choose how ties should be handled and what product/definition it should be consistent with</param>
+        public static double[] Ranks(this IEnumerable<double?> data, RankDefinition definition = RankDefinition.Default)
+        {
+            return Ranks(data.Where(d => d.HasValue).Select(d => d.Value), definition);
+        }
+
+        /// <summary>
+        /// Estimates the quantile tau from the provided samples.
+        /// The tau-th quantile is the data value where the cumulative distribution
+        /// function crosses tau. The quantile definition can be specified to be compatible
+        /// with an existing system.
+        /// </summary>
+        /// <param name="data">The data sample sequence.</param>
+        /// <param name="x">Quantile value.</param>
+        /// <param name="definition">Rank definition, to choose how ties should be handled and what product/definition it should be consistent with</param>
+        public static double QuantileRank(this IEnumerable<double> data, double x, RankDefinition definition = RankDefinition.Default)
+        {
+            var array = data.ToArray();
+            Array.Sort(array);
+            return SortedArrayStatistics.QuantileRank(array, x, definition);
+        }
+
+        /// <summary>
+        /// Estimates the quantile tau from the provided samples.
+        /// The tau-th quantile is the data value where the cumulative distribution
+        /// function crosses tau. The quantile definition can be specified to be compatible
+        /// with an existing system.
+        /// </summary>
+        /// <param name="data">The data sample sequence.</param>
+        /// <param name="x">Quantile value.</param>
+        /// <param name="definition">Rank definition, to choose how ties should be handled and what product/definition it should be consistent with</param>
+        public static double QuantileRank(this IEnumerable<double?> data, double x, RankDefinition definition = RankDefinition.Default)
+        {
+            return QuantileRank(data.Where(d => d.HasValue).Select(d => d.Value), x, definition);
+        }
+
+        /// <summary>
+        /// Estimates the quantile tau from the provided samples.
+        /// The tau-th quantile is the data value where the cumulative distribution
+        /// function crosses tau. The quantile definition can be specified to be compatible
+        /// with an existing system.
+        /// </summary>
+        /// <param name="data">The data sample sequence.</param>
+        /// <param name="definition">Rank definition, to choose how ties should be handled and what product/definition it should be consistent with</param>
+        public static Func<double, double> QuantileRankFunc(this IEnumerable<double> data, RankDefinition definition = RankDefinition.Default)
+        {
+            var array = data.ToArray();
+            Array.Sort(array);
+            return x => SortedArrayStatistics.QuantileRank(array, x, definition);
+        }
+
+        /// <summary>
+        /// Estimates the quantile tau from the provided samples.
+        /// The tau-th quantile is the data value where the cumulative distribution
+        /// function crosses tau. The quantile definition can be specified to be compatible
+        /// with an existing system.
+        /// </summary>
+        /// <param name="data">The data sample sequence.</param>
+        /// <param name="definition">Rank definition, to choose how ties should be handled and what product/definition it should be consistent with</param>
+        public static Func<double, double> QuantileRankFunc(this IEnumerable<double?> data, RankDefinition definition = RankDefinition.Default)
+        {
+            return QuantileRankFunc(data.Where(d => d.HasValue).Select(d => d.Value), definition);
+        }
+
+        /// <summary>
+        /// Estimates the empirical cumulative distribution function (CDF) at x from the provided samples.
+        /// </summary>
+        /// <param name="data">The data sample sequence.</param>
+        /// <param name="x">The value where to estimate the CDF at.</param>
+        public static double EmpiricalCDF(this IEnumerable<double> data, double x)
+        {
+            var array = data.ToArray();
+            Array.Sort(array);
+            return SortedArrayStatistics.EmpiricalCDF(array, x);
+        }
+
+        /// <summary>
+        /// Estimates the empirical cumulative distribution function (CDF) at x from the provided samples.
+        /// </summary>
+        /// <param name="data">The data sample sequence.</param>
+        /// <param name="x">The value where to estimate the CDF at.</param>
+        public static double EmpiricalCDF(this IEnumerable<double?> data, double x)
+        {
+            return EmpiricalCDF(data.Where(d => d.HasValue).Select(d => d.Value), x);
+        }
+
+        /// <summary>
+        /// Estimates the empirical cumulative distribution function (CDF) at x from the provided samples.
+        /// </summary>
+        /// <param name="data">The data sample sequence.</param>
+        public static Func<double, double> EmpiricalCDFFunc(this IEnumerable<double> data)
+        {
+            var array = data.ToArray();
+            Array.Sort(array);
+            return x => SortedArrayStatistics.EmpiricalCDF(array, x);
+        }
+
+        /// <summary>
+        /// Estimates the empirical cumulative distribution function (CDF) at x from the provided samples.
+        /// </summary>
+        /// <param name="data">The data sample sequence.</param>
+        public static Func<double, double> EmpiricalCDFFunc(this IEnumerable<double?> data)
+        {
+            return EmpiricalCDFFunc(data.Where(d => d.HasValue).Select(d => d.Value));
+        }
+
+        /// <summary>
+        /// Estimates the empirical inverse CDF at tau from the provided samples.
+        /// </summary>
+        /// <param name="data">The data sample sequence.</param>
+        /// <param name="tau">Quantile selector, between 0.0 and 1.0 (inclusive).</param>
+        public static double EmpiricalInvCDF(this IEnumerable<double> data, double tau)
+        {
+            var array = data.ToArray();
+            return ArrayStatistics.QuantileCustomInplace(array, tau, QuantileDefinition.EmpiricalInvCDF);
+        }
+
+        /// <summary>
+        /// Estimates the empirical inverse CDF at tau from the provided samples.
+        /// </summary>
+        /// <param name="data">The data sample sequence.</param>
+        /// <param name="tau">Quantile selector, between 0.0 and 1.0 (inclusive).</param>
+        public static double EmpiricalInvCDF(this IEnumerable<double?> data, double tau)
+        {
+            return EmpiricalInvCDF(data.Where(d => d.HasValue).Select(d => d.Value), tau);
+        }
+
+        /// <summary>
+        /// Estimates the empirical inverse CDF at tau from the provided samples.
+        /// </summary>
+        /// <param name="data">The data sample sequence.</param>
+        public static Func<double, double> EmpiricalInvCDFFunc(this IEnumerable<double> data)
+        {
+            var array = data.ToArray();
+            Array.Sort(array);
+            return tau => SortedArrayStatistics.QuantileCustom(array, tau, QuantileDefinition.EmpiricalInvCDF);
+        }
+
+        /// <summary>
+        /// Estimates the empirical inverse CDF at tau from the provided samples.
+        /// </summary>
+        /// <param name="data">The data sample sequence.</param>
+        public static Func<double, double> EmpiricalInvCDFFunc(this IEnumerable<double?> data)
+        {
+            return EmpiricalInvCDFFunc(data.Where(d => d.HasValue).Select(d => d.Value));
+        }
+
+        /// <summary>
+        /// Calculates the entropy of a stream of double values in bits.
+        /// Returns NaN if any of the values in the stream are NaN.
+        /// </summary>
+        /// <param name="data">The data sample sequence.</param>
+        public static double Entropy(IEnumerable<double> data)
+        {
+            return StreamingStatistics.Entropy(data);
+        }
+
+        /// <summary>
+        /// Calculates the entropy of a stream of double values in bits.
+        /// Returns NaN if any of the values in the stream are NaN.
+        /// Null-entries are ignored.
+        /// </summary>
+        /// <param name="data">The data sample sequence.</param>
+        public static double Entropy(IEnumerable<double?> data)
+        {
+            return StreamingStatistics.Entropy(data.Where(d => d.HasValue).Select(d => d.Value));
+        }
+
+        /// <summary>
+        /// Evaluates the sample mean over a moving window, for each samples.
+        /// Returns NaN if no data is empty or if any entry is NaN.
+        /// </summary>
+        /// <param name="samples">The sample stream to calculate the mean of.</param>
+        /// <param name="windowSize">The number of last samples to consider.</param>
+        public static IEnumerable<double> MovingAverage(this IEnumerable<double> samples, int windowSize)
+        {
+            var movingStatistics = new MovingStatistics(windowSize);
+            return samples.Select(sample =>
+            {
+                movingStatistics.Push(sample);
+                return movingStatistics.Mean;
+            });
         }
     }
 }

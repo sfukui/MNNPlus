@@ -3,7 +3,9 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
-// Copyright (c) 2009-2010 Math.NET
+//
+// Copyright (c) 2009-2014 Math.NET
+//
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
@@ -12,8 +14,10 @@
 // copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following
 // conditions:
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -39,15 +43,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
     [TestFixture, Category("Distributions")]
     public class GammaTests
     {
-        /// <summary>
-        /// Set-up parameters.
-        /// </summary>
-        [SetUp]
-        public void SetUp()
-        {
-            Control.CheckDistributionParameters = true;
-        }
-
         /// <summary>
         /// Can create gamma.
         /// </summary>
@@ -78,7 +73,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [TestCase(-1.0, Double.NaN)]
         public void GammaCreateFailsWithBadParameters(double shape, double invScale)
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new Gamma(shape, invScale));
+            Assert.That(() => new Gamma(shape, invScale), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -125,90 +120,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         {
             var n = new Gamma(1d, 2d);
             Assert.AreEqual("Gamma(α = 1, β = 2)", n.ToString());
-        }
-
-        /// <summary>
-        /// Can set shape.
-        /// </summary>
-        /// <param name="shape">Shape value.</param>
-        [TestCase(-0.0)]
-        [TestCase(0.0)]
-        [TestCase(0.1)]
-        [TestCase(1.0)]
-        [TestCase(10.0)]
-        [TestCase(Double.PositiveInfinity)]
-        public void CanSetShape(double shape)
-        {
-            new Gamma(1.0, 1.0)
-            {
-                Shape = shape
-            };
-        }
-
-        /// <summary>
-        /// Set shape fails with negative shape.
-        /// </summary>
-        [Test]
-        public void SetShapeFailsWithNegativeShape()
-        {
-            var n = new Gamma(1.0, 1.0);
-            Assert.Throws<ArgumentOutOfRangeException>(() => n.Shape = -1.0);
-        }
-
-        /// <summary>
-        /// Can set scale.
-        /// </summary>
-        /// <param name="scale">Scale value.</param>
-        [TestCase(-0.0)]
-        [TestCase(0.0)]
-        [TestCase(0.1)]
-        [TestCase(1.0)]
-        [TestCase(10.0)]
-        [TestCase(Double.PositiveInfinity)]
-        public void CanSetScale(double scale)
-        {
-            new Gamma(1.0, 1.0)
-            {
-                Scale = scale
-            };
-        }
-
-        /// <summary>
-        /// Set scale fails with negative scale.
-        /// </summary>
-        [Test]
-        public void SetScaleFailsWithNegativeScale()
-        {
-            var n = new Gamma(1.0, 1.0);
-            Assert.Throws<ArgumentOutOfRangeException>(() => n.Scale = -1.0);
-        }
-
-        /// <summary>
-        /// Can set inverse scale.
-        /// </summary>
-        /// <param name="invScale">Inverse scale value.</param>
-        [TestCase(-0.0)]
-        [TestCase(0.0)]
-        [TestCase(0.1)]
-        [TestCase(1.0)]
-        [TestCase(10.0)]
-        [TestCase(Double.PositiveInfinity)]
-        public void CanSetInvScale(double invScale)
-        {
-            new Gamma(1.0, 1.0)
-            {
-                Rate = invScale
-            };
-        }
-
-        /// <summary>
-        /// Set inverse scale fails with negative value.
-        /// </summary>
-        [Test]
-        public void SetInvScaleFailsWithNegativeInvScale()
-        {
-            var n = new Gamma(1.0, 1.0);
-            Assert.Throws<ArgumentOutOfRangeException>(() => n.Rate = -1.0);
         }
 
         /// <summary>
@@ -429,7 +340,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         public void CanSampleSequenceStatic()
         {
             var ied = Gamma.Samples(new Random(0), 1.0, 1.0);
-            ied.Take(5).ToArray();
+            GC.KeepAlive(ied.Take(5).ToArray());
         }
 
         /// <summary>
@@ -438,7 +349,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [Test]
         public void FailSampleStatic()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => Normal.Sample(new Random(0), 1.0, -1.0));
+            Assert.That(() => Normal.Sample(new Random(0), 1.0, -1.0), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -447,7 +358,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [Test]
         public void FailSampleSequenceStatic()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => Normal.Samples(new Random(0), 1.0, -1.0).First());
+            Assert.That(() => Normal.Samples(new Random(0), 1.0, -1.0).First(), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -468,7 +379,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         {
             var n = new Normal();
             var ied = n.Samples();
-            ied.Take(5).ToArray();
+            GC.KeepAlive(ied.Take(5).ToArray());
         }
 
         /// <summary>
@@ -498,9 +409,30 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [TestCase(10, Double.PositiveInfinity, 10.0, 1.0)]
         public void ValidateCumulativeDistribution(int shape, double invScale, double x, double cdf)
         {
-            var n = new Gamma(shape, invScale);
-            AssertHelpers.AlmostEqualRelative(cdf, n.CumulativeDistribution(x), 13);
-            AssertHelpers.AlmostEqualRelative(cdf, Gamma.CDF(shape, invScale, x), 13);
+            var gamma = new Gamma(shape, invScale);
+            Assert.That(gamma.CumulativeDistribution(x), Is.EqualTo(cdf).Within(13));
+            Assert.That(Gamma.CDF(shape, invScale, x), Is.EqualTo(cdf).Within(13));
+        }
+
+        /// <summary>
+        /// Validate inverse cumulative distribution.
+        /// </summary>
+        /// <param name="shape">Shape value.</param>
+        /// <param name="invScale">Inverse scale value.</param>
+        /// <param name="x">Input X value.</param>
+        /// <param name="cdf">Expected value.</param>
+        [TestCase(1, 0.1, 1.0, 0.095162581964040431858607615783064404690935346242622848)]
+        [TestCase(1, 0.1, 10.0, 0.63212055882855767840447622983853913255418886896823196)]
+        [TestCase(1, 1.0, 1.0, 0.63212055882855767840447622983853913255418886896823196)]
+        [TestCase(1, 1.0, 10.0, 0.99995460007023751514846440848443944938976208191113396)]
+        [TestCase(10, 10.0, 1.0, 0.54207028552814779168583514294066541824736464003242184)]
+        [TestCase(10, 1.0, 1.0, 0.00000011142547833872067735305068724025236288094949815466035)]
+        [TestCase(10, 1.0, 10.0, 0.54207028552814779168583514294066541824736464003242184)]
+        public void ValidateInverseCumulativeDistribution(int shape, double invScale, double x, double cdf)
+        {
+            var gamma = new Gamma(shape, invScale);
+            Assert.That(gamma.InverseCumulativeDistribution(cdf), Is.EqualTo(x).Within(10));
+            Assert.That(Gamma.InvCDF(shape, invScale, cdf), Is.EqualTo(x).Within(10));
         }
     }
 }

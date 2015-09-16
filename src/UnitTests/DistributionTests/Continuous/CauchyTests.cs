@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2013 Math.NET
+// Copyright (c) 2009-2014 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -41,15 +41,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
     [TestFixture, Category("Distributions")]
     public class CauchyTests
     {
-        /// <summary>
-        /// Set-up parameters.
-        /// </summary>
-        [SetUp]
-        public void SetUp()
-        {
-            Control.CheckDistributionParameters = true;
-        }
-
         /// <summary>
         /// Can create Cauchy.
         /// </summary>
@@ -90,7 +81,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         [TestCase(1.0, 0.0)]
         public void CauchyCreateFailsWithBadParameters(double location, double scale)
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new Cauchy(location, scale));
+            Assert.That(() => new Cauchy(location, scale), Throws.ArgumentException);
         }
 
         /// <summary>
@@ -101,58 +92,6 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         {
             var n = new Cauchy(1d, 2d);
             Assert.AreEqual("Cauchy(x0 = 1, γ = 2)", n.ToString());
-        }
-
-        /// <summary>
-        /// Can set location.
-        /// </summary>
-        /// <param name="location">Location value.</param>
-        [TestCase(-10.0)]
-        [TestCase(-0.0)]
-        [TestCase(0.0)]
-        [TestCase(0.1)]
-        [TestCase(1.0)]
-        public void CanSetLocation(double location)
-        {
-            new Cauchy
-            {
-                Location = location
-            };
-        }
-
-        /// <summary>
-        /// Set bad location fails.
-        /// </summary>
-        [Test]
-        public void SetBadLocationFail()
-        {
-            var n = new Cauchy();
-            Assert.Throws<ArgumentOutOfRangeException>(() => n.Location = Double.NaN);
-        }
-
-        /// <summary>
-        /// Can set scale.
-        /// </summary>
-        /// <param name="scale">Scale value.</param>
-        [TestCase(1.0)]
-        [TestCase(2.0)]
-        [TestCase(12.0)]
-        public void CanSetScale(double scale)
-        {
-            new Cauchy
-            {
-                Scale = scale
-            };
-        }
-
-        /// <summary>
-        /// Set bad scale fails.
-        /// </summary>
-        [Test]
-        public void SetBadScaleFail()
-        {
-            var n = new Cauchy();
-            Assert.Throws<ArgumentOutOfRangeException>(() => n.Scale = -1.0);
         }
 
         /// <summary>
@@ -313,7 +252,7 @@ namespace MathNet.Numerics.UnitTests.DistributionTests.Continuous
         {
             var n = new Cauchy();
             var ied = n.Samples();
-            ied.Take(5).ToArray();
+            GC.KeepAlive(ied.Take(5).ToArray());
         }
 
         /// <summary>

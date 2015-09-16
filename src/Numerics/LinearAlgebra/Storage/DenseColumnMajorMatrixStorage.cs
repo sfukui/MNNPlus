@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2013 Math.NET
+// Copyright (c) 2009-2015 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -47,7 +47,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
         internal DenseColumnMajorMatrixStorage(int rows, int columns)
             : base(rows, columns)
         {
-            Data = new T[rows * columns];
+            Data = new T[rows*columns];
         }
 
         internal DenseColumnMajorMatrixStorage(int rows, int columns, T[] data)
@@ -58,9 +58,9 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
                 throw new ArgumentNullException("data");
             }
 
-            if (data.Length != rows * columns)
+            if (data.Length != rows*columns)
             {
-                throw new ArgumentOutOfRangeException("data", string.Format(Resources.ArgumentArrayWrongLength, rows * columns));
+                throw new ArgumentOutOfRangeException("data", string.Format(Resources.ArgumentArrayWrongLength, rows*columns));
             }
 
             Data = data;
@@ -97,7 +97,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
         /// </summary>
         public override T At(int row, int column)
         {
-            return Data[(column * RowCount) + row];
+            return Data[(column*RowCount) + row];
         }
 
         /// <summary>
@@ -105,19 +105,34 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
         /// </summary>
         public override void At(int row, int column, T value)
         {
-            Data[(column * RowCount) + row] = value;
+            Data[(column*RowCount) + row] = value;
         }
+
+        /// <summary>
+        /// Evaluate the row and column at a specific data index.
+        /// </summary>
+        void RowColumnAtIndex(int index, out int row, out int column)
+        {
+#if PORTABLE
+            row = index % RowCount;
+            column = index / RowCount;
+#else
+            column = Math.DivRem(index, RowCount, out row);
+#endif
+        }
+
+        // CLEARING
 
         public override void Clear()
         {
             Array.Clear(Data, 0, Data.Length);
         }
 
-        public override void Clear(int rowIndex, int rowCount, int columnIndex, int columnCount)
+        internal override void ClearUnchecked(int rowIndex, int rowCount, int columnIndex, int columnCount)
         {
             if (rowIndex == 0 && columnIndex == 0 && rowCount == RowCount && columnCount == ColumnCount)
             {
-                Clear();
+                Array.Clear(Data, 0, Data.Length);
                 return;
             }
 
@@ -127,12 +142,46 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             }
         }
 
+        internal override void ClearRowsUnchecked(int[] rowIndices)
+        {
+            for (var j = 0; j < ColumnCount; j++)
+            {
+                int offset = j*RowCount;
+                for (var k = 0; k < rowIndices.Length; k++)
+                {
+                    Data[offset + rowIndices[k]] = Zero;
+                }
+            }
+        }
+
+        internal override void ClearColumnsUnchecked(int[] columnIndices)
+        {
+            for (int k = 0; k < columnIndices.Length; k++)
+            {
+                Array.Clear(Data, columnIndices[k]*RowCount, RowCount);
+            }
+        }
+
         // INITIALIZATION
 
         public static DenseColumnMajorMatrixStorage<T> OfMatrix(MatrixStorage<T> matrix)
         {
             var storage = new DenseColumnMajorMatrixStorage<T>(matrix.RowCount, matrix.ColumnCount);
-            matrix.CopyToUnchecked(storage, skipClearing: true);
+            matrix.CopyToUnchecked(storage, ExistingData.AssumeZeros);
+            return storage;
+        }
+
+        public static DenseColumnMajorMatrixStorage<T> OfValue(int rows, int columns, T value)
+        {
+            var storage = new DenseColumnMajorMatrixStorage<T>(rows, columns);
+            var data = storage.Data;
+            CommonParallel.For(0, data.Length, 4096, (a, b) =>
+            {
+                for (int i = a; i < b; i++)
+                {
+                    data[i] = value;
+                }
+            });
             return storage;
         }
 
@@ -179,9 +228,14 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
 
         public static DenseColumnMajorMatrixStorage<T> OfColumnArrays(T[][] data)
         {
+            if (data.Length <= 0)
+            {
+                throw new ArgumentOutOfRangeException("data", Resources.MatrixCanNotBeEmpty);
+            }
+
             int columns = data.Length;
             int rows = data[0].Length;
-            var array = new T[rows * columns];
+            var array = new T[rows*columns];
             for (int j = 0; j < data.Length; j++)
             {
                 Array.Copy(data[j], 0, array, j*rows, rows);
@@ -191,12 +245,17 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
 
         public static DenseColumnMajorMatrixStorage<T> OfRowArrays(T[][] data)
         {
+            if (data.Length <= 0)
+            {
+                throw new ArgumentOutOfRangeException("data", Resources.MatrixCanNotBeEmpty);
+            }
+
             int rows = data.Length;
             int columns = data[0].Length;
-            var array = new T[rows * columns];
+            var array = new T[rows*columns];
             for (int j = 0; j < columns; j++)
             {
-                int offset = j * rows;
+                int offset = j*rows;
                 for (int i = 0; i < rows; i++)
                 {
                     array[offset + i] = data[i][j];
@@ -207,21 +266,26 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
 
         public static DenseColumnMajorMatrixStorage<T> OfColumnVectors(VectorStorage<T>[] data)
         {
+            if (data.Length <= 0)
+            {
+                throw new ArgumentOutOfRangeException("data", Resources.MatrixCanNotBeEmpty);
+            }
+
             int columns = data.Length;
             int rows = data[0].Length;
-            var array = new T[rows * columns];
+            var array = new T[rows*columns];
             for (int j = 0; j < data.Length; j++)
             {
                 var column = data[j];
                 var denseColumn = column as DenseVectorStorage<T>;
                 if (denseColumn != null)
                 {
-                    Array.Copy(denseColumn.Data, 0, array, j * rows, rows);
+                    Array.Copy(denseColumn.Data, 0, array, j*rows, rows);
                 }
                 else
                 {
                     // FALL BACK
-                    int offset = j * rows;
+                    int offset = j*rows;
                     for (int i = 0; i < rows; i++)
                     {
                         array[offset + i] = column.At(i);
@@ -233,12 +297,17 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
 
         public static DenseColumnMajorMatrixStorage<T> OfRowVectors(VectorStorage<T>[] data)
         {
+            if (data.Length <= 0)
+            {
+                throw new ArgumentOutOfRangeException("data", Resources.MatrixCanNotBeEmpty);
+            }
+
             int rows = data.Length;
             int columns = data[0].Length;
-            var array = new T[rows * columns];
+            var array = new T[rows*columns];
             for (int j = 0; j < columns; j++)
             {
-                int offset = j * rows;
+                int offset = j*rows;
                 for (int i = 0; i < rows; i++)
                 {
                     array[offset + i] = data[i].At(j);
@@ -249,10 +318,10 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
 
         public static DenseColumnMajorMatrixStorage<T> OfIndexedEnumerable(int rows, int columns, IEnumerable<Tuple<int, int, T>> data)
         {
-            var array = new T[rows * columns];
+            var array = new T[rows*columns];
             foreach (var item in data)
             {
-                array[(item.Item2 * rows) + item.Item1] = item.Item3;
+                array[(item.Item2*rows) + item.Item1] = item.Item3;
             }
             return new DenseColumnMajorMatrixStorage<T>(rows, columns, array);
         }
@@ -327,7 +396,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
 
         // MATRIX COPY
 
-        internal override void CopyToUnchecked(MatrixStorage<T> target, bool skipClearing = false)
+        internal override void CopyToUnchecked(MatrixStorage<T> target, ExistingData existingData)
         {
             var denseTarget = target as DenseColumnMajorMatrixStorage<T>;
             if (denseTarget != null)
@@ -356,7 +425,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
         internal override void CopySubMatrixToUnchecked(MatrixStorage<T> target,
             int sourceRowIndex, int targetRowIndex, int rowCount,
             int sourceColumnIndex, int targetColumnIndex, int columnCount,
-            bool skipClearing = false)
+            ExistingData existingData)
         {
             var denseTarget = target as DenseColumnMajorMatrixStorage<T>;
             if (denseTarget != null)
@@ -365,9 +434,18 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
                 return;
             }
 
+            // TODO: Proper Sparse Implementation
+
             // FALL BACK
 
-            base.CopySubMatrixToUnchecked(target, sourceRowIndex, targetRowIndex, rowCount, sourceColumnIndex, targetColumnIndex, columnCount, skipClearing);
+            for (int j = sourceColumnIndex, jj = targetColumnIndex; j < sourceColumnIndex + columnCount; j++, jj++)
+            {
+                int index = sourceRowIndex + j*RowCount;
+                for (int ii = targetRowIndex; ii < targetRowIndex + rowCount; ii++)
+                {
+                    target.At(ii, jj, Data[index++]);
+                }
+            }
         }
 
         void CopySubMatrixToUnchecked(DenseColumnMajorMatrixStorage<T> target,
@@ -383,14 +461,15 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
 
         // ROW COPY
 
-        internal override void CopySubRowToUnchecked(VectorStorage<T> target, int rowIndex, int sourceColumnIndex, int targetColumnIndex, int columnCount, bool skipClearing = false)
+        internal override void CopySubRowToUnchecked(VectorStorage<T> target, int rowIndex, int sourceColumnIndex, int targetColumnIndex, int columnCount,
+            ExistingData existingData)
         {
             var targetDense = target as DenseVectorStorage<T>;
             if (targetDense != null)
             {
-                for (int j = 0; j<columnCount; j++)
+                for (int j = 0; j < columnCount; j++)
                 {
-                    targetDense.Data[j + targetColumnIndex] = Data[(j + sourceColumnIndex) * RowCount + rowIndex];
+                    targetDense.Data[j + targetColumnIndex] = Data[(j + sourceColumnIndex)*RowCount + rowIndex];
                 }
                 return;
             }
@@ -399,13 +478,14 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
 
             for (int j = sourceColumnIndex, jj = targetColumnIndex; j < sourceColumnIndex + columnCount; j++, jj++)
             {
-                target.At(jj, Data[(j * RowCount) + rowIndex]);
+                target.At(jj, Data[(j*RowCount) + rowIndex]);
             }
         }
 
         // COLUMN COPY
 
-        internal override void CopySubColumnToUnchecked(VectorStorage<T> target, int columnIndex, int sourceRowIndex, int targetRowIndex, int rowCount, bool skipClearing = false)
+        internal override void CopySubColumnToUnchecked(VectorStorage<T> target, int columnIndex, int sourceRowIndex, int targetRowIndex, int rowCount,
+            ExistingData existingData)
         {
             var targetDense = target as DenseVectorStorage<T>;
             if (targetDense != null)
@@ -416,11 +496,77 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
 
             // FALL BACK
 
-            var offset = columnIndex * RowCount;
+            var offset = columnIndex*RowCount;
             for (int i = sourceRowIndex, ii = targetRowIndex; i < sourceRowIndex + rowCount; i++, ii++)
             {
                 target.At(ii, Data[offset + i]);
             }
+        }
+
+        // TRANSPOSE
+
+        internal override void TransposeToUnchecked(MatrixStorage<T> target, ExistingData existingData)
+        {
+            var denseTarget = target as DenseColumnMajorMatrixStorage<T>;
+            if (denseTarget != null)
+            {
+                TransposeToUnchecked(denseTarget);
+                return;
+            }
+
+            var sparseTarget = target as SparseCompressedRowMatrixStorage<T>;
+            if (sparseTarget != null)
+            {
+                TransposeToUnchecked(sparseTarget);
+                return;
+            }
+
+            // FALL BACK
+
+            for (int j = 0, offset = 0; j < ColumnCount; j++, offset += RowCount)
+            {
+                for (int i = 0; i < RowCount; i++)
+                {
+                    target.At(j, i, Data[i + offset]);
+                }
+            }
+        }
+
+        void TransposeToUnchecked(DenseColumnMajorMatrixStorage<T> target)
+        {
+            for (var j = 0; j < ColumnCount; j++)
+            {
+                var index = j * RowCount;
+                for (var i = 0; i < RowCount; i++)
+                {
+                    target.Data[(i * ColumnCount) + j] = Data[index + i];
+                }
+            }
+        }
+
+        void TransposeToUnchecked(SparseCompressedRowMatrixStorage<T> target)
+        {
+            var rowPointers = target.RowPointers;
+            var columnIndices = new List<int>();
+            var values = new List<T>();
+
+            for (int j = 0; j < ColumnCount; j++)
+            {
+                rowPointers[j] = values.Count;
+                var index = j * RowCount;
+                for (int i = 0; i < RowCount; i++)
+                {
+                    if (!Zero.Equals(Data[index + i]))
+                    {
+                        values.Add(Data[index + i]);
+                        columnIndices.Add(i);
+                    }
+                }
+            }
+
+            rowPointers[ColumnCount] = values.Count;
+            target.ColumnIndices = columnIndices.ToArray();
+            target.Values = values.ToArray();
         }
 
         // EXTRACT
@@ -430,10 +576,10 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             var ret = new T[Data.Length];
             for (int i = 0; i < RowCount; i++)
             {
-                var offset = i * ColumnCount;
+                var offset = i*ColumnCount;
                 for (int j = 0; j < ColumnCount; j++)
                 {
-                    ret[offset + j] = Data[(j * RowCount) + i];
+                    ret[offset + j] = Data[(j*RowCount) + i];
                 }
             }
             return ret;
@@ -446,6 +592,39 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             return ret;
         }
 
+        public override T[][] ToRowArrays()
+        {
+            var ret = new T[RowCount][];
+            CommonParallel.For(0, RowCount, Math.Max(4096/ColumnCount, 32), (a, b) =>
+            {
+                for (int i = a; i < b; i++)
+                {
+                    var row = new T[ColumnCount];
+                    for (int j = 0; j < ColumnCount; j++)
+                    {
+                        row[j] = Data[j*RowCount + i];
+                    }
+                    ret[i] = row;
+                }
+            });
+            return ret;
+        }
+
+        public override T[][] ToColumnArrays()
+        {
+            var ret = new T[ColumnCount][];
+            CommonParallel.For(0, ColumnCount, Math.Max(4096/RowCount, 32), (a, b) =>
+            {
+                for (int j = a; j < b; j++)
+                {
+                    var column = new T[RowCount];
+                    Array.Copy(Data, j*RowCount, column, 0, RowCount);
+                    ret[j] = column;
+                }
+            });
+            return ret;
+        }
+
         public override T[,] ToArray()
         {
             var ret = new T[RowCount, ColumnCount];
@@ -453,7 +632,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             {
                 for (int j = 0; j < ColumnCount; j++)
                 {
-                    ret[i, j] = Data[(j * RowCount) + i];
+                    ret[i, j] = Data[(j*RowCount) + i];
                 }
             }
             return ret;
@@ -501,30 +680,312 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             }
         }
 
-        // FUNCTIONAL COMBINATORS
+        // FIND
 
-        public override void MapInplace(Func<T, T> f, bool forceMapZeros = false)
+        public override Tuple<int, int, T> Find(Func<T, bool> predicate, Zeros zeros)
+        {
+            for (int i = 0; i < Data.Length; i++)
+            {
+                if (predicate(Data[i]))
+                {
+                    int row, column;
+                    RowColumnAtIndex(i, out row, out column);
+                    return new Tuple<int, int, T>(row, column, Data[i]);
+                }
+            }
+            return null;
+        }
+
+        internal override Tuple<int, int, T, TOther> Find2Unchecked<TOther>(MatrixStorage<TOther> other, Func<T, TOther, bool> predicate, Zeros zeros)
+        {
+            var denseOther = other as DenseColumnMajorMatrixStorage<TOther>;
+            if (denseOther != null)
+            {
+                TOther[] otherData = denseOther.Data;
+                for (int i = 0; i < Data.Length; i++)
+                {
+                    if (predicate(Data[i], otherData[i]))
+                    {
+                        int row, column;
+                        RowColumnAtIndex(i, out row, out column);
+                        return new Tuple<int, int, T, TOther>(row, column, Data[i], otherData[i]);
+
+                    }
+                }
+                return null;
+            }
+
+            var diagonalOther = other as DiagonalMatrixStorage<TOther>;
+            if (diagonalOther != null)
+            {
+                TOther[] otherData = diagonalOther.Data;
+                TOther otherZero = BuilderInstance<TOther>.Matrix.Zero;
+                int k = 0;
+                for (int j = 0; j < ColumnCount; j++)
+                {
+                    for (int i = 0; i < RowCount; i++)
+                    {
+                        if (predicate(Data[k], i == j ? otherData[i] : otherZero))
+                        {
+                            return new Tuple<int, int, T, TOther>(i, j, Data[k], i == j ? otherData[i] : otherZero);
+                        }
+                        k++;
+                    }
+                }
+                return null;
+            }
+
+            var sparseOther = other as SparseCompressedRowMatrixStorage<TOther>;
+            if (sparseOther != null)
+            {
+                int[] otherRowPointers = sparseOther.RowPointers;
+                int[] otherColumnIndices = sparseOther.ColumnIndices;
+                TOther[] otherValues = sparseOther.Values;
+                TOther otherZero = BuilderInstance<TOther>.Matrix.Zero;
+                int k = 0;
+                for (int row = 0; row < RowCount; row++)
+                {
+                    for (int col = 0; col < ColumnCount; col++)
+                    {
+                        if (k < otherRowPointers[row + 1] && otherColumnIndices[k] == col)
+                        {
+                            if (predicate(Data[col*RowCount + row], otherValues[k]))
+                            {
+                                return new Tuple<int, int, T, TOther>(row, col, Data[col*RowCount + row], otherValues[k]);
+                            }
+                            k++;
+                        }
+                        else
+                        {
+                            if (predicate(Data[col*RowCount + row], otherZero))
+                            {
+                                return new Tuple<int, int, T, TOther>(row, col, Data[col*RowCount + row], otherValues[k]);
+                            }
+                        }
+                    }
+                }
+                return null;
+            }
+
+            // FALL BACK
+
+            return base.Find2Unchecked(other, predicate, zeros);
+        }
+
+        // FUNCTIONAL COMBINATORS: MAP
+
+        public override void MapInplace(Func<T, T> f, Zeros zeros = Zeros.AllowSkip)
         {
             CommonParallel.For(0, Data.Length, 4096, (a, b) =>
+            {
+                for (int i = a; i < b; i++)
+                {
+                    Data[i] = f(Data[i]);
+                }
+            });
+        }
+
+        public override void MapIndexedInplace(Func<int, int, T, T> f, Zeros zeros = Zeros.AllowSkip)
+        {
+            CommonParallel.For(0, ColumnCount, Math.Max(4096/RowCount, 32), (a, b) =>
+            {
+                int index = a*RowCount;
+                for (int j = a; j < b; j++)
+                {
+                    for (int i = 0; i < RowCount; i++)
+                    {
+                        Data[index] = f(i, j, Data[index]);
+                        index++;
+                    }
+                }
+            });
+        }
+
+        internal override void MapToUnchecked<TU>(MatrixStorage<TU> target, Func<T, TU> f,
+            Zeros zeros, ExistingData existingData)
+        {
+            var denseTarget = target as DenseColumnMajorMatrixStorage<TU>;
+            if (denseTarget != null)
+            {
+                CommonParallel.For(0, Data.Length, 4096, (a, b) =>
                 {
                     for (int i = a; i < b; i++)
                     {
-                        Data[i] = f(Data[i]);
+                        denseTarget.Data[i] = f(Data[i]);
                     }
                 });
-        }
+                return;
+            }
 
-        public override void MapIndexedInplace(Func<int, int, T, T> f, bool forceMapZeros = false)
-        {
+            // FALL BACK
+
             int index = 0;
             for (int j = 0; j < ColumnCount; j++)
             {
                 for (int i = 0; i < RowCount; i++)
                 {
-                    Data[index] = f(i, j, Data[index]);
-                    index++;
+                    target.At(i, j, f(Data[index++]));
                 }
             }
+        }
+
+        internal override void MapIndexedToUnchecked<TU>(MatrixStorage<TU> target, Func<int, int, T, TU> f,
+            Zeros zeros, ExistingData existingData)
+        {
+            var denseTarget = target as DenseColumnMajorMatrixStorage<TU>;
+            if (denseTarget != null)
+            {
+                CommonParallel.For(0, ColumnCount, Math.Max(4096/RowCount, 32), (a, b) =>
+                {
+                    int index = a*RowCount;
+                    for (int j = a; j < b; j++)
+                    {
+                        for (int i = 0; i < RowCount; i++)
+                        {
+                            denseTarget.Data[index] = f(i, j, Data[index]);
+                            index++;
+                        }
+                    }
+                });
+                return;
+            }
+
+            // FALL BACK
+
+            int index2 = 0;
+            for (int j = 0; j < ColumnCount; j++)
+            {
+                for (int i = 0; i < RowCount; i++)
+                {
+                    target.At(i, j, f(i, j, Data[index2++]));
+                }
+            }
+        }
+
+        internal override void MapSubMatrixIndexedToUnchecked<TU>(MatrixStorage<TU> target, Func<int, int, T, TU> f,
+            int sourceRowIndex, int targetRowIndex, int rowCount,
+            int sourceColumnIndex, int targetColumnIndex, int columnCount,
+            Zeros zeros, ExistingData existingData)
+        {
+            var denseTarget = target as DenseColumnMajorMatrixStorage<TU>;
+            if (denseTarget != null)
+            {
+                CommonParallel.For(0, columnCount, Math.Max(4096/rowCount, 32), (a, b) =>
+                {
+                    for (int j = a; j < b; j++)
+                    {
+                        int sourceIndex = sourceRowIndex + (j + sourceColumnIndex)*RowCount;
+                        int targetIndex = targetRowIndex + (j + targetColumnIndex)*target.RowCount;
+                        for (int i = 0; i < rowCount; i++)
+                        {
+                            denseTarget.Data[targetIndex++] = f(targetRowIndex + i, targetColumnIndex + j, Data[sourceIndex++]);
+                        }
+                    }
+                });
+                return;
+            }
+
+            // TODO: Proper Sparse Implementation
+
+            // FALL BACK
+
+            for (int j = sourceColumnIndex, jj = targetColumnIndex; j < sourceColumnIndex + columnCount; j++, jj++)
+            {
+                int index = sourceRowIndex + j*RowCount;
+                for (int ii = targetRowIndex; ii < targetRowIndex + rowCount; ii++)
+                {
+                    target.At(ii, jj, f(ii, jj, Data[index++]));
+                }
+            }
+        }
+
+        // FUNCTIONAL COMBINATORS: FOLD
+
+        internal override void FoldByRowUnchecked<TU>(TU[] target, Func<TU, T, TU> f, Func<TU, int, TU> finalize, TU[] state, Zeros zeros)
+        {
+            for (int i = 0; i < RowCount; i++)
+            {
+                TU s = state[i];
+                for (int j = 0; j < ColumnCount; j++)
+                {
+                    s = f(s, Data[j*RowCount + i]);
+                }
+                target[i] = finalize(s, ColumnCount);
+            }
+        }
+
+        internal override void FoldByColumnUnchecked<TU>(TU[] target, Func<TU, T, TU> f, Func<TU, int, TU> finalize, TU[] state, Zeros zeros)
+        {
+            for (int j = 0; j < ColumnCount; j++)
+            {
+                int offset = j*RowCount;
+                TU s = state[j];
+                for (int i = 0; i < RowCount; i++)
+                {
+                    s = f(s, Data[offset + i]);
+                }
+                target[j] = finalize(s, RowCount);
+            }
+        }
+
+        internal override TState Fold2Unchecked<TOther, TState>(MatrixStorage<TOther> other, Func<TState, T, TOther, TState> f, TState state, Zeros zeros)
+        {
+            var denseOther = other as DenseColumnMajorMatrixStorage<TOther>;
+            if (denseOther != null)
+            {
+                TOther[] otherData = denseOther.Data;
+                for (int i = 0; i < Data.Length; i++)
+                {
+                    state = f(state, Data[i], otherData[i]);
+                }
+                return state;
+            }
+
+            var diagonalOther = other as DiagonalMatrixStorage<TOther>;
+            if (diagonalOther != null)
+            {
+                TOther[] otherData = diagonalOther.Data;
+                TOther otherZero = BuilderInstance<TOther>.Matrix.Zero;
+                int k = 0;
+                for (int j = 0; j < ColumnCount; j++)
+                {
+                    for (int i = 0; i < RowCount; i++)
+                    {
+                        state = f(state, Data[k], i == j ? otherData[i] : otherZero);
+                        k++;
+                    }
+                }
+                return state;
+            }
+
+            var sparseOther = other as SparseCompressedRowMatrixStorage<TOther>;
+            if (sparseOther != null)
+            {
+                int[] otherRowPointers = sparseOther.RowPointers;
+                int[] otherColumnIndices = sparseOther.ColumnIndices;
+                TOther[] otherValues = sparseOther.Values;
+                TOther otherZero = BuilderInstance<TOther>.Matrix.Zero;
+                int k = 0;
+                for (int row = 0; row < RowCount; row++)
+                {
+                    for (int col = 0; col < ColumnCount; col++)
+                    {
+                        if (k < otherRowPointers[row + 1] && otherColumnIndices[k] == col)
+                        {
+                            state = f(state, Data[col*RowCount + row], otherValues[k++]);
+                        }
+                        else
+                        {
+                            state = f(state, Data[col*RowCount + row], otherZero);
+                        }
+                    }
+                }
+                return state;
+            }
+
+            // FALL BACK
+
+            return base.Fold2Unchecked(other, f, state, zeros);
         }
     }
 }

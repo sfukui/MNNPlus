@@ -163,7 +163,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Factorization
         [TestCase(100)]
         public void CanCheckRankOfSquareSingular(int order)
         {
-            var matrixA = new DenseMatrix(order, order);
+            var matrixA = Matrix<double>.Build.Dense(order, order);
             matrixA[0, 0] = 1;
             matrixA[order - 1, order - 1] = 1;
             for (var i = 1; i < order - 1; i++)
@@ -190,7 +190,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Factorization
             var factorSvd = matrixA.Svd(false);
 
             var matrixB = Matrix<double>.Build.Random(10, 10, 1);
-            Assert.Throws<InvalidOperationException>(() => factorSvd.Solve(matrixB));
+            Assert.That(() => factorSvd.Solve(matrixB), Throws.InvalidOperationException);
         }
 
         /// <summary>
@@ -203,7 +203,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Factorization
             var factorSvd = matrixA.Svd(false);
 
             var vectorb = Vector<double>.Build.Random(10, 1);
-            Assert.Throws<InvalidOperationException>(() => factorSvd.Solve(vectorb));
+            Assert.That(() => factorSvd.Solve(vectorb), Throws.InvalidOperationException);
         }
 
         /// <summary>
@@ -358,7 +358,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double.Factorization
             var matrixB = Matrix<double>.Build.Random(row, column, 1);
             var matrixBCopy = matrixB.Clone();
 
-            var matrixX = new DenseMatrix(column, column);
+            var matrixX = Matrix<double>.Build.Dense(column, column);
             factorSvd.Solve(matrixB, matrixX);
 
             // The solution X row dimension is equal to the column dimension of A

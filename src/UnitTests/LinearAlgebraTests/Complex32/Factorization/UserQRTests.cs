@@ -24,7 +24,6 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
-using System;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Complex32.Factorization;
 using MathNet.Numerics.LinearAlgebra.Factorization;
@@ -46,7 +45,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex32.Factorization
         [Test]
         public void ConstructorWideMatrixThrowsInvalidMatrixOperationException()
         {
-            Assert.Throws<ArgumentException>(() => UserQR.Create(new UserDefinedMatrix(3, 4)));
+            Assert.That(() => UserQR.Create(new UserDefinedMatrix(3, 4)), Throws.ArgumentException);
         }
 
         /// <summary>
