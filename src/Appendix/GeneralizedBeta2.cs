@@ -206,14 +206,6 @@ namespace MathNet.Numerics.Distributions
         }
 
         /// <summary>
-        /// Gets the median of the generalized beta distribution of second kind.
-        /// </summary>
-        double IContinuousDistribution.Median
-        {
-            get { throw new NotImplementedException(); }
-        }
-
-        /// <summary>
         /// Gets the minimum of the generalized beta distribution of second kind.
         /// </summary>
         public double Minimum
@@ -390,6 +382,30 @@ namespace MathNet.Numerics.Distributions
             }
         }
 
+        double IContinuousDistribution.Minimum
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        double IContinuousDistribution.Maximum
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        double IUnivariateDistribution.Median
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+
         /// <summary>
         /// Computes the probability density of the distribution (PDF) at x with parameters given by arguments;
         /// alpha, beta, p, and q.
@@ -498,6 +514,26 @@ namespace MathNet.Numerics.Distributions
         public static double CDF(double[] theta, double x)
         {
             return Integration.DoubleExponentialTransformation.Integrate(y => PDF(theta, y), 0.0, x, 0.001);
+        }
+
+        double IContinuousDistribution.Density(double x)
+        {
+            throw new NotImplementedException();
+        }
+
+        double IContinuousDistribution.DensityLn(double x)
+        {
+            throw new NotImplementedException();
+        }
+
+        void IContinuousDistribution.Samples(double[] values)
+        {
+            throw new NotImplementedException();
+        }
+
+        double IUnivariateDistribution.CumulativeDistribution(double x)
+        {
+            throw new NotImplementedException();
         }
     }
 }
