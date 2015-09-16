@@ -225,6 +225,7 @@ type QuasiNewtonMethodStatus<'a> =
     | GradientInvalid
     | WeightMatrixInvalid
     | LineSearchFailure
+    | InvertedWeightMatrixInvalid
 
 [<CompiledName "QuasiNewtonSearchBuilderFSharp">]
 type QuasiNewtonSearchBuilder() =
@@ -236,6 +237,7 @@ type QuasiNewtonSearchBuilder() =
         | GradientInvalid -> GradientInvalid
         | WeightMatrixInvalid -> WeightMatrixInvalid
         | LineSearchFailure -> LineSearchFailure
+        | InvertedWeightMatrixInvalid -> InvertedWeightMatrixInvalid
 
     member this.Return(result) = result
 
@@ -307,6 +309,14 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
         else do m_LatestWeightMatrix <- Some(tRes)
              NotConverged(tRes)
 
+    member private this.InverseOfBFGSWeightMatrix (wInv: Matrix<float>) (xds: Vector<float>) (dds: Vector<float>) =
+        let (rho, ident) = (1.0 / (dds * xds), (DenseMatrix.identity xds.Count))
+        let tRes = let (matL, matR) = (ident - rho * Vector.OuterProduct(xds, dds), ident - rho * Vector.OuterProduct(dds, xds))
+                   in matL * wInv * matR + rho * Vector.OuterProduct(xds, xds)
+        if Matrix.exists isInvalidFloat tRes then
+            InvertedWeightMatrixInvalid
+        else NotConverged(tRes)
+
     member private this.lineSearch r g =
         let ls = LineSearch(f, this.InitialStepSize, this.MaxStepSize, m_DerivationMethod)
         let tRes = ls.Search r g
@@ -322,6 +332,7 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
             | GradientInvalid -> { Status = 3; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
             | WeightMatrixInvalid -> { Status = 4; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
             | LineSearchFailure -> { Status = 5; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
+            | InvertedWeightMatrixInvalid -> { Status = 6; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
 
     member private this.Trace (writeline: string -> unit) (sw: System.Diagnostics.Stopwatch) =
         do writeline("---- Tracing Log of BFGS Oprimization ----")
@@ -348,7 +359,7 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
         let sw = new System.Diagnostics.Stopwatch();
         do sw.Start()
 
-        let rec search (w: Matrix<float>) (r: Vector<float>) (g: Vector<float>) count = 
+        let rec search (w: Matrix<float>) (winv: Matrix<float>) (r: Vector<float>) (g: Vector<float>) count = 
             match m_WriteTrace with
             | StdOut -> do this.Trace (System.Console.WriteLine) sw
             | TextWriter(writer) -> do this.Trace writer.WriteLine sw
@@ -356,28 +367,30 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
             | NoTrace -> ()
 
             qnsearch {
-                let wi = w.Inverse()
                 let cur_fval = f r
 
                 if System.Double.IsNaN(cur_fval) || System.Double.IsInfinity(cur_fval) then return FunctionValueInvalid
                 else if g.Norm(2.0) < this.Tolerance
                 then do sw.Stop()
-                     return Converged(r, cur_fval, wi)
-                else if (count >= this.Iteration) then return NotConverged(r, cur_fval, wi)
-                else let! step = this.lineSearch r ((-1.0) * (wi * g))
-                     let newR = r - step * (wi * g)
+                     return Converged(r, cur_fval, winv)
+                else if (count >= this.Iteration) then return NotConverged(r, cur_fval, winv)
+                else let! step = this.lineSearch r ((-1.0) * (winv * g))
+                     let newR = r - step * (winv * g)
                      do m_LatestXVector <- Some(newR)
                      let! newG = this.differentiation newR
                      let! newW = this.BFGSWeightMatrix w (newR - r) (newG - g)
-                     return search newW newR newG (count + 1)
+                     let! newWInv = this.InverseOfBFGSWeightMatrix winv (newR - r) (newG - g)
+                     return search newW newWInv newR newG (count + 1)
             }
 
         qnsearch {
             let initX = initVal.Clone()
             let! initD = this.differentiation initX
-            let w = let mult = if this.FirstTimeStepSizeMultiplier = 1.0 then 1.0
-                               else (1.0 / this.FirstTimeStepSizeMultiplier) * initD.Norm(2.0)
-                    mult * DenseMatrix.identity(initX.Count)
+            let initW = let mult = if this.FirstTimeStepSizeMultiplier = 1.0 then 1.0
+                                   else (1.0 / this.FirstTimeStepSizeMultiplier) * initD.Norm(2.0)
+                        mult * DenseMatrix.identity(initX.Count)
+            let initWInv = let wDiagInv = initW.Diagonal() |> Vector.map (fun x -> 1.0 / x)
+                           in DenseMatrix.initDiag wDiagInv.Count wDiagInv.Count (fun i -> wDiagInv.[i])
 
-            return search w initX initD 0
+            return search initW initWInv initX initD 0
         }
