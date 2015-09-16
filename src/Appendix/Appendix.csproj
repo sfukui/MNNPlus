@@ -34,7 +34,7 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="FSharp.Core, Version=4.3.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="FSharp.Core, Version=4.4.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
@@ -49,6 +49,8 @@
     <Compile Include="Differentiation.cs" />
     <Compile Include="Differentiation_Obsolete.cs" />
     <Compile Include="GeneralizedBeta2.cs" />
+    <Compile Include="ConstrainedHybridMC.cs" />
+    <Compile Include="ConstrainedHybridMCGeneric.cs" />
     <Compile Include="MCMC.cs" />
     <Compile Include="Optimization.cs" />
     <Compile Include="Parallel\Diffetentiation.cs" />
