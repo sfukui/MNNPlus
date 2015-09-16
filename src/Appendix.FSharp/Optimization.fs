@@ -340,11 +340,11 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
         do writeline(sw.Elapsed.ToString())
         do writeline("Estimated Parameters:")
         match this.LatestXVector with
-        | Some(x : Vector<float>) -> writeline(x.ToVectorString(1, x.Count, null))
+        | Some(x : Vector<float>) -> writeline(x.ToVectorString())
         | None -> writeline("NaN")
         do writeline("Gradients:")
         match this.LatestGradientVector with
-        | Some(x : Vector<float>) -> writeline(x.ToVectorString(1, x.Count, null))
+        | Some(x : Vector<float>) -> writeline(x.ToVectorString())
         | None -> writeline("NaN")
         do writeline("Weight Matrix:")
         match this.LatestWeightMatrix with
