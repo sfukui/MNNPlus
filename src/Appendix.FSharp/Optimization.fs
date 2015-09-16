@@ -265,7 +265,7 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
     let mutable m_LatestStepSize = None
     let mutable m_LatestXVector = None
     let mutable m_LatestGradientVector = None
-    let mutable m_LatestWeightMatrix = None
+    let mutable m_LatestInvertedWeightMatrix = None
 
     let mutable m_WriteTrace = NoTrace
 
@@ -285,7 +285,7 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
     member this.LatestStepSize with get() = m_LatestStepSize
     member this.LatestXVector with get() = m_LatestXVector
     member this.LatestGradientVector with get() = m_LatestGradientVector
-    member this.LatestWeightMatrix with get() = m_LatestWeightMatrix
+    member this.LatestInvertedWeightMatrix with get() = m_LatestInvertedWeightMatrix
 
     member this.TraceToStdOut = 
         do m_WriteTrace <- StdOut
@@ -306,8 +306,7 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
         let tRes = w + ((1.0 / (dds * xds)) * Vector.OuterProduct(dds, dds)) - ((1.0 / (xds * w * xds)) * Vector.OuterProduct((w * xds), (w * xds)))
         if Matrix.exists isInvalidFloat tRes then
             WeightMatrixInvalid
-        else do m_LatestWeightMatrix <- Some(tRes)
-             NotConverged(tRes)
+        else NotConverged(tRes)
 
     member private this.InverseOfBFGSWeightMatrix (wInv: Matrix<float>) (xds: Vector<float>) (dds: Vector<float>) =
         let (rho, ident) = (1.0 / (dds * xds), (DenseMatrix.identity xds.Count))
@@ -315,7 +314,8 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
                    in matL * wInv * matR + rho * Vector.OuterProduct(xds, xds)
         if Matrix.exists isInvalidFloat tRes then
             InvertedWeightMatrixInvalid
-        else NotConverged(tRes)
+        else do m_LatestInvertedWeightMatrix <- Some(tRes)
+             NotConverged(tRes)
 
     member private this.lineSearch r g =
         let ls = LineSearch(f, this.InitialStepSize, this.MaxStepSize, m_DerivationMethod)
@@ -346,8 +346,8 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
         match this.LatestGradientVector with
         | Some(x : Vector<float>) -> writeline(x.ToVectorString())
         | None -> writeline("NaN")
-        do writeline("Weight Matrix:")
-        match this.LatestWeightMatrix with
+        do writeline("Inverted Weight Matrix:")
+        match this.LatestInvertedWeightMatrix with
         | Some(x : Matrix<float>) -> writeline(x.ToMatrixString(x.RowCount, x.ColumnCount, null))
         | None -> writeline("NaN")
         do writeline("Step Size:")
@@ -359,7 +359,7 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
         let sw = new System.Diagnostics.Stopwatch();
         do sw.Start()
 
-        let rec search (w: Matrix<float>) (winv: Matrix<float>) (r: Vector<float>) (g: Vector<float>) count = 
+        let rec search (winv: Matrix<float>) (r: Vector<float>) (g: Vector<float>) count = 
             match m_WriteTrace with
             | StdOut -> do this.Trace (System.Console.WriteLine) sw
             | TextWriter(writer) -> do this.Trace writer.WriteLine sw
@@ -378,9 +378,8 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
                      let newR = r - step * (winv * g)
                      do m_LatestXVector <- Some(newR)
                      let! newG = this.differentiation newR
-                     let! newW = this.BFGSWeightMatrix w (newR - r) (newG - g)
                      let! newWInv = this.InverseOfBFGSWeightMatrix winv (newR - r) (newG - g)
-                     return search newW newWInv newR newG (count + 1)
+                     return search newWInv newR newG (count + 1)
             }
 
         qnsearch {
@@ -392,5 +391,5 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
             let initWInv = let wDiagInv = initW.Diagonal() |> Vector.map (fun x -> 1.0 / x)
                            in DenseMatrix.initDiag wDiagInv.Count wDiagInv.Count (fun i -> wDiagInv.[i])
 
-            return search initW initWInv initX initD 0
+            return search initWInv initX initD 0
         }

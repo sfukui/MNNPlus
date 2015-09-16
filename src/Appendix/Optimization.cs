@@ -205,11 +205,11 @@ namespace MathNet.Numerics.Optimization
             }
         }
 
-        public Matrix<double> LatestWeightMatrix
+        public Matrix<double> LatestInvertedWeightMatrix
         {
             get
             {
-                return Appendix.Common.CommonTools.FSOptionMatrixToCSMatrix(m_BFGSFS.LatestWeightMatrix);
+                return Appendix.Common.CommonTools.FSOptionMatrixToCSMatrix(m_BFGSFS.LatestInvertedWeightMatrix);
 
             }
         }
