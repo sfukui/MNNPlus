@@ -44,7 +44,7 @@ type LineSearch ( f: (Vector<float> -> float), xInit: float, xMax: float, trialM
     let searchMaxStepMax = 100
 
     let cubicInterpolation (oldInfo: LineSearchInfo) (newInfo: LineSearchInfo) =
-        if abs( (newInfo.A - oldInfo.A) / newInfo.A) < dMin then Some(newInfo.A)
+        if (abs (newInfo.A - oldInfo.A)) < dMin then Some(newInfo.A)
         else
             let d1 = oldInfo.DPhi + newInfo.DPhi - 3.0 * ((oldInfo.Phi - newInfo.Phi) / (oldInfo.A - newInfo.A))
             let d2Temp = (d1 * d1 - oldInfo.DPhi * newInfo.DPhi) |> sqrt
@@ -93,23 +93,25 @@ type LineSearch ( f: (Vector<float> -> float), xInit: float, xMax: float, trialM
                           in { LineSearchInfo.A = maxStep; LineSearchInfo.Phi = phiMax; LineSearchInfo.DPhi = dphiMax }
 
             let rec zoom (low: LineSearchInfo) (high: LineSearchInfo) (trialCount: int) =
-                if (trialCount > trialMax) || (high.A < dMin) then high.A
+                if (abs (low.A - high.A)) < dMin then low.A
                 else
                     let interpolatedA = cubicInterpolation low high
-
+ 
                     match interpolatedA with
                     | None -> rescueStepSize
-                    | Some aJ
-                        -> let pick = let (phiJ, dphiJ) = [aJ] |> DenseVector.ofList |> (fun x -> (phi x, dphi x))
-                                      in { LineSearchInfo.A = aJ; LineSearchInfo.Phi = phiJ; LineSearchInfo.DPhi = dphiJ }
+                    | Some aJ ->
+                        if trialCount > trialMax then aJ
+                        else
+                            let pick = let (phiJ, dphiJ) = [aJ] |> DenseVector.ofList |> (fun x -> (phi x, dphi x))
+                                       in { LineSearchInfo.A = aJ; LineSearchInfo.Phi = phiJ; LineSearchInfo.DPhi = dphiJ }
             
-                           match pick.Phi with
-                           | _ when pick.Phi > (info0.Phi + c1 * pick.A * info0.DPhi) || (pick.Phi >= low.Phi)
-                                   -> zoom low pick (trialCount + 1)
-                           | _ -> match pick.DPhi with
-                                  | _ when (abs pick.DPhi) <= -c2 * info0.DPhi -> pick.A
-                                  | _ when pick.DPhi * (high.A - low.A) >= 0.0 -> zoom pick low (trialCount + 1)
-                                  | _ -> zoom pick high (trialCount + 1)
+                            match pick.Phi with
+                            | _ when pick.Phi > (info0.Phi + c1 * pick.A * info0.DPhi) || (pick.Phi >= low.Phi)
+                                     -> zoom low pick (trialCount + 1)
+                            | _ -> match pick.DPhi with
+                                   | _ when (abs pick.DPhi) <= -c2 * info0.DPhi -> pick.A
+                                   | _ when pick.DPhi * (high.A - low.A) >= 0.0 -> zoom pick low (trialCount + 1)
+                                   | _ -> zoom pick high (trialCount + 1)
 
             let rec search aCur (old: LineSearchInfo) (trialCount: int) =
                 if trialCount > trialMax then aCur
