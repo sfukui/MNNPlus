@@ -49,8 +49,6 @@
     <Compile Include="Differentiation.cs" />
     <Compile Include="Differentiation_Obsolete.cs" />
     <Compile Include="GeneralizedBeta2.cs" />
-    <Compile Include="ConstrainedHybridMC.cs" />
-    <Compile Include="ConstrainedHybridMCGeneric.cs" />
     <Compile Include="MCMC.cs" />
     <Compile Include="Optimization.cs" />
     <Compile Include="Parallel\Diffetentiation.cs" />
