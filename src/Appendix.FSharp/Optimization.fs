@@ -32,27 +32,36 @@ open MathNet.Numerics.Interpolation
 open MathNet.Numerics.LinearAlgebra
 open MathNet.Numerics.LinearAlgebra.Double
 
+type LineSearchInfo = { A: float; Phi: float; DPhi: float; }
+
 [<CompiledName "LineSearchFSharp">]
-type LineSearch ( f: (Vector<float> -> float), xInit, xMax, derivationmethod: (Vector<float> -> Vector<float>) ) =
-    let c1, c2 = 10.0**(-4.0), 0.9
+type LineSearch ( f: (Vector<float> -> float), xInit: float, xMax: float, trialMax: int) =
+    let (c1, c2) = (10.0**(-4.0), 0.9)
     let dMin = 1e-16
     let rescueStepSize = 1.0
+
     let searchMaxStepMult = 0.5
     let searchMaxStepMax = 100
 
-    let cubicInterpolation((a_old, f_old, df_old), (a_cur, f_cur, df_cur), a_min, a_max) =
-        if abs( (a_old - a_cur) / a_cur) < dMin then Some(a_cur)
+    let cubicInterpolation (oldInfo: LineSearchInfo) (newInfo: LineSearchInfo) =
+        if abs( (newInfo.A - oldInfo.A) / newInfo.A) < dMin then Some(newInfo.A)
         else
-            let d1 = df_old + df_cur - 3.0 * ((f_old - f_cur) / (a_old - a_cur))
-            let d2Temp = (d1**2.0 - (df_old * df_cur)) |> sqrt
-            let d2Sign = (a_cur - a_old) |> sign |> float
+            let d1 = oldInfo.DPhi + newInfo.DPhi - 3.0 * ((oldInfo.Phi - newInfo.Phi) / (oldInfo.A - newInfo.A))
+            let d2Temp = (d1 * d1 - oldInfo.DPhi * newInfo.DPhi) |> sqrt
+            let d2Sign = (newInfo.A - oldInfo.A) |> sign |> float
             let d2 = d2Sign * d2Temp
-            let tRes = a_cur - (a_cur - a_old) * ((df_cur + d2 - d1) / (df_cur - df_old + 2.0 * d2))
+            let tRes = newInfo.A - (newInfo.A - oldInfo.A) * (newInfo.DPhi + d2 - d1) / (newInfo.DPhi - oldInfo.DPhi + 2.0 * d2)
 
             if System.Double.IsNaN(tRes) then None
-            else if tRes < a_min then Some(a_min)
-            else if tRes > a_max then Some(a_max)
-            else Some(tRes)
+            else
+                if oldInfo.A <= newInfo.A then
+                    if tRes < oldInfo.A then Some(oldInfo.A)
+                    else if tRes > newInfo.A then Some(newInfo.A)
+                    else Some(tRes)
+                else
+                    if tRes < newInfo.A then Some(newInfo.A)
+                    else if tRes > oldInfo.A then Some(oldInfo.A)
+                    else Some(tRes)
 
     let initialMaxStep (v: Vector<float>) (d: Vector<float>) =
         if Vector.exists System.Double.IsNaN v || Vector.exists System.Double.IsInfinity v then None
@@ -62,8 +71,9 @@ type LineSearch ( f: (Vector<float> -> float), xInit, xMax, derivationmethod: (V
                 if searchNum >= searchMaxStepMax then None
                 else
                     let y = f (v + cMax * d)
-                    if System.Double.IsInfinity(y) || System.Double.IsNaN(y) then let nextxmax = cMax * searchMaxStepMult
-                                                                                  searchMaxStep (nextxmax, searchNum + 1)
+                    if System.Double.IsInfinity(y) || System.Double.IsNaN(y) then
+                        let nextxmax = cMax * searchMaxStepMult
+                        searchMaxStep (nextxmax, searchNum + 1)
                     else Some(cMax)
 
             searchMaxStep(xMax, 0)
@@ -77,52 +87,53 @@ type LineSearch ( f: (Vector<float> -> float), xInit, xMax, derivationmethod: (V
             let phi = (fun (a: Vector<float>) -> f (v + a.[0] * d))
             let dphi = (fun a -> let res = Differentiation.Derivative(phi, a)
                                  res.[0])
-            let phi_0, dphi_0 = DenseVector.Create(1, 0.0) |> (fun x -> (phi x, dphi x))
-            let phiMax, dphiMax = DenseVector.Create(1, maxStep) |> (fun x -> (phi x, dphi x))
+            let info0  = let (phi0, dphi0) = DenseVector.Create(1, 0.0) |> (fun x -> (phi x, dphi x))
+                         in { LineSearchInfo.A = 0.0; LineSearchInfo.Phi = phi0; LineSearchInfo.DPhi = dphi0 }
+            let infoMax = let (phiMax, dphiMax) = DenseVector.Create(1, maxStep) |> (fun x -> (phi x, dphi x))
+                          in { LineSearchInfo.A = maxStep; LineSearchInfo.Phi = phiMax; LineSearchInfo.DPhi = dphiMax }
 
-            let rec zoom ((a_l, phi_l, dphi_l) as low) ((a_h, phi_h, dphi_h) as high) =
-                if a_h < dMin then
-                    dMin
+            let rec zoom (low: LineSearchInfo) (high: LineSearchInfo) (trialCount: int) =
+                if (trialCount > trialMax) || (high.A < dMin) then high.A
                 else
-                    let int_a = (low, high, a_l, a_h) |> cubicInterpolation
+                    let interpolatedA = cubicInterpolation low high
 
-                    match int_a with
+                    match interpolatedA with
                     | None -> rescueStepSize
-                    | Some a_j
-                        -> let zoomNotForSamePoint newlow newhigh =
-                               if (newlow = low) && (newhigh = high) then a_j
-                               else zoom newlow newhigh
-
-                           let phi_j, dphi_j = [a_j] |> DenseVector.ofList |> (fun x -> (phi x, dphi x))
+                    | Some aJ
+                        -> let pick = let (phiJ, dphiJ) = [aJ] |> DenseVector.ofList |> (fun x -> (phi x, dphi x))
+                                      in { LineSearchInfo.A = aJ; LineSearchInfo.Phi = phiJ; LineSearchInfo.DPhi = dphiJ }
             
-                           match phi_j with
-                           | _ when phi_j > (phi_0 + c1 * a_j * dphi_0) || (phi_j >= phi_l) -> zoomNotForSamePoint (a_l, phi_l, dphi_l) (a_j, phi_j, dphi_j)
-                           | _ -> match dphi_j with
-                                  | _ when (abs dphi_j) <= -c2 * dphi_0 -> a_j
-                                  | _ when dphi_j * (a_h - a_l) >= 0.0 -> zoomNotForSamePoint (a_j, phi_j, dphi_j) (a_l, phi_l, dphi_l)
-                                  | _ -> zoomNotForSamePoint (a_j, phi_j, dphi_j) (a_h, phi_h, dphi_h)
+                           match pick.Phi with
+                           | _ when pick.Phi > (info0.Phi + c1 * pick.A * info0.DPhi) || (pick.Phi >= low.Phi)
+                                   -> zoom low pick (trialCount + 1)
+                           | _ -> match pick.DPhi with
+                                  | _ when (abs pick.DPhi) <= -c2 * info0.DPhi -> pick.A
+                                  | _ when pick.DPhi * (high.A - low.A) >= 0.0 -> zoom pick low (trialCount + 1)
+                                  | _ -> zoom pick high (trialCount + 1)
 
-            let rec search a_cur (a_old, phi_old, dphi_old as old) =
-                let a_curVec = [a_cur] |> DenseVector.ofList
-                let phi_cur, dphi_cur = (phi a_curVec, dphi a_curVec)
+            let rec search aCur (old: LineSearchInfo) (trialCount: int) =
+                if trialCount > trialMax then aCur
+                else
+                    let current = let (phiCur, dphiCur) = [aCur] |> DenseVector.ofList |> (fun a -> (phi a, dphi a))
+                                  in { LineSearchInfo.A = aCur; LineSearchInfo.Phi = phiCur; LineSearchInfo.DPhi = dphiCur }
 
-                match phi_cur with
-                | _ when (phi_cur > phi_0 + c1 * a_cur * dphi_0) || (phi_cur >= phi_old && a_old <> actualInitStep)
-                    -> zoom (a_old, phi_old, dphi_old) (a_cur, phi_cur, dphi_cur)
-                | _ -> match dphi_cur with
-                       | _ when (abs dphi_cur) <= -c2 * dphi_0 -> a_cur
-                       | _ when dphi_cur >= 0.0 -> zoom (a_old, phi_old, dphi_old) (a_cur, phi_cur, dphi_cur)
-                       | _ -> let a_new = cubicInterpolation ((a_cur, phi_cur, dphi_cur), (maxStep, phiMax, dphiMax), a_cur, maxStep)
-                              match a_new with
-                              | None -> rescueStepSize
-                              | Some a_new ->
-                                  if a_new >= maxStep then maxStep
-                                  else if a_new <= a_cur then a_cur
-                                  else (search a_new (a_cur, phi_cur, dphi_cur))
+                    match current.Phi with
+                    | _ when (current.Phi > info0.Phi + c1 * current.A * info0.DPhi) || (current.Phi >= old.Phi && old.A <> actualInitStep)
+                        -> zoom old current trialCount
+                    | _ -> match current.DPhi with
+                           | _ when (abs current.DPhi) <= -c2 * info0.DPhi -> current.A
+                           | _ when current.DPhi >= 0.0 -> zoom current old trialCount
+                           | _ -> let aNewOption = cubicInterpolation current infoMax
+                                  match aNewOption with
+                                  | None -> rescueStepSize
+                                  | Some aNewVal ->
+                                      if aNewVal >= infoMax.A then infoMax.A
+                                      else if aNewVal <= current.A then current.A
+                                      else search aNewVal current (trialCount + 1)
 
-            match cubicInterpolation ((0.0, phi_0, dphi_0), (maxStep, phiMax, dphiMax), 0.0, maxStep) with
+            match cubicInterpolation info0 infoMax with
             | None -> rescueStepSize
-            | Some x -> search actualInitStep (0.0, phi_0, dphi_0)
+            | Some x -> search actualInitStep info0 0
 
 // "NelderMeadResult" class is for C#.
 type NelderMeadResultFSharp = { Parameters: Vector<float>; FunctionValue: float; Converged: bool }
@@ -257,8 +268,11 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
 
     let mutable m_Iteration = iteration
     let mutable m_Tolerance = tolerance
+
     let mutable m_InitialStepSize = 1.0
     let mutable m_MaxStepSize = 10.0
+    let mutable m_LineSearchMaxTrial = 10
+
     let mutable m_DerivationMethod = (fun x -> Differentiation.Derivative(f, x, true, false))
     let mutable m_FirstTimeStepSizeMuiltiplier = 1.0
 
@@ -318,7 +332,7 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
              NotConverged(tRes)
 
     member private this.lineSearch r g =
-        let ls = LineSearch(f, this.InitialStepSize, this.MaxStepSize, m_DerivationMethod)
+        let ls = LineSearch(f, this.InitialStepSize, this.MaxStepSize, m_LineSearchMaxTrial)
         let tRes = ls.Search r g
         if isInvalidFloat tRes then LineSearchFailure
         else do m_LatestStepSize <- Some(tRes)
