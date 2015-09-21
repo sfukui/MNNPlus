@@ -70,8 +70,14 @@ type LineSearch ( f: (Vector<float> -> float), xInit: float, xMax: float, trialM
             let rec searchMaxStep (cMax: float, searchNum: int) =
                 if searchNum >= searchMaxStepMax then None
                 else
-                    let y = f (v + cMax * d)
-                    if System.Double.IsInfinity(y) || System.Double.IsNaN(y) then
+                    let phi = (fun (a: Vector<float>) -> f (v + a.[0] * d))
+                    let dphi = (fun a -> let res = Differentiation.Derivative(phi, a)
+                                         res.[0])
+                    let cMaxVec = [cMax] |> DenseVector.ofList
+                    let phiCMax = phi cMaxVec
+                    let dphiCMax = dphi cMaxVec
+                    if System.Double.IsInfinity(phiCMax) || System.Double.IsNaN(phiCMax) ||
+                       System.Double.IsInfinity(dphiCMax) || System.Double.IsNaN(dphiCMax) then
                         let nextxmax = cMax * searchMaxStepMult
                         searchMaxStep (nextxmax, searchNum + 1)
                     else Some(cMax)
