@@ -273,7 +273,9 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
 
     let mutable m_InitialStepSize = 1.0
     let mutable m_MaxStepSize = 10.0
-    let mutable m_LineSearchMaxTrial = 10
+
+    let defaultLineSearchMaxTrial = 10
+    let mutable m_LineSearchMaxTrial = defaultLineSearchMaxTrial
 
     let mutable m_DerivationMethod = (fun x -> Differentiation.Derivative(f, x, true, false))
     let mutable m_FirstTimeStepSizeMuiltiplier = 1.0
@@ -296,6 +298,7 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
     member this.DerivationMethod with get() = m_DerivationMethod and set v = m_DerivationMethod <- v
     member this.InitialStepSize with get() = m_InitialStepSize and set v = m_InitialStepSize <- v
     member this.MaxStepSize with get() = m_MaxStepSize and set v = m_MaxStepSize <- v
+    member this.LineSearchMaxTrial with get() = m_LineSearchMaxTrial and set v = m_LineSearchMaxTrial <- if v <= 0 then defaultLineSearchMaxTrial else v
     member this.FirstTimeStepSizeMultiplier with get() = m_FirstTimeStepSizeMuiltiplier and set v = m_FirstTimeStepSizeMuiltiplier <- v
 
     member this.LatestStepSize with get() = m_LatestStepSize
