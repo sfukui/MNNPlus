@@ -43,6 +43,14 @@ type LineSearch ( f: (Vector<float> -> float), xInit: float, xMax: float, trialM
     let searchMaxStepMult = 0.5
     let searchMaxStepMax = 100
 
+    let numdiff = new Differentiation.NumericalDerivative()
+
+    let createFuncs (v: Vector<float>) (d: Vector<float>) =
+        let phi = fun (a: float) -> f (v + a * d)
+        let phiFunc = new System.Func<float, float>(phi)
+        let dphi = (fun (a: float) -> numdiff.EvaluateDerivative(phiFunc, a, 1))
+        (phi, dphi)
+
     let cubicInterpolation (oldInfo: LineSearchInfo) (newInfo: LineSearchInfo) =
         if (abs (newInfo.A - oldInfo.A)) < dMin then Some(newInfo.A)
         else
@@ -70,12 +78,10 @@ type LineSearch ( f: (Vector<float> -> float), xInit: float, xMax: float, trialM
             let rec searchMaxStep (cMax: float, searchNum: int) =
                 if searchNum >= searchMaxStepMax then None
                 else
-                    let phi = (fun (a: Vector<float>) -> f (v + a.[0] * d))
-                    let dphi = (fun a -> let res = Differentiation.Derivative(phi, a)
-                                         res.[0])
-                    let cMaxVec = [cMax] |> DenseVector.ofList
-                    let phiCMax = phi cMaxVec
-                    let dphiCMax = dphi cMaxVec
+                    let (phi, dphi) = let funcs = createFuncs v d
+                                      in (fst funcs, snd funcs)
+                    let phiCMax = phi cMax
+                    let dphiCMax = dphi cMax
                     if System.Double.IsInfinity(phiCMax) || System.Double.IsNaN(phiCMax) ||
                        System.Double.IsInfinity(dphiCMax) || System.Double.IsNaN(dphiCMax) then
                         let nextxmax = cMax * searchMaxStepMult
@@ -90,12 +96,11 @@ type LineSearch ( f: (Vector<float> -> float), xInit: float, xMax: float, trialM
         | None -> System.Double.NaN
         | Some(maxStep) -> 
             let actualInitStep = if maxStep < xInit then 0.5 * maxStep else xInit
-            let phi = (fun (a: Vector<float>) -> f (v + a.[0] * d))
-            let dphi = (fun a -> let res = Differentiation.Derivative(phi, a)
-                                 res.[0])
-            let info0  = let (phi0, dphi0) = DenseVector.Create(1, 0.0) |> (fun x -> (phi x, dphi x))
+            let (phi, dphi) = let funcs = createFuncs v d
+                              in (fst funcs, snd funcs)
+            let info0  = let (phi0, dphi0) = 0.0 |> (fun x -> (phi x, dphi x))
                          in { LineSearchInfo.A = 0.0; LineSearchInfo.Phi = phi0; LineSearchInfo.DPhi = dphi0 }
-            let infoMax = let (phiMax, dphiMax) = DenseVector.Create(1, maxStep) |> (fun x -> (phi x, dphi x))
+            let infoMax = let (phiMax, dphiMax) = maxStep |> (fun x -> (phi x, dphi x))
                           in { LineSearchInfo.A = maxStep; LineSearchInfo.Phi = phiMax; LineSearchInfo.DPhi = dphiMax }
 
             let rec zoom (low: LineSearchInfo) (high: LineSearchInfo) (trialCount: int) =
@@ -108,7 +113,7 @@ type LineSearch ( f: (Vector<float> -> float), xInit: float, xMax: float, trialM
                     | Some aJ ->
                         if trialCount > trialMax then aJ
                         else
-                            let pick = let (phiJ, dphiJ) = [aJ] |> DenseVector.ofList |> (fun x -> (phi x, dphi x))
+                            let pick = let (phiJ, dphiJ) = aJ |> (fun x -> (phi x, dphi x))
                                        in { LineSearchInfo.A = aJ; LineSearchInfo.Phi = phiJ; LineSearchInfo.DPhi = dphiJ }
             
                             match pick.Phi with
@@ -122,7 +127,7 @@ type LineSearch ( f: (Vector<float> -> float), xInit: float, xMax: float, trialM
             let rec search aCur (old: LineSearchInfo) (trialCount: int) =
                 if trialCount > trialMax then aCur
                 else
-                    let current = let (phiCur, dphiCur) = [aCur] |> DenseVector.ofList |> (fun a -> (phi a, dphi a))
+                    let current = let (phiCur, dphiCur) = aCur |> (fun a -> (phi a, dphi a))
                                   in { LineSearchInfo.A = aCur; LineSearchInfo.Phi = phiCur; LineSearchInfo.DPhi = dphiCur }
 
                     match current.Phi with
