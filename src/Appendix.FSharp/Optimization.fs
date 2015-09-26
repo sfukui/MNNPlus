@@ -1,4 +1,4 @@
-﻿// Math.NET Numerics Appendix Library License (MIT/X11)
+// Math.NET Numerics Appendix Library License (MIT/X11)
 // ===================================================
 // 
 // Copyright (c) 2013 Fukui Shogo
@@ -34,14 +34,21 @@ open MathNet.Numerics.LinearAlgebra.Double
 
 type LineSearchInfo = { A: float; Phi: float; DPhi: float; }
 
+type searchInterpolationResult = | Plain of LineSearchInfo
+                                 | Conditioned of LineSearchInfo
+                                 | Failed
+
 [<CompiledName "LineSearchFSharp">]
 type LineSearch ( f: (Vector<float> -> float), xInit: float, xMax: float, trialMax: int) =
-    let (c1, c2) = (10.0**(-4.0), 0.9)
-    let dMin = 1e-16
-    let rescueStepSize = 1.0
+    let (c1, c2) = (10.0**(-4.0), 0.9)  // General settings for Wolfe conditions.
+    let dMin = 1e-16                    // When a difference of two values is less than dMin, the difference is considered as zero.   
 
-    let searchMaxStepMult = 0.5
-    let searchMaxStepMax = 100
+    let maxStepSearchMult = 0.5
+    let maxStepSearchTrial = 100
+
+    let interpolationSearchTrial = 10
+    
+    let nextStepSearchMult = 0.1 
 
     let numdiff = new Differentiation.NumericalDerivative()
 
@@ -55,28 +62,30 @@ type LineSearch ( f: (Vector<float> -> float), xInit: float, xMax: float, trialM
         if (abs (newInfo.A - oldInfo.A)) < dMin then Some(newInfo.A)
         else
             let d1 = oldInfo.DPhi + newInfo.DPhi - 3.0 * ((oldInfo.Phi - newInfo.Phi) / (oldInfo.A - newInfo.A))
-            let d2Temp = (d1 * d1 - oldInfo.DPhi * newInfo.DPhi) |> sqrt
-            let d2Sign = (newInfo.A - oldInfo.A) |> sign |> float
-            let d2 = d2Sign * d2Temp
-            let tRes = newInfo.A - (newInfo.A - oldInfo.A) * (newInfo.DPhi + d2 - d1) / (newInfo.DPhi - oldInfo.DPhi + 2.0 * d2)
-
-            if System.Double.IsNaN(tRes) then None
+            let d2Temp = (d1 * d1 - oldInfo.DPhi * newInfo.DPhi)
+            if d2Temp < 0.0 then None
             else
-                if oldInfo.A <= newInfo.A then
-                    if tRes < oldInfo.A then Some(oldInfo.A)
-                    else if tRes > newInfo.A then Some(newInfo.A)
-                    else Some(tRes)
-                else
-                    if tRes < newInfo.A then Some(newInfo.A)
-                    else if tRes > oldInfo.A then Some(oldInfo.A)
-                    else Some(tRes)
+                let d2Sign = (newInfo.A - oldInfo.A) |> sign |> float
+                let d2 = d2Temp |> sqrt |> (*) d2Sign
+                let tRes = newInfo.A - (newInfo.A - oldInfo.A) * (newInfo.DPhi + d2 - d1) / (newInfo.DPhi - oldInfo.DPhi + 2.0 * d2)
 
-    let initialMaxStep (v: Vector<float>) (d: Vector<float>) =
-        if Vector.exists System.Double.IsNaN v || Vector.exists System.Double.IsInfinity v then None
-        else if Vector.exists System.Double.IsNaN d || Vector.exists System.Double.IsInfinity d then None
+                if System.Double.IsNaN(tRes) then None
+                else
+                    if oldInfo.A <= newInfo.A then
+                        if tRes < oldInfo.A then Some(oldInfo.A)
+                        else if tRes > newInfo.A then Some(newInfo.A)
+                        else Some(tRes)
+                    else
+                        if tRes < newInfo.A then Some(newInfo.A)
+                        else if tRes > oldInfo.A then Some(oldInfo.A)
+                        else Some(tRes)
+
+    let searchDownValidStep (xCurrentMax: float) (v: Vector<float>) (d: Vector<float>) =
+        if Vector.exists System.Double.IsNaN v || Vector.exists System.Double.IsInfinity v then Failed
+        else if Vector.exists System.Double.IsNaN d || Vector.exists System.Double.IsInfinity d then Failed
         else
-            let rec searchMaxStep (cMax: float, searchNum: int) =
-                if searchNum >= searchMaxStepMax then None
+            let rec searchStep (cMax: float, searchCount: int) =
+                if searchCount >= maxStepSearchTrial then Failed
                 else
                     let (phi, dphi) = let funcs = createFuncs v d
                                       in (fst funcs, snd funcs)
@@ -84,38 +93,56 @@ type LineSearch ( f: (Vector<float> -> float), xInit: float, xMax: float, trialM
                     let dphiCMax = dphi cMax
                     if System.Double.IsInfinity(phiCMax) || System.Double.IsNaN(phiCMax) ||
                        System.Double.IsInfinity(dphiCMax) || System.Double.IsNaN(dphiCMax) then
-                        let nextxmax = cMax * searchMaxStepMult
-                        searchMaxStep (nextxmax, searchNum + 1)
-                    else Some(cMax)
+                        let nextxmax = cMax * maxStepSearchMult
+                        searchStep (nextxmax, searchCount + 1)
+                    else
+                        let res = { A = cMax; Phi = phiCMax; DPhi = dphiCMax }
+                        if searchCount = 0 then Plain(res)
+                        else Conditioned(res)
 
-            searchMaxStep(xMax, 0)
+            searchStep(xCurrentMax, 0)
+
+    let searchValidCubicInterpolation (v: Vector<float>) (d: Vector<float>) =
+        let rec searchValidPoint (oldInfo: LineSearchInfo) (newInfo: LineSearchInfo) (count: int) =
+            let tempInterpolation = cubicInterpolation oldInfo newInfo
+            if (count >= interpolationSearchTrial) then None
+            else match tempInterpolation with
+                 | Some x -> match searchDownValidStep x v d with
+                             | Plain info -> Some info
+                             | Conditioned info -> if oldInfo.A <= newInfo.A then searchValidPoint oldInfo info (count + 1)
+                                                   else searchValidPoint info newInfo (count + 1)
+                             | Failed -> None
+                 | None -> None
+
+        fun (oldInfo: LineSearchInfo) (newInfo: LineSearchInfo) ->
+            searchValidPoint oldInfo newInfo 0
             
     member this.Search (v: Vector<float>) (d: Vector<float>) =
-        let actualMaxStep = initialMaxStep v d
+        let actualMaxStep = searchDownValidStep xMax v d
+        let validCubicInterpolationSearch = searchValidCubicInterpolation v d
         match actualMaxStep with
-        | None -> System.Double.NaN
-        | Some(maxStep) -> 
-            let actualInitStep = if maxStep < xInit then 0.5 * maxStep else xInit
+        | Failed -> System.Double.NaN
+        | Plain infoMax | Conditioned infoMax -> 
+            let actualInitialStep = let tempInit = if xInit >= infoMax.A then infoMax.A * 0.5 else xInit
+                                    searchDownValidStep tempInit v d 
+            let maxStep = infoMax.A
             let (phi, dphi) = let funcs = createFuncs v d
                               in (fst funcs, snd funcs)
             let info0  = let (phi0, dphi0) = 0.0 |> (fun x -> (phi x, dphi x))
                          in { LineSearchInfo.A = 0.0; LineSearchInfo.Phi = phi0; LineSearchInfo.DPhi = dphi0 }
-            let infoMax = let (phiMax, dphiMax) = maxStep |> (fun x -> (phi x, dphi x))
-                          in { LineSearchInfo.A = maxStep; LineSearchInfo.Phi = phiMax; LineSearchInfo.DPhi = dphiMax }
+
+            let searchNextStepRange = nextStepSearchMult * (infoMax.A - info0.A)
 
             let rec zoom (low: LineSearchInfo) (high: LineSearchInfo) (trialCount: int) =
                 if (abs (low.A - high.A)) < dMin then low.A
                 else
-                    let interpolatedA = cubicInterpolation low high
+                    let interpolatedInfo = validCubicInterpolationSearch low high
  
-                    match interpolatedA with
-                    | None -> rescueStepSize
-                    | Some aJ ->
-                        if trialCount > trialMax then aJ
-                        else
-                            let pick = let (phiJ, dphiJ) = aJ |> (fun x -> (phi x, dphi x))
-                                       in { LineSearchInfo.A = aJ; LineSearchInfo.Phi = phiJ; LineSearchInfo.DPhi = dphiJ }
-            
+                    match interpolatedInfo with
+                    | None -> failwith "Cannot interpolate current minimum and maximum step values."
+                    | Some pick ->
+                        if trialCount > trialMax then pick.A
+                        else    
                             match pick.Phi with
                             | _ when pick.Phi > (info0.Phi + c1 * pick.A * info0.DPhi) || (pick.Phi >= low.Phi)
                                      -> zoom low pick (trialCount + 1)
@@ -124,29 +151,26 @@ type LineSearch ( f: (Vector<float> -> float), xInit: float, xMax: float, trialM
                                    | _ when pick.DPhi * (high.A - low.A) >= 0.0 -> zoom pick low (trialCount + 1)
                                    | _ -> zoom pick high (trialCount + 1)
 
-            let rec search aCur (old: LineSearchInfo) (trialCount: int) =
-                if trialCount > trialMax then aCur
+            let rec search (currentInfo: LineSearchInfo) (oldInfo: LineSearchInfo) (trialCount: int) =
+                if trialCount > trialMax then currentInfo.A
                 else
-                    let current = let (phiCur, dphiCur) = aCur |> (fun a -> (phi a, dphi a))
-                                  in { LineSearchInfo.A = aCur; LineSearchInfo.Phi = phiCur; LineSearchInfo.DPhi = dphiCur }
+                    match currentInfo.Phi with
+                    | _ when (currentInfo.Phi > info0.Phi + c1 * currentInfo.A * info0.DPhi) || (currentInfo.Phi >= oldInfo.Phi && trialCount <> 0)
+                        -> zoom oldInfo currentInfo trialCount
+                    | _ -> match currentInfo.DPhi with
+                           | _ when (abs currentInfo.DPhi) <= -c2 * info0.DPhi -> currentInfo.A
+                           | _ when currentInfo.DPhi >= 0.0 -> zoom currentInfo oldInfo trialCount
+                           | _ -> let newInfoInterpolation = searchDownValidStep (currentInfo.A + searchNextStepRange) v d
+                                  match newInfoInterpolation with
+                                  | Failed -> failwith "Cannot find next step value in line search."
+                                  | Plain newInfo | Conditioned newInfo ->
+                                      if newInfo.A >= infoMax.A || newInfo.A <= currentInfo.A then failwith "Next step value went over the limits."
+                                      else search newInfo currentInfo (trialCount + 1)
 
-                    match current.Phi with
-                    | _ when (current.Phi > info0.Phi + c1 * current.A * info0.DPhi) || (current.Phi >= old.Phi && old.A <> actualInitStep)
-                        -> zoom old current trialCount
-                    | _ -> match current.DPhi with
-                           | _ when (abs current.DPhi) <= -c2 * info0.DPhi -> current.A
-                           | _ when current.DPhi >= 0.0 -> zoom current old trialCount
-                           | _ -> let aNewOption = cubicInterpolation current infoMax
-                                  match aNewOption with
-                                  | None -> rescueStepSize
-                                  | Some aNewVal ->
-                                      if aNewVal >= infoMax.A then infoMax.A
-                                      else if aNewVal <= current.A then current.A
-                                      else search aNewVal current (trialCount + 1)
+            match actualInitialStep with
+            | Plain info | Conditioned info -> search info info0 0
+            | Failed -> failwith "Cannot find initial step value in line search."
 
-            match cubicInterpolation info0 infoMax with
-            | None -> rescueStepSize
-            | Some x -> search actualInitStep info0 0
 
 // "NelderMeadResult" class is for C#.
 type NelderMeadResultFSharp = { Parameters: Vector<float>; FunctionValue: float; Converged: bool }
@@ -275,7 +299,7 @@ type TraceOutput<'a> =
     | NoTrace 
 
 [<CompiledName "BFGSFSharp">]
-type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =  
+type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) = 
     let defaultIteration = 100
     let defaultTolerance = 1e-1
 
