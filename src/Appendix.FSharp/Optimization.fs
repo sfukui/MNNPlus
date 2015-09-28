@@ -39,7 +39,7 @@ type searchInterpolationResult = | Plain of LineSearchInfo
                                  | Failed
 
 [<CompiledName "LineSearchFSharp">]
-type LineSearch ( f: (Vector<float> -> float), xInit: float, xMax: float, trialMax: int) =
+type LineSearch ( f: (float[] -> float), xInit: float, xMax: float, trialMax: int) =
     let (c1, c2) = (10.0**(-4.0), 0.9)  // General settings for Wolfe conditions.
     let dMin = 1e-16                    // When a difference of two values is less than dMin, the difference is considered as zero.   
 
@@ -51,9 +51,10 @@ type LineSearch ( f: (Vector<float> -> float), xInit: float, xMax: float, trialM
     let nextStepSearchMult = 0.1 
 
     let numdiff = new Differentiation.NumericalDerivative()
+    let insidef (xVec: Vector<float>) = xVec.ToArray() |> f 
 
-    let createFuncs (v: Vector<float>) (d: Vector<float>) =
-        let phi = fun (a: float) -> f (v + a * d)
+    let createFuncs (vVec: Vector<float>) (dVec: Vector<float>) =
+        let phi = fun (a: float) -> insidef (vVec + a * dVec)
         let phiFunc = new System.Func<float, float>(phi)
         let dphi = (fun (a: float) -> numdiff.EvaluateDerivative(phiFunc, a, 1))
         (phi, dphi)
@@ -80,14 +81,14 @@ type LineSearch ( f: (Vector<float> -> float), xInit: float, xMax: float, trialM
                         else if tRes > oldInfo.A then Some(oldInfo.A)
                         else Some(tRes)
 
-    let searchDownValidStep (xCurrentMax: float) (v: Vector<float>) (d: Vector<float>) =
-        if Vector.exists System.Double.IsNaN v || Vector.exists System.Double.IsInfinity v then Failed
-        else if Vector.exists System.Double.IsNaN d || Vector.exists System.Double.IsInfinity d then Failed
+    let searchDownValidStep (xCurrentMax: float) (vVec: Vector<float>) (dVec: Vector<float>) =
+        if Vector.exists System.Double.IsNaN vVec || Vector.exists System.Double.IsInfinity vVec then Failed
+        else if Vector.exists System.Double.IsNaN dVec || Vector.exists System.Double.IsInfinity dVec then Failed
         else
             let rec searchStep (cMax: float, searchCount: int) =
                 if searchCount >= maxStepSearchTrial then Failed
                 else
-                    let (phi, dphi) = let funcs = createFuncs v d
+                    let (phi, dphi) = let funcs = createFuncs vVec dVec
                                       in (fst funcs, snd funcs)
                     let phiCMax = phi cMax
                     let dphiCMax = dphi cMax
@@ -102,12 +103,12 @@ type LineSearch ( f: (Vector<float> -> float), xInit: float, xMax: float, trialM
 
             searchStep(xCurrentMax, 0)
 
-    let searchValidCubicInterpolation (v: Vector<float>) (d: Vector<float>) =
+    let searchValidCubicInterpolation (vVec: Vector<float>) (dVec: Vector<float>) =
         let rec searchValidPoint (oldInfo: LineSearchInfo) (newInfo: LineSearchInfo) (count: int) =
             let tempInterpolation = cubicInterpolation oldInfo newInfo
             if (count >= interpolationSearchTrial) then None
             else match tempInterpolation with
-                 | Some x -> match searchDownValidStep x v d with
+                 | Some x -> match searchDownValidStep x vVec dVec with
                              | Plain info -> Some info
                              | Conditioned info -> if oldInfo.A <= newInfo.A then searchValidPoint oldInfo info (count + 1)
                                                    else searchValidPoint info newInfo (count + 1)
@@ -117,16 +118,17 @@ type LineSearch ( f: (Vector<float> -> float), xInit: float, xMax: float, trialM
         fun (oldInfo: LineSearchInfo) (newInfo: LineSearchInfo) ->
             searchValidPoint oldInfo newInfo 0
             
-    member this.Search (v: Vector<float>) (d: Vector<float>) =
-        let actualMaxStep = searchDownValidStep xMax v d
-        let validCubicInterpolationSearch = searchValidCubicInterpolation v d
+    member this.Search (v: float[]) (d: float[]) =
+        let (vVec, dVec) = (DenseVector.ofArray v, DenseVector.ofArray d)
+        let actualMaxStep = searchDownValidStep xMax vVec dVec
+        let validCubicInterpolationSearch = searchValidCubicInterpolation vVec dVec
         match actualMaxStep with
         | Failed -> System.Double.NaN
         | Plain infoMax | Conditioned infoMax -> 
             let actualInitialStep = let tempInit = if xInit >= infoMax.A then infoMax.A * 0.5 else xInit
-                                    searchDownValidStep tempInit v d 
+                                    searchDownValidStep tempInit vVec dVec 
             let maxStep = infoMax.A
-            let (phi, dphi) = let funcs = createFuncs v d
+            let (phi, dphi) = let funcs = createFuncs vVec dVec
                               in (fst funcs, snd funcs)
             let info0  = let (phi0, dphi0) = 0.0 |> (fun x -> (phi x, dphi x))
                          in { LineSearchInfo.A = 0.0; LineSearchInfo.Phi = phi0; LineSearchInfo.DPhi = dphi0 }
@@ -160,7 +162,7 @@ type LineSearch ( f: (Vector<float> -> float), xInit: float, xMax: float, trialM
                     | _ -> match currentInfo.DPhi with
                            | _ when (abs currentInfo.DPhi) <= -c2 * info0.DPhi -> currentInfo.A
                            | _ when currentInfo.DPhi >= 0.0 -> zoom currentInfo oldInfo trialCount
-                           | _ -> let newInfoInterpolation = searchDownValidStep (currentInfo.A + searchNextStepRange) v d
+                           | _ -> let newInfoInterpolation = searchDownValidStep (currentInfo.A + searchNextStepRange) vVec dVec
                                   match newInfoInterpolation with
                                   | Failed -> failwith "Cannot find next step value in line search."
                                   | Plain newInfo | Conditioned newInfo ->
@@ -173,10 +175,10 @@ type LineSearch ( f: (Vector<float> -> float), xInit: float, xMax: float, trialM
 
 
 // "NelderMeadResult" class is for C#.
-type NelderMeadResultFSharp = { Parameters: Vector<float>; FunctionValue: float; Converged: bool }
+type NelderMeadResultFSharp = { Parameters: float[]; FunctionValue: float; Converged: bool }
 
 [<CompiledName "NelderMeadFSharp">]
-type NelderMead (f:(Vector<float> -> float), iteration: int, tolerance: float) =
+type NelderMead (f:(float[] -> float), iteration: int, tolerance: float) =
     let defaultIteration = 100
     let defaultTolerance = 1e-3
 
@@ -198,16 +200,16 @@ type NelderMead (f:(Vector<float> -> float), iteration: int, tolerance: float) =
     member this.Psi with get() = m_Psi and set v = m_Psi <- v
     member this.Sigma with get() = m_Sigma and set v = m_Sigma <- v
                 
-    member this.Minimize(initval: Vector<float>) =
+    member this.Minimize(initval: float[]) =
         // Creating Simplex
-        let rec loopCS (vec: Vector<float>) acc simplex =
-            if acc = vec.Count then simplex
-            else vec |> Vector.mapi (fun i x -> if i = acc then match x with
-                                                                | 0.0 -> this.ZDelta
-                                                                | x -> (1.0 + this.Delta) * x
+        let rec loopCS (vec: float[]) acc simplex =
+            if acc = vec.Length then simplex
+            else vec |> Array.mapi (fun i x -> if i = acc then match x with
+                                                               | 0.0 -> this.ZDelta
+                                                               | x -> (1.0 + this.Delta) * x
                                                 else x) 
                      |> (fun s -> loopCS vec (acc+1) (s :: simplex))
-        let ss = initval :: (loopCS initval 0 []) |> List.map (fun x -> (x, (f x)))
+        let ss = initval :: (loopCS initval 0 []) |> List.map (fun x -> ((DenseVector.OfArray x) :> Vector<float>, (f x)))
         
         let rec loopIT (oldSimplex: (Vector<float> * float) list) (newSimplex: (Vector<float> * float) list) (count: int) =
             let ascendingSimplex = List.sortBy (fun elem -> (snd elem)) newSimplex
@@ -220,6 +222,9 @@ type NelderMead (f:(Vector<float> -> float), iteration: int, tolerance: float) =
                 let otherThanLargest = List.tail descendingSimplex
                 newv :: otherThanLargest
 
+            let getXYSet (x: Vector<float>) = let xArr = x.ToArray()
+                                              in (x, f xArr)
+
             // Checking Convergence
             let f_L2 =
                 if count > 0 then
@@ -229,7 +234,7 @@ type NelderMead (f:(Vector<float> -> float), iteration: int, tolerance: float) =
             if f_L2 < this.Tolerance && count > 0 then (List.head newSimplex) |> (fun x -> ((fst x), (snd x), true)) 
             else if count > this.Iteration && count > 0 then (List.head newSimplex) |> (fun x -> ((fst x), (snd x), false))
             else if System.Double.IsNaN(f_L2) || System.Double.IsInfinity(f_L2) then
-                let invalidres = List.init initval.Count (fun i -> System.Double.NaN) |> DenseVector.ofList |> Vector.map (fun x -> x)
+                let invalidres = List.init initval.Length (fun i -> System.Double.NaN) |> DenseVector.ofList |> Vector.map (fun x -> x)
                 (invalidres, f_L2, false)
             else
                 let (best, worst, sndWorst) =
@@ -238,30 +243,35 @@ type NelderMead (f:(Vector<float> -> float), iteration: int, tolerance: float) =
                                |> (fun x -> x / (float (descendingSimplex.Length) - 1.0))
 
                 // Reflect
-                let r = centroid + this.Rho * (centroid - (fst worst)) |> (fun x -> (x, f x))
+                let r = centroid + this.Rho * (centroid - (fst worst)) |> getXYSet
             
                 if (snd r) < (snd best) then       // Expand
-                    let e = (fst r) + this.Chi * ((fst r) - centroid) |> (fun x -> (x, f x))
+                    let e = (fst r) + this.Chi * ((fst r) - centroid) |> getXYSet
                     loopIT ascendingSimplex (createNextNewSimplex e) (count + 1)
                 else if (snd sndWorst) <= (snd r) then     // Contract
                     let c =
                         if (snd r) < (snd worst) then
-                            centroid + this.Psi * ((fst r) - centroid) |> (fun x -> (x, f x))    // Outside Contract
+                            centroid + this.Psi * ((fst r) - centroid) |> getXYSet    // Outside Contract
                         else
-                            centroid + this.Psi * ((fst worst) - centroid) |> (fun x -> (x, f x))    // Inside Contract
+                            centroid + this.Psi * ((fst worst) - centroid) |> getXYSet    // Inside Contract
                     if (snd c) <= (snd worst) then
                         loopIT newSimplex (createNextNewSimplex c) (count + 1)
                     else                // Shrink
                         let nNewSimplex = List.map (fun (v: (Vector<float> * float)) ->
                                                         let x = (fst best) + this.Sigma * ((fst v) - (fst best))
-                                                        (x, f x)) newSimplex
+                                                        let xArr = x.ToArray()
+                                                        (x, f xArr)) newSimplex
                         loopIT newSimplex nNewSimplex (count + 1)
                 else
                     loopIT newSimplex (createNextNewSimplex r) (count + 1)
 
-        loopIT [] ss 0
+        let getResults (rawRes: Vector<float> * float * bool) =
+            let (ps, fVal, conv) = rawRes
+            in (ps.ToArray(), fVal, conv)
+        
+        (loopIT [] ss 0) |> getResults
 
-    member this.ResultConvertToType (result:(Vector<float> * float * bool)) =
+    member this.ResultConvertToType (result:(float[] * float * bool)) =
         let (parameters, fValue, converged) = result
         { Parameters = parameters; FunctionValue = fValue; Converged = converged } 
 
@@ -290,7 +300,7 @@ type QuasiNewtonSearchBuilder() =
     member this.Return(result) = result
 
 
-type QuasiNewtonMethodResultFSharp = { Status: int; Parameters: Vector<double>; FunctionValue: System.Nullable<float>; InvertedWeightMatrix: Matrix<float> }
+type QuasiNewtonMethodResultFSharp = { Status: int; Parameters: float[]; FunctionValue: System.Nullable<float>; InvertedWeightMatrix: float[,] }
 
 [<CompiledName "TraceOutputFSharp">]
 type TraceOutput<'a> =
@@ -299,9 +309,14 @@ type TraceOutput<'a> =
     | NoTrace 
 
 [<CompiledName "BFGSFSharp">]
-type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) = 
+type BFGS (f:(float[] -> float), iteration: int, tolerance: float) = 
     let defaultIteration = 100
     let defaultTolerance = 1e-1
+    let defaultLineSearchMaxTrial = 10
+
+    let defaultDerivation = new NumericalJacobian()
+
+    let fFunc = new System.Func<float[], float>(f) 
 
     let mutable m_Iteration = iteration
     let mutable m_Tolerance = tolerance
@@ -309,10 +324,9 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
     let mutable m_InitialStepSize = 1.0
     let mutable m_MaxStepSize = 10.0
 
-    let defaultLineSearchMaxTrial = 10
     let mutable m_LineSearchMaxTrial = defaultLineSearchMaxTrial
 
-    let mutable m_DerivationMethod = (fun x -> Differentiation.Derivative(f, x, true, false))
+    let mutable m_DerivationMethod = (fun x -> defaultDerivation.Evaluate(fFunc, x))
     let mutable m_FirstTimeStepSizeMuiltiplier = 1.0
 
     let mutable m_LatestStepSize = None
@@ -325,6 +339,10 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
     let isInvalidFloat (x: float) =
         if System.Double.IsInfinity x || System.Double.IsNaN x then true
         else false
+
+    let insideDerivationMethod (xVec: Vector<float>) =
+        let xArr = xVec.ToArray()
+        m_DerivationMethod xArr |> DenseVector.ofArray
          
     let qnsearch = new QuasiNewtonSearchBuilder()
 
@@ -351,7 +369,7 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
         do m_WriteTrace <- NoTrace
 
     member private this.differentiation x =
-        let tRes = this.DerivationMethod x
+        let tRes = x |> insideDerivationMethod
         if Vector.exists isInvalidFloat tRes then GradientInvalid
         else do m_LatestGradientVector <- Some(tRes)
              NotConverged(tRes)
@@ -371,14 +389,25 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
         else do m_LatestInvertedWeightMatrix <- Some(tRes)
              NotConverged(tRes)
 
-    member private this.lineSearch r g =
+    member private this.lineSearch (r: Vector<float>) (g: Vector<float>) =
+        let (rArr, gArr) = (r.ToArray(), g.ToArray())
         let ls = LineSearch(f, this.InitialStepSize, this.MaxStepSize, m_LineSearchMaxTrial)
-        let tRes = ls.Search r g
+        let tRes = ls.Search rArr gArr
         if isInvalidFloat tRes then LineSearchFailure
         else do m_LatestStepSize <- Some(tRes)
              NotConverged(tRes)
 
-    member this.FSResultToCSResult(result: QuasiNewtonMethodStatus<Vector<float> * float * Matrix<float>>) =
+    member this.GetResults(result: QuasiNewtonMethodStatus<Vector<float> * float * Matrix<float>>) =
+        match result with
+            Converged(x, f, w) -> Converged(x.ToArray(), f, w.ToArray())
+            | NotConverged(x, f, w) -> NotConverged(x.ToArray(), f, w.ToArray())
+            | FunctionValueInvalid -> FunctionValueInvalid
+            | GradientInvalid -> GradientInvalid
+            | WeightMatrixInvalid -> WeightMatrixInvalid
+            | LineSearchFailure -> LineSearchFailure
+            | InvertedWeightMatrixInvalid -> InvertedWeightMatrixInvalid
+
+    member this.FSResultToCSResult(result: QuasiNewtonMethodStatus<float[] * float * float[,]>) =
         match result with
             Converged((x, f, w)) -> { Status = 0; Parameters = x; FunctionValue = new System.Nullable<float>(f); InvertedWeightMatrix = w }
             | NotConverged((x, f, w)) -> { Status = 1; Parameters = x; FunctionValue = new System.Nullable<float>(f); InvertedWeightMatrix = w }
@@ -409,7 +438,7 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
         | Some(x : float) -> writeline(x.ToString())
         | None -> writeline("NaN")
 
-    member this.Minimize(initVal: Vector<float>) =
+    member this.Minimize(initVal: float[]) =
         let sw = new System.Diagnostics.Stopwatch();
         do sw.Start()
 
@@ -421,7 +450,7 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
             | NoTrace -> ()
 
             qnsearch {
-                let cur_fval = f r
+                let cur_fval = r.ToArray() |> f
 
                 if System.Double.IsNaN(cur_fval) || System.Double.IsInfinity(cur_fval) then return FunctionValueInvalid
                 else if g.Norm(2.0) < this.Tolerance
@@ -437,7 +466,7 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
             }
 
         qnsearch {
-            let initX = initVal.Clone()
+            let initX = initVal |> DenseVector.ofArray
             let! initD = this.differentiation initX
             let initW = let mult = if this.FirstTimeStepSizeMultiplier = 1.0 then 1.0
                                    else (1.0 / this.FirstTimeStepSizeMultiplier) * initD.Norm(2.0)
@@ -445,5 +474,5 @@ type BFGS (f:(Vector<float> -> float), iteration: int, tolerance: float) =
             let initWInv = let wDiagInv = initW.Diagonal() |> Vector.map (fun x -> 1.0 / x)
                            in DenseMatrix.initDiag wDiagInv.Count wDiagInv.Count (fun i -> wDiagInv.[i])
 
-            return search initWInv initX initD 0
+            return (search initWInv initX initD 0) |> this.GetResults
         }

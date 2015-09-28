@@ -15,15 +15,15 @@ namespace MathNet.Numerics.Optimization
     {
         private LineSearchFSharp m_LineSearchFS;
 
-        public LineSearch(System.Func<Vector<double>, double> f, double xInit, double xMax, int trialMax)
+        public LineSearch(System.Func<double[], double> f, double xInit, double xMax, int trialMax)
         {
-            var fConv = new Converter<Vector<double>, double>(f);
-            var fFS = Microsoft.FSharp.Core.FSharpFunc<Vector<double>, double>.FromConverter(fConv);
+            var fConv = new Converter<double[], double>(f);
+            var fFS = Microsoft.FSharp.Core.FSharpFunc<double[], double>.FromConverter(fConv);
 
             m_LineSearchFS = new LineSearchFSharp(fFS, xInit, xMax, trialMax);
         }
 
-        public double Search(Vector<double> v, Vector<double> d)
+        public double Search(double[] v, double[] d)
         {
             return m_LineSearchFS.Search(v, d);
         }
@@ -31,7 +31,7 @@ namespace MathNet.Numerics.Optimization
 
     public class NelderMeadResult
     {
-        public Vector<double> Parameters { get; private set; }
+        public double[] Parameters { get; private set; }
         public double FunctionValue { get; private set; }
         public bool Converged { get; private set; }
 
@@ -47,10 +47,10 @@ namespace MathNet.Numerics.Optimization
     {
         private NelderMeadFSharp m_NelderMeadFS;
         
-        public NelderMead(System.Func<Vector<double>, double> f, int iteration, double tolerance)
+        public NelderMead(System.Func<double[], double> f, int iteration, double tolerance)
         {
-            var fConv = new Converter<Vector<double>,double>(f);
-            var fFS = Microsoft.FSharp.Core.FSharpFunc<Vector<double>, double>.FromConverter(fConv);
+            var fConv = new Converter<double[], double>(f);
+            var fFS = Microsoft.FSharp.Core.FSharpFunc<double[], double>.FromConverter(fConv);
 
             m_NelderMeadFS = new NelderMeadFSharp(fFS, iteration, tolerance);
         }
@@ -103,7 +103,7 @@ namespace MathNet.Numerics.Optimization
             set { m_NelderMeadFS.Sigma = value; }
         }
 
-        public NelderMeadResult Minimize(Vector<double> initVal)
+        public NelderMeadResult Minimize(double[] initVal)
         {
             var resFS = m_NelderMeadFS.Minimize(initVal);
             return new NelderMeadResult(m_NelderMeadFS.ResultConvertToType(resFS));
@@ -113,9 +113,9 @@ namespace MathNet.Numerics.Optimization
     public class QuasiNewtonMethodResult
     {
         public QuasiNewtonMethodResultStatus Status { get; private set; }
-        public Vector<double> Parameters { get; private set; }
+        public double[] Parameters { get; private set; }
         public double? FunctionValue { get; private set; }
-        public Matrix<double> InvertedWeightMatrix { get; private set; }
+        public double[,] InvertedWeightMatrix { get; private set; }
 
         public QuasiNewtonMethodResult(QuasiNewtonMethodResultFSharp result)
         {
@@ -140,10 +140,10 @@ namespace MathNet.Numerics.Optimization
     {
         private BFGSFSharp m_BFGSFS;
 
-        public BFGS(System.Func<Vector<double>, double> f, int iteration, double tolerance)
+        public BFGS(System.Func<double[], double> f, int iteration, double tolerance)
         {
-            var fConv = new Converter<Vector<double>,double>(f);
-            var fFS = Microsoft.FSharp.Core.FSharpFunc<Vector<double>, double>.FromConverter(fConv);
+            var fConv = new Converter<double[],double>(f);
+            var fFS = Microsoft.FSharp.Core.FSharpFunc<double[], double>.FromConverter(fConv);
 
             m_BFGSFS = new BFGSFSharp(fFS, iteration, tolerance);
         }
@@ -172,7 +172,7 @@ namespace MathNet.Numerics.Optimization
             set { m_BFGSFS.MaxStepSize = value; }
         }
 
-        public QuasiNewtonMethodResult Minimize(Vector<double> initVal)
+        public QuasiNewtonMethodResult Minimize(double[] initVal)
         {
             var resFS = m_BFGSFS.Minimize(initVal);
             return new QuasiNewtonMethodResult(m_BFGSFS.FSResultToCSResult(resFS));

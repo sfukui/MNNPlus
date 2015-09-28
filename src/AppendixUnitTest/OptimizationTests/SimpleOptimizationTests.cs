@@ -18,7 +18,7 @@ namespace AppendixUnitTest.OptimizationTests
         /// </summary>
         /// <param name="x">Vector value of independent variable.</param>
         /// <returns></returns>
-        private double targetFunction(Vector<double> x)
+        private double targetFunction(double[] x)
         {
             return (x[0] - 1.0) * (x[0] - 1.0) + (x[1] - 1.0) * (x[1] - 1.0);
         }
@@ -50,15 +50,15 @@ namespace AppendixUnitTest.OptimizationTests
         {
             NelderMead nm = new NelderMead(targetFunction, nmIteration, nmTolerance);
 
-            Vector<double> initParams = new DenseVector(new double[2] { x0Init, x1Init });
-            Vector<double> expectedParams = new DenseVector(new double[2] { 1.0, 1.0 });
+            double[] initParams = new double[2] { x0Init, x1Init };
+            double[] expectedParams = new double[2] { 1.0, 1.0 };
             var intermediateresult = nm.Minimize(initParams);
             var result = nm.Minimize(intermediateresult.Parameters);
 
             Assert.AreEqual(true, result.Converged);
 
             int i = 0;
-            while (i < result.Parameters.Count)
+            while (i < result.Parameters.Length)
             {
                 double delta = acceptRangeRate * expectedParams[i];
                 Assert.AreEqual(expectedParams[i], result.Parameters[i], delta);
@@ -80,14 +80,14 @@ namespace AppendixUnitTest.OptimizationTests
         {
             BFGS bfgs = new BFGS(targetFunction, bfgsIteration, bfgsTolerance);
 
-            Vector<double> initParams = new DenseVector(new double[2] { x0Init, x1Init });
-            Vector<double> expectedParams = new DenseVector(new double[2] { 1.0, 1.0 });
+            double[] initParams = new double[2] { x0Init, x1Init };
+            double[] expectedParams = new double[2] { 1.0, 1.0 };
             var result = bfgs.Minimize(initParams);
 
             Assert.AreEqual(QuasiNewtonMethodResultStatus.Converged, result.Status);
 
             int i = 0;
-            while (i < result.Parameters.Count)
+            while (i < result.Parameters.Length)
             {
                 double delta = acceptRangeRate * expectedParams[i];
                 Assert.AreEqual(expectedParams[i], result.Parameters[i], delta);

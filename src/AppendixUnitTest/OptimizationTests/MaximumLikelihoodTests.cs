@@ -27,9 +27,9 @@ namespace MathNet.Numerics.UnitTests.OptimizationTests
         /// <summary>
         /// Likelihood function.
         /// </summary>
-        /// <param name="parameters">Vector value of parameters.</param>
+        /// <param name="parameters">Parameter values.</param>
         /// <returns>Value of log-likelihood.</returns>
-        private double likehood(Vector<double> parameters)
+        private double likehood(double[] parameters)
         {
             int i = 0;
             double res = 0.0;
@@ -72,13 +72,13 @@ namespace MathNet.Numerics.UnitTests.OptimizationTests
             int nmIter = 100, bfgsIter = 100;
             double nmToler = 1e-3, bfgsToler = 1e-3;
 
-            Func<Vector<double>, double> targetFunction = (parameters) => { return (-1.0) * likehood(parameters); };
+            Func<double[], double> targetFunction = (parameters) => { return (-1.0) * likehood(parameters); };
 
             NelderMead nm = new NelderMead(targetFunction, nmIter, nmToler);
             BFGS bfgs = new BFGS(targetFunction, bfgsIter, bfgsToler);
 
-            Vector<double> initParameters = new DenseVector(new double[3] { 10.0, 5.0, 4.0 });
-            Vector<double> expectedParameters = new DenseVector(new double[3] { 8.46, 5.45, 6.75 });
+            double[] initParameters = new double[3] { 10.0, 5.0, 4.0 };
+            double[] expectedParameters = new double[3] { 8.46, 5.45, 6.75 };
 
             var nmResult = nm.Minimize(initParameters);
             var bfgsResult = bfgs.Minimize(nmResult.Parameters);
@@ -87,7 +87,7 @@ namespace MathNet.Numerics.UnitTests.OptimizationTests
 
             int i = 0;
             double delta = 0.0;
-            while (i < bfgsResult.Parameters.Count)
+            while (i < bfgsResult.Parameters.Length)
             {
                 delta = acceptRangeRate * expectedParameters[i];
                 Assert.AreEqual(expectedParameters[i], bfgsResult.Parameters[i], delta);
@@ -141,13 +141,14 @@ namespace MathNet.Numerics.UnitTests.OptimizationTests
         /// </summary>
         /// <param name="parameters">Vector value of parameters.</param>
         /// <returns>Value of log-likelihood.</returns>
-        private double likelihood(Vector<double> parameters)
+        private double likelihood(double[] parameters)
         {
             int i = 0;
             double res = 0.0;
             while (i < TestData.Count)
             {
-                res += lnPDF_GB2(TestData[i], parameters);
+                var paramVec = DenseVector.OfArray(parameters);
+                res += lnPDF_GB2(TestData[i], paramVec);
                 i++;
             }
 
@@ -177,19 +178,19 @@ namespace MathNet.Numerics.UnitTests.OptimizationTests
             int nmIter = 100, bfgsIter = 100;
             double nmToler = 1e-3, bfgsToler = 1e-3;
 
-            Func<Vector<double>, double> targetfunction = (parameters) => { return (-1.0) * (1e-3) * likelihood(parameters); };
+            Func<double[], double> targetfunction = (parameters) => { return (-1.0) * (1e-3) * likelihood(parameters); };
             var nm = new NelderMead(targetfunction, nmIter, nmToler);
             var bfgs = new BFGS(targetfunction, bfgsIter, bfgsToler);
 
-            var initParams = new DenseVector(new double[4] { 1.65, 700.0, 2.34, 3.24 });
-            var expectedParams = new DenseVector(new double[4] { 1.65, 700.0, 2.34, 3.24 });
+            var initParams = new double[4] { 1.65, 700.0, 2.34, 3.24 };
+            var expectedParams = new double[4] { 1.65, 700.0, 2.34, 3.24 };
 
             var nmResult = nm.Minimize(initParams);
             var bfgsResult = bfgs.Minimize(nmResult.Parameters);
 
             int i = 0;
             double delta = 0.0;
-            while(i < bfgsResult.Parameters.Count)
+            while(i < bfgsResult.Parameters.Length)
             {
                 delta = Math.Abs(acceptRangeRate * expectedParams[i]);
                 Assert.AreEqual(expectedParams[i], bfgsResult.Parameters[i], delta);
