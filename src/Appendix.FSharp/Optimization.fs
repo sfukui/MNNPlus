@@ -316,21 +316,17 @@ type TraceOutput<'a> =
 type BFGS (f:(float[] -> float), iteration: int, tolerance: float) = 
     let defaultIteration = 100
     let defaultTolerance = 1e-1
-    let defaultLineSearchMaxTrial = 10
-
     let defaultDerivation = new NumericalJacobian()
+    let defaultLineSearch = new LineSearch(f, 1.0, 10.0, 10)
 
     let fFunc = new System.Func<float[], float>(f) 
 
     let mutable m_Iteration = iteration
     let mutable m_Tolerance = tolerance
 
-    let mutable m_InitialStepSize = 1.0
-    let mutable m_MaxStepSize = 10.0
-
-    let mutable m_LineSearchMaxTrial = defaultLineSearchMaxTrial
-
     let mutable m_DerivationMethod = (fun x -> defaultDerivation.Evaluate(fFunc, x))
+    let mutable m_LineSearch = defaultLineSearch
+
     let mutable m_FirstTimeStepSizeMuiltiplier = 1.0
 
     let mutable m_LatestStepSize = None
@@ -353,9 +349,7 @@ type BFGS (f:(float[] -> float), iteration: int, tolerance: float) =
     member this.Iteration with get() = m_Iteration and set v = m_Iteration <- if v <= 0 then defaultIteration else v
     member this.Tolerance with get() = m_Tolerance and set v = m_Tolerance <- if v <= 0.0 then defaultTolerance else v
     member this.DerivationMethod with get() = m_DerivationMethod and set v = m_DerivationMethod <- v
-    member this.InitialStepSize with get() = m_InitialStepSize and set v = m_InitialStepSize <- v
-    member this.MaxStepSize with get() = m_MaxStepSize and set v = m_MaxStepSize <- v
-    member this.LineSearchMaxTrial with get() = m_LineSearchMaxTrial and set v = m_LineSearchMaxTrial <- if v <= 0 then defaultLineSearchMaxTrial else v
+    member this.LineSearch with get() = m_LineSearch and set v = m_LineSearch <- v
     member this.FirstTimeStepSizeMultiplier with get() = m_FirstTimeStepSizeMuiltiplier and set v = m_FirstTimeStepSizeMuiltiplier <- v
 
     member this.LatestStepSize with get() = m_LatestStepSize
@@ -395,8 +389,7 @@ type BFGS (f:(float[] -> float), iteration: int, tolerance: float) =
 
     member private this.lineSearch (r: Vector<float>) (g: Vector<float>) =
         let (rArr, gArr) = (r.ToArray(), g.ToArray())
-        let ls = LineSearch(f, this.InitialStepSize, this.MaxStepSize, m_LineSearchMaxTrial)
-        let tRes = ls.Search rArr gArr
+        let tRes = m_LineSearch.Search rArr gArr
         if isInvalidFloat tRes then LineSearchFailure
         else do m_LatestStepSize <- Some(tRes)
              NotConverged(tRes)

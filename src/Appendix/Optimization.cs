@@ -160,17 +160,17 @@ namespace MathNet.Numerics.Optimization
             set { m_BFGSFS.Tolerance = value; }
         }
 
-        public double InitialStepSize
-        {
-            get { return m_BFGSFS.InitialStepSize; }
-            set { m_BFGSFS.InitialStepSize = value; }
-        }
+        //public double InitialStepSize
+        //{
+        //    get { return m_BFGSFS.InitialStepSize; }
+        //    set { m_BFGSFS.InitialStepSize = value; }
+        //}
 
-        public double MaxStepSize
-        {
-            get { return m_BFGSFS.MaxStepSize; }
-            set { m_BFGSFS.MaxStepSize = value; }
-        }
+        //public double MaxStepSize
+        //{
+        //    get { return m_BFGSFS.MaxStepSize; }
+        //    set { m_BFGSFS.MaxStepSize = value; }
+        //}
 
         public QuasiNewtonMethodResult Minimize(double[] initVal)
         {
