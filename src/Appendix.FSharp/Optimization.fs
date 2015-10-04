@@ -38,21 +38,24 @@ type internal searchInterpolationResult = | Plain of LineSearchInfo
                                           | Conditioned of LineSearchInfo
                                           | Failed
 
-[<CompiledName "LineSearchFSharp">]
-type LineSearch ( f: (float[] -> float), xInit: float, xMax: float, trialMax: int) =
+type LineSearch ( f: System.Func<float[], float>, xInit: float, xMax: float, trialMax: int) =
+    let defaultNumericalDerivative = new Differentiation.NumericalDerivative()
+    let defaultDerivationMethod = new System.Func<System.Func<float, float>, float, float>( (fun f a -> defaultNumericalDerivative.EvaluateDerivative(f, a, 1)) )
+
     let mutable (m_c1, m_c2) = (10.0**(-4.0), 0.9)  // General settings for Wolfe conditions.
     let mutable m_DMin = 1e-16                      // When a difference of two values is less than dMin, the difference is considered as zero.   
     let mutable m_MaxStepSearchMult = 0.5           // Multiplier for temporal max step size in valid max step search. 
     let mutable m_MaxStepSearchTrial = 100          // Max trial number of valid max step search.
     let mutable m_InterpolationSearchTrial = 10     // Max trial number of valid interpolated step size.
     let mutable m_NextStepMult = 0.1                // Multiplier to get next step size candidate.
-    let mutable m_NumericalDerivative = new Differentiation.NumericalDerivative()    // Numerical differentiation function.
+    let mutable m_DerivationMethod = defaultDerivationMethod // Numerical differentiation function.
 
     let createFuncs (v: float[]) (d: float[]) =
         let vad a = Array.map2 (fun vi di -> vi + a * di) v d
-        let phi = fun (a: float) -> a |> vad |> f
+        let phi = fun (a: float) -> let ov = a |> vad
+                                    in f.Invoke(ov)
         let phiFunc = new System.Func<float, float>(phi)
-        let dphi = (fun (a: float) -> m_NumericalDerivative.EvaluateDerivative(phiFunc, a, 1))
+        let dphi = (fun (a: float) -> m_DerivationMethod.Invoke(phiFunc, a))
         (phi, dphi)
 
     let cubicInterpolation (oldInfo: LineSearchInfo) (newInfo: LineSearchInfo) =
@@ -113,7 +116,7 @@ type LineSearch ( f: (float[] -> float), xInit: float, xMax: float, trialMax: in
 
         fun (oldInfo: LineSearchInfo) (newInfo: LineSearchInfo) ->
             searchValidPoint oldInfo newInfo 0
-    
+
     member this.C1 with get() = m_c1 and set v = m_c1 <- if v <= 0.0 then 10.0**(-4.0) else v
     member this.C2 with get() = m_c2 and set v = m_c2 <- if v <= 0.0 then 0.9 else v
     member this.MinimumDifference with get() = m_DMin and set v = m_DMin <- if v <= 0.0 then 1e-16 else v
@@ -121,7 +124,7 @@ type LineSearch ( f: (float[] -> float), xInit: float, xMax: float, trialMax: in
     member this.MaxStepSearchTrial with get() = m_MaxStepSearchTrial and set v = m_MaxStepSearchTrial <- if v <= 0 then 100 else v
     member this.InterpolationSearchTrial with get() = m_InterpolationSearchTrial and set v = m_InterpolationSearchTrial <- if v <= 0 then 10 else v
     member this.NextStepMultiplier with get() = m_NextStepMult and set v = m_NextStepMult <- if v <= 0.0 || v >= 1.0 then 0.1 else v
-    member this.NumericalDerivative with get() = m_NumericalDerivative and set v = m_NumericalDerivative <- v
+    member this.NumericalDerivation with get() = m_DerivationMethod and set v = m_DerivationMethod <- v
          
     member this.Search (v: float[]) (d: float[]) =
         let actualMaxStep = searchDownValidStep xMax v d
@@ -313,18 +316,16 @@ type TraceOutput<'a> =
     | NoTrace 
 
 [<CompiledName "BFGSFSharp">]
-type BFGS (f:(float[] -> float), iteration: int, tolerance: float) = 
+type BFGS (f: System.Func<float[], float>, iteration: int, tolerance: float) = 
     let defaultIteration = 100
     let defaultTolerance = 1e-1
     let defaultDerivation = new NumericalJacobian()
     let defaultLineSearch = new LineSearch(f, 1.0, 10.0, 10)
 
-    let fFunc = new System.Func<float[], float>(f) 
-
     let mutable m_Iteration = iteration
     let mutable m_Tolerance = tolerance
 
-    let mutable m_DerivationMethod = (fun x -> defaultDerivation.Evaluate(fFunc, x))
+    let mutable m_DerivationMethod = new System.Func<float[], float[]>(fun x -> defaultDerivation.Evaluate(f, x))
     let mutable m_LineSearch = defaultLineSearch
 
     let mutable m_FirstTimeStepSizeMuiltiplier = 1.0
@@ -342,7 +343,7 @@ type BFGS (f:(float[] -> float), iteration: int, tolerance: float) =
 
     let insideDerivationMethod (xVec: Vector<float>) =
         let xArr = xVec.ToArray()
-        m_DerivationMethod xArr |> DenseVector.ofArray
+        m_DerivationMethod.Invoke(xArr) |> DenseVector.ofArray
          
     let qnsearch = new QuasiNewtonSearchBuilder()
 
@@ -447,7 +448,7 @@ type BFGS (f:(float[] -> float), iteration: int, tolerance: float) =
             | NoTrace -> ()
 
             qnsearch {
-                let cur_fval = r.ToArray() |> f
+                let cur_fval = f.Invoke(r.ToArray())
 
                 if System.Double.IsNaN(cur_fval) || System.Double.IsInfinity(cur_fval) then return FunctionValueInvalid
                 else if g.Norm(2.0) < this.Tolerance

@@ -11,23 +11,71 @@ using MathNet.Numerics.Appendix;
 
 namespace MathNet.Numerics.Optimization
 {
-    public class LineSearch
-    {
-        private LineSearchFSharp m_LineSearchFS;
+    //public class LineSearch
+    //{
+    //    private LineSearchFSharp m_LineSearchFS;
 
-        public LineSearch(System.Func<double[], double> f, double xInit, double xMax, int trialMax)
-        {
-            var fConv = new Converter<double[], double>(f);
-            var fFS = Microsoft.FSharp.Core.FSharpFunc<double[], double>.FromConverter(fConv);
+    //    public LineSearch(System.Func<double[], double> f, double xInit, double xMax, int trialMax)
+    //    {
+    //        var fConv = new Converter<double[], double>(f);
+    //        var fFS = Microsoft.FSharp.Core.FSharpFunc<double[], double>.FromConverter(fConv);
 
-            m_LineSearchFS = new LineSearchFSharp(fFS, xInit, xMax, trialMax);
-        }
+    //        m_LineSearchFS = new LineSearchFSharp(fFS, xInit, xMax, trialMax);
+    //    }
 
-        public double Search(double[] v, double[] d)
-        {
-            return m_LineSearchFS.Search(v, d);
-        }
-    }
+    //    public double C1
+    //    {
+    //        get { return m_LineSearchFS.C1; }
+    //        set { m_LineSearchFS.C1 = value; }
+    //    }
+
+    //    public double C2
+    //    {
+    //        get { return m_LineSearchFS.C2; }
+    //        set { m_LineSearchFS.C2 = value; }
+    //    }
+
+    //    public double MinimumDifference
+    //    {
+    //        get { return m_LineSearchFS.MinimumDifference; }
+    //        set { m_LineSearchFS.MinimumDifference = value; }
+    //    }
+
+    //    public double MaxStepSearchMultiplier
+    //    {
+    //        get { return m_LineSearchFS.MaxStepSearchMultiplier; }
+    //        set { m_LineSearchFS.MaxStepSearchMultiplier = value; }
+    //    }
+
+    //    public int MaxStepSearchTrial
+    //    {
+    //        get { return m_LineSearchFS.MaxStepSearchTrial; }
+    //        set { m_LineSearchFS.MaxStepSearchTrial = value; }
+    //    }
+
+    //    public int InterpolationSearchTrial
+    //    {
+    //        get { return m_LineSearchFS.InterpolationSearchTrial; }
+    //        set { m_LineSearchFS.InterpolationSearchTrial = value; }
+    //    }
+
+    //    public double NextStepMultiplier
+    //    {
+    //        get { return m_LineSearchFS.NextStepMultiplier; }
+    //        set { m_LineSearchFS.NextStepMultiplier = value; }
+    //    }
+
+    //    public System.Func<System.Func<double, double>, double, double> NumericalDerivation
+    //    {
+    //        get { return m_LineSearchFS.NumericalDerivation;  }
+    //        set { m_LineSearchFS.NumericalDerivation = value; }
+    //    }
+
+    //    public double Search(double[] v, double[] d)
+    //    {
+    //        return m_LineSearchFS.Search(v, d);
+    //    }
+    //}
 
     public class NelderMeadResult
     {
@@ -142,10 +190,7 @@ namespace MathNet.Numerics.Optimization
 
         public BFGS(System.Func<double[], double> f, int iteration, double tolerance)
         {
-            var fConv = new Converter<double[],double>(f);
-            var fFS = Microsoft.FSharp.Core.FSharpFunc<double[], double>.FromConverter(fConv);
-
-            m_BFGSFS = new BFGSFSharp(fFS, iteration, tolerance);
+            m_BFGSFS = new BFGSFSharp(f, iteration, tolerance);
         }
 
         public int Iteration
@@ -160,22 +205,22 @@ namespace MathNet.Numerics.Optimization
             set { m_BFGSFS.Tolerance = value; }
         }
 
-        //public double InitialStepSize
-        //{
-        //    get { return m_BFGSFS.InitialStepSize; }
-        //    set { m_BFGSFS.InitialStepSize = value; }
-        //}
-
-        //public double MaxStepSize
-        //{
-        //    get { return m_BFGSFS.MaxStepSize; }
-        //    set { m_BFGSFS.MaxStepSize = value; }
-        //}
-
         public QuasiNewtonMethodResult Minimize(double[] initVal)
         {
             var resFS = m_BFGSFS.Minimize(initVal);
             return new QuasiNewtonMethodResult(m_BFGSFS.FSResultToCSResult(resFS));
+        }
+
+        public System.Func<double[], double[]> DerivationMethod
+        {
+            get { return m_BFGSFS.DerivationMethod; }
+            set { m_BFGSFS.DerivationMethod = value; }
+        }
+
+        public LineSearch LineSearch
+        {
+            get { return m_BFGSFS.LineSearch; }
+            set { m_BFGSFS.LineSearch = value; }
         }
 
         public double? LatestStepSize
