@@ -315,6 +315,11 @@ type TraceOutput<'a> =
     | StdOut
     | NoTrace 
 
+type internal StepSizeStatus =
+    | ValidStep of float
+    | InvalidStep
+    | NotYet
+
 [<CompiledName "BFGSFSharp">]
 type BFGS (f: System.Func<float[], float>, iteration: int, tolerance: float) = 
     let defaultIteration = 100
@@ -330,7 +335,7 @@ type BFGS (f: System.Func<float[], float>, iteration: int, tolerance: float) =
 
     let mutable m_FirstTimeStepSizeMuiltiplier = 1.0
 
-    let mutable m_LatestStepSize = None
+    let mutable m_LatestStepSize = NotYet
     let mutable m_LatestXVector = None
     let mutable m_LatestGradientVector = None
     let mutable m_LatestInvertedWeightMatrix = None
@@ -353,7 +358,9 @@ type BFGS (f: System.Func<float[], float>, iteration: int, tolerance: float) =
     member this.LineSearch with get() = m_LineSearch and set v = m_LineSearch <- v
     member this.FirstTimeStepSizeMultiplier with get() = m_FirstTimeStepSizeMuiltiplier and set v = m_FirstTimeStepSizeMuiltiplier <- v
 
-    member this.LatestStepSize with get() = m_LatestStepSize
+    member this.LatestStepSize with get() = match m_LatestStepSize with
+                                            | ValidStep(x) -> Some(x)
+                                            | _ -> None 
     member this.LatestXVector with get() = m_LatestXVector
     member this.LatestGradientVector with get() = m_LatestGradientVector
     member this.LatestInvertedWeightMatrix with get() = m_LatestInvertedWeightMatrix
@@ -369,8 +376,11 @@ type BFGS (f: System.Func<float[], float>, iteration: int, tolerance: float) =
 
     member private this.differentiation x =
         let tRes = x |> insideDerivationMethod
-        if Vector.exists isInvalidFloat tRes then GradientInvalid
-        else do m_LatestGradientVector <- Some(tRes)
+        if Vector.exists isInvalidFloat tRes then
+             do m_LatestGradientVector <- None
+             GradientInvalid
+        else
+             do m_LatestGradientVector <- Some(tRes)
              NotConverged(tRes)
 
     member private this.BFGSWeightMatrix (w: Matrix<float>) (xds: Vector<float>) (dds: Vector<float>) =
@@ -384,15 +394,19 @@ type BFGS (f: System.Func<float[], float>, iteration: int, tolerance: float) =
         let tRes = let (matL, matR) = (ident - rho * Vector.OuterProduct(xds, dds), ident - rho * Vector.OuterProduct(dds, xds))
                    in matL * wInv * matR + rho * Vector.OuterProduct(xds, xds)
         if Matrix.exists isInvalidFloat tRes then
+            do m_LatestInvertedWeightMatrix <- None
             InvertedWeightMatrixInvalid
-        else do m_LatestInvertedWeightMatrix <- Some(tRes)
-             NotConverged(tRes)
+        else
+            do m_LatestInvertedWeightMatrix <- Some(tRes)
+            NotConverged(tRes)
 
     member private this.lineSearch (r: Vector<float>) (g: Vector<float>) =
         let (rArr, gArr) = (r.ToArray(), g.ToArray())
         let tRes = m_LineSearch.Search rArr gArr
-        if isInvalidFloat tRes then LineSearchFailure
-        else do m_LatestStepSize <- Some(tRes)
+        if isInvalidFloat tRes then
+            do m_LatestStepSize <- InvalidStep
+            LineSearchFailure
+        else do m_LatestStepSize <- ValidStep(tRes)
              NotConverged(tRes)
 
     member this.GetResults(result: QuasiNewtonMethodStatus<Vector<float> * float * Matrix<float>>) =
@@ -416,25 +430,27 @@ type BFGS (f: System.Func<float[], float>, iteration: int, tolerance: float) =
             | InvertedWeightMatrixInvalid -> { Status = 6; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
 
     member private this.Trace (writeline: string -> unit) (sw: System.Diagnostics.Stopwatch) =
-        do writeline("---- Tracing Log of BFGS Oprimization ----")
+        do writeline("---- Tracing Log of BFGS Optimization ----")
         do writeline("Elapsed Time:")
         do writeline(sw.Elapsed.ToString())
         do writeline("Estimated Parameters:")
-        match this.LatestXVector with
+        match m_LatestXVector with
         | Some(x : Vector<float>) -> writeline(x.ToVectorString())
         | None -> writeline("NaN")
         do writeline("Gradients:")
-        match this.LatestGradientVector with
+        match m_LatestGradientVector with
         | Some(x : Vector<float>) -> writeline(x.ToVectorString())
         | None -> writeline("NaN")
         do writeline("Inverted Weight Matrix:")
-        match this.LatestInvertedWeightMatrix with
+        match m_LatestInvertedWeightMatrix with
         | Some(x : Matrix<float>) -> writeline(x.ToMatrixString(x.RowCount, x.ColumnCount, null))
         | None -> writeline("NaN")
         do writeline("Step Size:")
-        match this.LatestStepSize with
-        | Some(x : float) -> writeline(x.ToString())
-        | None -> writeline("NaN")
+        match m_LatestStepSize with
+        | ValidStep(x : float) -> writeline(x.ToString())
+        | InvalidStep -> writeline("NaN")
+        | NotYet -> writeline("Not computed yet.")
+        do writeline("")
 
     member this.Minimize(initVal: float[]) =
         let sw = new System.Diagnostics.Stopwatch();
@@ -472,5 +488,7 @@ type BFGS (f: System.Func<float[], float>, iteration: int, tolerance: float) =
             let initWInv = let wDiagInv = initW.Diagonal() |> Vector.map (fun x -> 1.0 / x)
                            in DenseMatrix.initDiag wDiagInv.Count wDiagInv.Count (fun i -> wDiagInv.[i])
 
+            do m_LatestXVector <- Some(initX)
+            do m_LatestInvertedWeightMatrix <- Some(initWInv)
             return (search initWInv initX initD 0) |> this.GetResults
         }
