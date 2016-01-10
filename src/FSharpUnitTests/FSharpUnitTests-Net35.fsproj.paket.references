@@ -1,2 +1,5 @@
-FsUnit
 TaskParallelLibrary
+
+group Test
+    FsUnit
+    FSharp.Core

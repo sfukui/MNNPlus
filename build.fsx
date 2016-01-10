@@ -15,8 +15,8 @@
 // PRELUDE
 // --------------------------------------------------------------------------------------
 
-#I "packages/FAKE/tools"
-#r "packages/FAKE/tools/FakeLib.dll"
+#I "packages/build/FAKE/tools"
+#r "packages/build/FAKE/tools/FakeLib.dll"
 
 open Fake
 open Fake.DocuHelper
@@ -123,7 +123,7 @@ let numericsPack =
       Authors = [ "Christoph Ruegg"; "Marcus Cuda"; "Jurgen Van Gael" ]
       Dependencies =
         [ { FrameworkVersion="net35"
-            Dependencies=[ "TaskParallelLibrary", GetPackageVersion "packages" "TaskParallelLibrary" ] }
+            Dependencies=[ "TaskParallelLibrary", GetPackageVersion "./packages/" "TaskParallelLibrary" ] }
           { FrameworkVersion="net40"
             Dependencies=[] } ]
       Files =
@@ -146,7 +146,7 @@ let fsharpPack =
         Dependencies =
           [ { FrameworkVersion=""
               Dependencies=[ "MathNet.Numerics", RequireExactly packageVersion
-                             "FSharp.Core", GetPackageVersion "packages" "FSharp.Core" ] } ]
+                             "FSharp.Core", GetPackageVersion "./packages/" "FSharp.Core" ] } ]
         Files =
           [ @"..\..\out\lib\Net35\MathNet.Numerics.FSharp.*", Some libnet35, None;
             @"..\..\out\lib\Net40\MathNet.Numerics.FSharp.*", Some libnet40, None;
@@ -175,7 +175,7 @@ let fsharpSignedPack =
         Dependencies =
           [ { FrameworkVersion=""
               Dependencies=[ "MathNet.Numerics.Signed", RequireExactly packageVersion
-                             "FSharp.Core", GetPackageVersion "packages" "FSharp.Core" ] } ]
+                             "FSharp.Core", GetPackageVersion "./packages/" "FSharp.Core" ] } ]
         Files =
           [ @"..\..\out\lib-signed\Net40\MathNet.Numerics.FSharp.*", Some libnet40, None;
             @"MathNet.Numerics.fsx", None, None;
@@ -206,7 +206,7 @@ let mklWinPack =
       Version = mklPackageVersion
       Title = "Math.NET Numerics - MKL Native Provider for Windows (x64 and x86)"
       Summary = ""
-      Description = "Intel MKL native libraries for Math.NET Numerics. Requires an Intel MKL license if redistributed."
+      Description = "Intel MKL native libraries for Math.NET Numerics on Windows."
       ReleaseNotes = mklReleaseNotes
       Tags = "math numeric statistics probability integration interpolation linear algebra matrix fft native mkl"
       Authors = [ "Christoph Ruegg"; "Marcus Cuda"; "Jurgen Van Gael" ]
@@ -223,38 +223,53 @@ let mklWin32Pack =
         Id = "MathNet.Numerics.MKL.Win-x86"
         Title = "Math.NET Numerics - MKL Native Provider for Windows (x86)"
         Files =
-          [ @"..\..\out\MKL\Windows\x86\libiomp5md.dll", Some "content", None;
-            @"..\..\out\MKL\Windows\x86\MathNet.Numerics.MKL.dll", Some "content", None ] }
+          [ @"..\..\build\NativeProvider.targets", Some "build\MathNet.Numerics.MKL.Win-x86.targets", None;
+            @"..\..\out\MKL\Windows\x86\libiomp5md.dll", Some @"build\x86", None;
+            @"..\..\out\MKL\Windows\x86\MathNet.Numerics.MKL.dll", Some @"build\x86", None ] }
 
 let mklWin64Pack =
     { mklWinPack with
         Id = "MathNet.Numerics.MKL.Win-x64"
         Title = "Math.NET Numerics - MKL Native Provider for Windows (x64)"
         Files =
-          [ @"..\..\out\MKL\Windows\x64\libiomp5md.dll", Some "content", None;
-            @"..\..\out\MKL\Windows\x64\MathNet.Numerics.MKL.dll", Some "content", None ] }
+          [ @"..\..\build\NativeProvider.targets", Some "build\MathNet.Numerics.MKL.Win-x64.targets", None;
+            @"..\..\out\MKL\Windows\x64\libiomp5md.dll", Some @"build\x64", None;
+            @"..\..\out\MKL\Windows\x64\MathNet.Numerics.MKL.dll", Some @"build\x64", None ] }
 
-let mklLinux32Pack =
-    { Id = "MathNet.Numerics.MKL.Linux-x86"
+let mklLinuxPack =
+    { Id = "MathNet.Numerics.MKL.Linux"
       Version = mklPackageVersion
-      Title = "Math.NET Numerics - MKL Native Provider for Linux (x86)"
+      Title = "Math.NET Numerics - MKL Native Provider for Linux (x64 and x86)"
       Summary = ""
-      Description = "Intel MKL native libraries for Math.NET Numerics. Requires an Intel MKL license if redistributed."
+      Description = "Intel MKL native libraries for Math.NET Numerics on Linux."
       ReleaseNotes = mklReleaseNotes
       Tags = "math numeric statistics probability integration interpolation linear algebra matrix fft native mkl"
       Authors = [ "Christoph Ruegg"; "Marcus Cuda"; "Jurgen Van Gael" ]
       Dependencies = []
       Files =
-        [ @"..\..\out\MKL\Linux\x86\libiomp5.so", Some "content", None;
-          @"..\..\out\MKL\Linux\x86\MathNet.Numerics.MKL.dll", Some "content", None ] }
+        [ @"..\..\build\NativeProvider.targets", Some "build\MathNet.Numerics.MKL.Linux.targets", None;
+          @"..\..\out\MKL\Linux\x64\libiomp5.so", Some @"build\x64", None;
+          @"..\..\out\MKL\Linux\x64\MathNet.Numerics.MKL.dll", Some @"build\x64", None;
+          @"..\..\out\MKL\Linux\x86\libiomp5.so", Some @"build\x86", None;
+          @"..\..\out\MKL\Linux\x86\MathNet.Numerics.MKL.dll", Some @"build\x86", None ] }
+
+let mklLinux32Pack =
+    { mklLinuxPack with
+        Id = "MathNet.Numerics.MKL.Linux-x86"
+        Title = "Math.NET Numerics - MKL Native Provider for Linux (x86)"
+        Files =
+          [ @"..\..\build\NativeProvider.targets", Some "build\MathNet.Numerics.MKL.Linux-x86.targets", None;
+            @"..\..\out\MKL\Linux\x86\libiomp5.so", Some @"build\x86", None;
+            @"..\..\out\MKL\Linux\x86\MathNet.Numerics.MKL.dll", Some @"build\x86", None ] }
 
 let mklLinux64Pack =
-    { mklLinux32Pack with
+    { mklLinuxPack with
         Id = "MathNet.Numerics.MKL.Linux-x64"
         Title = "Math.NET Numerics - MKL Native Provider for Linux (x64)"
         Files =
-          [ @"..\..\out\MKL\Linux\x64\libiomp5.so", Some "content", None;
-            @"..\..\out\MKL\Linux\x64\MathNet.Numerics.MKL.dll", Some "content", None ] }
+          [ @"..\..\build\NativeProvider.targets", Some "build\MathNet.Numerics.MKL.Linux-x64.targets", None;
+            @"..\..\out\MKL\Linux\x64\libiomp5.so", Some @"build\x64", None;
+            @"..\..\out\MKL\Linux\x64\MathNet.Numerics.MKL.dll", Some @"build\x64", None ] }
 
 let mklWinBundle =
     { Id = "MathNet.Numerics.MKL.Win"
@@ -270,7 +285,7 @@ let mklLinuxBundle =
       Title = "Math.NET Numerics MKL Native Provider for Linux"
       ReleaseNotesFile = "RELEASENOTES-MKL.md"
       FsLoader = false
-      Packages = [ mklLinux32Pack; mklLinux64Pack ] }
+      Packages = [ mklLinuxPack; mklLinux32Pack; mklLinux64Pack ] }
 
 
 // CUDA NATIVE PROVIDER PACKAGES
@@ -348,7 +363,7 @@ let dataTextPack =
       Authors = [ "Christoph Ruegg"; "Marcus Cuda" ]
       Dependencies =
         [ { FrameworkVersion=""
-            Dependencies=[ "MathNet.Numerics", GetPackageVersion "packages" "MathNet.Numerics" ] } ]
+            Dependencies=[ "MathNet.Numerics", GetPackageVersion "./packages/data/" "MathNet.Numerics" ] } ]
       Files =
         [ @"..\..\out\Data\lib\Net40\MathNet.Numerics.Data.Text.dll", Some libnet40, None;
           @"..\..\out\Data\lib\Net40\MathNet.Numerics.Data.Text.xml", Some libnet40, None ] }
@@ -364,7 +379,7 @@ let dataMatlabPack =
       Authors = [ "Christoph Ruegg"; "Marcus Cuda" ]
       Dependencies =
         [ { FrameworkVersion=""
-            Dependencies=[ "MathNet.Numerics", GetPackageVersion "packages" "MathNet.Numerics" ] } ]
+            Dependencies=[ "MathNet.Numerics", GetPackageVersion "./packages/data/" "MathNet.Numerics" ] } ]
       Files =
         [ @"..\..\out\Data\lib\Net40\MathNet.Numerics.Data.Matlab.dll", Some libnet40, None;
           @"..\..\out\Data\lib\Net40\MathNet.Numerics.Data.Matlab.xml", Some libnet40, None ] }
@@ -638,7 +653,7 @@ Target "DataZip" (fun _ ->
 // NUGET
 
 let updateNuspec (pack:Package) outPath symbols updateFiles spec =
-    { spec with ToolPath = "packages/NuGet.CommandLine/tools/NuGet.exe"
+    { spec with ToolPath = "packages/build/NuGet.CommandLine/tools/NuGet.exe"
                 OutputPath = outPath
                 WorkingDir = "obj/NuGet"
                 Version = pack.Version
@@ -730,20 +745,46 @@ let provideDocExtraFiles() =
     for (fileName, docName, title) in releaseNotesDocs do
         String.concat Environment.NewLine
           [ "# " + title
-            "[Math.NET Numerics](ReleaseNotes.html) | [Data Extensions](ReleaseNotes-Data.html) | [MKL Native Provider](ReleaseNotes-MKL.html)"
+            "[Math.NET Numerics](ReleaseNotes.html) | [Data Extensions](ReleaseNotes-Data.html) | [MKL Native Provider](ReleaseNotes-MKL.html) | [OpenBLAS Native Provider](ReleaseNotes-OpenBLAS.html)"
             ""
             ReadFileAsString fileName ]
         |> ReplaceFile ("docs/content" </> docName)
 
+let buildDocumentationTarget fsiargs target =
+    trace (sprintf "Building documentation (%s), this could take some time, please wait..." target)
+    let fakePath = "packages" </> "build" </> "FAKE" </> "tools" </> "FAKE.exe"
+    let fakeStartInfo script workingDirectory args fsiargs environmentVars =
+        (fun (info: System.Diagnostics.ProcessStartInfo) ->
+            info.FileName <- System.IO.Path.GetFullPath fakePath
+            info.Arguments <- sprintf "%s --fsiargs -d:FAKE %s \"%s\"" args fsiargs script
+            info.WorkingDirectory <- workingDirectory
+            let setVar k v =
+                info.EnvironmentVariables.[k] <- v
+            for (k, v) in environmentVars do
+                setVar k v
+            setVar "MSBuild" msBuildExe
+            setVar "GIT" Git.CommandHelper.gitPath
+            setVar "FSI" fsiPath)
+    let executeFAKEWithOutput workingDirectory script fsiargs envArgs =
+        let exitCode =
+            ExecProcessWithLambdas
+                (fakeStartInfo script workingDirectory "" fsiargs envArgs)
+                TimeSpan.MaxValue false ignore ignore
+        System.Threading.Thread.Sleep 1000
+        exitCode
+    let exit = executeFAKEWithOutput "docs/tools" "build-docs.fsx" fsiargs ["target", target]
+    if exit <> 0 then
+        failwith "Generating documentation failed"
+    ()
+
 let generateDocs fail local =
-    let args = if local then [] else ["--define:RELEASE"]
-    if executeFSIWithArgs "docs/tools" "build-docs.fsx" args [] then
-         traceImportant "Docs generated"
-    else
-        if fail then
-            failwith "Generating documentation failed"
-        else
-            traceImportant "generating documentation failed"
+    let args = if local then "" else "--define:RELEASE"
+    try
+        buildDocumentationTarget args "Default"
+        traceImportant "Documentation generated"
+    with
+    | e when not fail ->
+        failwith "Generating documentation failed"
 
 Target "Docs" (fun _ ->
     provideDocExtraFiles ()
@@ -840,7 +881,7 @@ let publishNuGet packageFiles =
             let args = sprintf "push \"%s\"" (FullName file)
             let result =
                 ExecProcess (fun info ->
-                    info.FileName <- "packages/NuGet.CommandLine/tools/NuGet.exe"
+                    info.FileName <- "packages/build/NuGet.CommandLine/tools/NuGet.exe"
                     info.WorkingDirectory <- FullName "obj/NuGet"
                     info.Arguments <- args) (TimeSpan.FromMinutes 10.)
             if result <> 0 then failwith "Error during NuGet push."

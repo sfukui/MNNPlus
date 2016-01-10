@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2014 Math.NET
+// Copyright (c) 2009-2015 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -92,49 +92,6 @@ namespace MathNet.Numerics.Distributions
             _shapeB = b;
         }
 
-
-        /// <summary>
-        /// Create a Beta PERT distribution, used in risk analysis and other domains where an expert forecast
-        /// is used to construct an underlying beta distribution.
-        /// </summary>
-        /// <param name="min">The minimum value.</param>
-        /// <param name="max">The maximum value.</param>
-        /// <param name="likely">The most likely value (mode).</param>
-        /// <param name="randomSource">The random number generator which is used to draw random samples.</param>
-        /// <returns>The Beta distribution derived from the PERT parameters.</returns>
-        public static Beta PERT(double min, double max, double likely, System.Random randomSource = null)
-        {
-            if( min > max || likely > max || likely < min )
-            {
-                throw new ArgumentException(Resources.InvalidDistributionParameters);
-            }
-
-            // specified to make the formulas match the literature;
-            // traditionally set to 4 so that the range between min and max
-            // represents six standard deviations (sometimes called
-            // "the six-sigma assumption").
-            const double lambda = 4;
-
-            // calculate the mean
-            double mean = (min + max + lambda * likely) / (lambda + 2);
-
-            // derive the shape parameters a and b
-            double a;
-            // special case where mean and mode are identical
-            if (mean == likely)
-            {
-                a = (lambda/2) + 1;
-            }
-            else
-            {
-                a = ((mean - min) * (2 * likely - min - max)) / ((likely - mean) * (max - min));
-            }
-
-            double b = (a * (max - mean)) / (mean - min);
-
-            return new Beta(a, b, randomSource);
-        }
-
         /// <summary>
         /// A string representation of the distribution.
         /// </summary>
@@ -155,7 +112,7 @@ namespace MathNet.Numerics.Distributions
         }
 
         /// <summary>
-        /// Gets or sets the α shape parameter of the Beta distribution. Range: α ≥ 0.
+        /// Gets the α shape parameter of the Beta distribution. Range: α ≥ 0.
         /// </summary>
         public double A
         {
@@ -163,7 +120,7 @@ namespace MathNet.Numerics.Distributions
         }
 
         /// <summary>
-        /// Gets or sets the β shape parameter of the Beta distribution. Range: β ≥ 0.
+        /// Gets the β shape parameter of the Beta distribution. Range: β ≥ 0.
         /// </summary>
         public double B
         {
@@ -456,14 +413,14 @@ namespace MathNet.Numerics.Distributions
         /// <param name="a">The α shape parameter of the Beta distribution. Range: α ≥ 0.</param>
         /// <param name="b">The β shape parameter of the Beta distribution. Range: β ≥ 0.</param>
         /// <returns>a random number from the Beta distribution.</returns>
-        static double SampleUnchecked(System.Random rnd, double a, double b)
+        static internal double SampleUnchecked(System.Random rnd, double a, double b)
         {
             var x = Gamma.SampleUnchecked(rnd, a, 1.0);
             var y = Gamma.SampleUnchecked(rnd, b, 1.0);
             return x/(x + y);
         }
 
-        static void SamplesUnchecked(System.Random rnd, double[] values, double a, double b)
+        static internal void SamplesUnchecked(System.Random rnd, double[] values, double a, double b)
         {
             var y = new double[values.Length];
             Gamma.SamplesUnchecked(rnd, values, a, 1.0);

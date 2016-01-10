@@ -4,7 +4,7 @@
 // http://github.com/mathnet/mathnet-numerics
 // http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2013 Math.NET
+// Copyright (c) 2009-2015 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -175,7 +175,7 @@ namespace MathNet.Numerics.Distributions
         }
 
         /// <summary>
-        /// Gets or sets the mean (μ) of the normal distribution.
+        /// Gets the mean (μ) of the normal distribution.
         /// </summary>
         public double Mean
         {
@@ -183,7 +183,7 @@ namespace MathNet.Numerics.Distributions
         }
 
         /// <summary>
-        /// Gets or sets the standard deviation (σ) of the normal distribution. Range: σ ≥ 0.
+        /// Gets the standard deviation (σ) of the normal distribution. Range: σ ≥ 0.
         /// </summary>
         public double StdDev
         {
@@ -191,7 +191,7 @@ namespace MathNet.Numerics.Distributions
         }
 
         /// <summary>
-        /// Gets or sets the variance of the normal distribution.
+        /// Gets the variance of the normal distribution.
         /// </summary>
         public double Variance
         {
@@ -199,7 +199,7 @@ namespace MathNet.Numerics.Distributions
         }
 
         /// <summary>
-        /// Gets or sets the precision of the normal distribution.
+        /// Gets the precision of the normal distribution.
         /// </summary>
         public double Precision
         {
@@ -207,7 +207,7 @@ namespace MathNet.Numerics.Distributions
         }
 
         /// <summary>
-        /// Gets or sets the random number generator which is used to draw random samples.
+        /// Gets the random number generator which is used to draw random samples.
         /// </summary>
         public System.Random RandomSource
         {
@@ -496,7 +496,7 @@ namespace MathNet.Numerics.Distributions
                 throw new ArgumentException(Resources.InvalidDistributionParameters);
             }
 
-            return 0.5*(1.0 + SpecialFunctions.Erf((x - mean)/(stddev*Constants.Sqrt2)));
+            return 0.5*SpecialFunctions.Erfc((mean - x)/(stddev*Constants.Sqrt2));
         }
 
         /// <summary>

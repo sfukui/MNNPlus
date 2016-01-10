@@ -1,4 +1,4 @@
-namespace MathNet.Numerics
+﻿namespace MathNet.Numerics
 
 open System.Reflection
 open System.Resources;
@@ -10,9 +10,9 @@ open System.Runtime.InteropServices
 [<assembly: AssemblyProduct("Math.NET Numerics")>]
 [<assembly: AssemblyCopyright("Copyright (c) Math.NET Project")>]
 
-[<assembly: AssemblyVersion("3.7.0.0")>]
-[<assembly: AssemblyFileVersion("3.7.0.0")>]
-[<assembly: AssemblyInformationalVersion("3.7.0")>]
+[<assembly: AssemblyVersion("3.10.0.0")>]
+[<assembly: AssemblyFileVersion("3.10.0.0")>]
+[<assembly: AssemblyInformationalVersion("3.10.0")>]
 
 #if PORTABLE
 #else

@@ -84,6 +84,7 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
+    <Reference Include="System.Runtime.Serialization" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Differentiate.cs" />
@@ -91,6 +92,7 @@
     <Compile Include="Differentiation\NumericalDerivative.cs" />
     <Compile Include="Differentiation\NumericalHessian.cs" />
     <Compile Include="Differentiation\NumericalJacobian.cs" />
+    <Compile Include="Distributions\BetaScaled.cs" />
     <Compile Include="Distributions\Triangular.cs" />
     <Compile Include="Euclid.cs" />
     <Compile Include="Generate.cs" />
@@ -107,6 +109,8 @@
     <Compile Include="LinearAlgebra\Options.cs" />
     <Compile Include="LinearAlgebra\Solvers\DelegateStopCriterion.cs" />
     <Compile Include="LinearAlgebra\CreateVector.cs" />
+    <Compile Include="LinearAlgebra\MatrixExtensions.cs" />
+    <Compile Include="LinearAlgebra\VectorExtensions.cs" />
     <Compile Include="LinearRegression\Options.cs" />
     <Compile Include="Precision.Comparison.cs" />
     <Compile Include="Precision.Equality.cs" />
@@ -229,10 +233,14 @@
     <Compile Include="SpecialFunctions\Logistic.cs" />
     <Compile Include="SpecialFunctions\TestFunctions.cs" />
     <Compile Include="Statistics\ArrayStatistics.cs" />
+    <Compile Include="Statistics\ArrayStatistics.Complex.cs" />
+    <Compile Include="Statistics\ArrayStatistics.Int32.cs" />
+    <Compile Include="Statistics\ArrayStatistics.Single.cs" />
     <Compile Include="Statistics\MovingStatistics.cs" />
     <Compile Include="Statistics\RunningStatistics.cs" />
     <Compile Include="Statistics\QuantileDefinition.cs" />
     <Compile Include="Statistics\RankDefinition.cs" />
+    <Compile Include="Statistics\SortedArrayStatistics.Single.cs" />
     <Compile Include="Statistics\StreamingStatistics.cs" />
     <Compile Include="Statistics\SortedArrayStatistics.cs" />
     <Compile Include="LinearAlgebra\Storage\SparseVectorStorage.cs" />

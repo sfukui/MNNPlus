@@ -23,6 +23,7 @@ coverage.*
 *.vsp
 *.vspx
 *.lnt
+*.svclog
 
 # Caches
 _ReSharper*
@@ -35,6 +36,7 @@ _TeamCity*
 *.aps
 *.opensdf
 *.cachefile
+*.swp
 
 # Upgrades
 _UpgradeReport_Files/
@@ -55,9 +57,6 @@ Desktop.ini
 # NOTE: we do NOT use package restore in the core projects, but do use it with FAKE builds.
 packages/*
 !packages/.gitattributes
-!packages/repositories.config
-!packages/NUnit
-!packages/FsUnit
 !packages/TaskParallelLibrary
 !packages/FSharp.Core
 

@@ -1,4 +1,4 @@
-// <copyright file="AssemblyInfo.fs" company="Math.NET">
+﻿// <copyright file="AssemblyInfo.fs" company="Math.NET">
 // Math.NET Numerics, part of the Math.NET Project
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
@@ -45,9 +45,9 @@ open System.Runtime.InteropServices
 [<assembly: AssemblyCulture("")>]
 [<assembly: NeutralResourcesLanguage("en")>]
 
-[<assembly: AssemblyVersion("3.7.0.0")>]
-[<assembly: AssemblyFileVersion("3.7.0.0")>]
-[<assembly: AssemblyInformationalVersion("3.7.0")>]
+[<assembly: AssemblyVersion("3.10.0.0")>]
+[<assembly: AssemblyFileVersion("3.10.0.0")>]
+[<assembly: AssemblyInformationalVersion("3.10.0")>]
 
 #if PORTABLE
 #else
