@@ -43,7 +43,7 @@ namespace MathNet.Numerics.Parallel.Differentiation
     /// This class can also be used to return function handles (delegates) for a fixed derivative order and variable.
     /// It is possible to evaluate the derivative and partial derivative of univariate and multivariate functions respectively.
     /// </summary>
-    public class ParallelNumericalDerivative
+    public class ThreadSafeNumericalDerivative
     {
         private int m_Evaluations;
 
@@ -147,7 +147,7 @@ namespace MathNet.Numerics.Parallel.Differentiation
         /// <summary>
         /// Initializes a NumericalDerivative class with the default 3 point center difference method.
         /// </summary>
-        public ParallelNumericalDerivative() : this(3, 1)
+        public ThreadSafeNumericalDerivative() : this(3, 1)
         {
         }
 
@@ -156,7 +156,7 @@ namespace MathNet.Numerics.Parallel.Differentiation
         /// </summary>
         /// <param name="points">Number of points for finite difference derivatives.</param>
         /// <param name="center">Location of the center with respect to other points. Value ranges from zero to points-1.</param>
-        public ParallelNumericalDerivative(int points, int center)
+        public ThreadSafeNumericalDerivative(int points, int center)
         {
             _center = center;
             if (points < 2)
@@ -262,6 +262,8 @@ namespace MathNet.Numerics.Parallel.Differentiation
                 }
             }
 
+            // This method is called from multiple threads in "ParallelNumericalJacobian" class.
+            // Thus, increment of "m_Evaluations" should be thread-safe, 
             var evalInc = _points + (evalDec ? -1 : 0);
             System.Threading.Interlocked.Add(ref m_Evaluations, evalInc);
 

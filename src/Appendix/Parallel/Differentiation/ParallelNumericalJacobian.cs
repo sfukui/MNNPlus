@@ -51,7 +51,7 @@ namespace MathNet.Numerics.Parallel.Differentiation
             get { return _df.Evaluations; }
         }
 
-        private readonly ParallelNumericalDerivative _df;
+        private readonly ThreadSafeNumericalDerivative _df;
 
         /// <summary>
         /// Creates a numerical Jacobian object with a three point central difference method.
@@ -65,7 +65,7 @@ namespace MathNet.Numerics.Parallel.Differentiation
         /// <param name="center">Center point for differentiation.</param>
         public ParallelNumericalJacobian(int points, int center)
         {
-            _df = new ParallelNumericalDerivative(points, center);
+            _df = new ThreadSafeNumericalDerivative(points, center);
         }
 
         /// <summary>

@@ -49,7 +49,7 @@
     <Compile Include="GeneralizedBeta2.cs" />
     <Compile Include="MCMC.cs" />
     <Compile Include="Optimization.cs" />
-    <Compile Include="Parallel\Differentiation\ParallelNumericalDerivative.cs" />
+    <Compile Include="Parallel\Differentiation\ThreadSafeNumericalDerivative.cs" />
     <Compile Include="Parallel\Differentiation\ParallelNumericalJacobian.cs" />
     <Compile Include="Parallel\Integrate.cs" />
     <Compile Include="Parallel\Integration\DoubleExponentialTransformation.cs" />
