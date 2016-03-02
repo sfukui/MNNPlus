@@ -69,6 +69,15 @@ namespace MathNet.Numerics.Parallel.Differentiation
         }
 
         /// <summary>
+        /// Creates a numerical Jacobian with a detailed differentiation scheme.
+        /// </summary>
+        /// <param name="df">Numerical derivation class defining detailed scheme.</param>
+        public ParallelNumericalJacobian(ThreadSafeNumericalDerivative df)
+        {
+            _df = df;
+        }
+
+        /// <summary>
         /// Evaluates the Jacobian of scalar univariate function f at point x.
         /// </summary>
         /// <param name="f">Scalar univariate function handle.</param>
