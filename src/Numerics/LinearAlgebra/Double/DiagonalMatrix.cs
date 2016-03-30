@@ -2,7 +2,6 @@
 // Math.NET Numerics, part of the Math.NET Project
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
-// http://mathnetnumerics.codeplex.com
 //
 // Copyright (c) 2009-2015 Math.NET
 //
@@ -850,7 +849,7 @@ namespace MathNet.Numerics.LinearAlgebra.Double
         /// <summary>
         /// Evaluates whether this matrix is symmetric.
         /// </summary>
-        public override sealed bool IsSymmetric()
+        public sealed override bool IsSymmetric()
         {
             return true;
         }

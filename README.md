@@ -17,6 +17,4 @@ Author
 -------------------
 Fukui Shogo
 
-Contributors of original MathNet.Numericws library are listed in [CONTRIBUTORS.md](CONTRIBUTORS.md).
-
 

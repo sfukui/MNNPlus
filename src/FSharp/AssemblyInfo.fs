@@ -2,7 +2,6 @@
 // Math.NET Numerics, part of the Math.NET Project
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
-// http://mathnetnumerics.codeplex.com
 //
 // Copyright (c) 2009 Math.NET
 //
@@ -45,9 +44,9 @@ open System.Runtime.InteropServices
 [<assembly: AssemblyCulture("")>]
 [<assembly: NeutralResourcesLanguage("en")>]
 
-[<assembly: AssemblyVersion("3.10.0.0")>]
-[<assembly: AssemblyFileVersion("3.10.0.0")>]
-[<assembly: AssemblyInformationalVersion("3.10.0")>]
+[<assembly: AssemblyVersion("3.11.0.0")>]
+[<assembly: AssemblyFileVersion("3.11.0.0")>]
+[<assembly: AssemblyInformationalVersion("3.11.0")>]
 
 #if PORTABLE
 #else

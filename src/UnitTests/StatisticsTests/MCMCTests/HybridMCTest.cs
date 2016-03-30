@@ -2,9 +2,8 @@
 // Math.NET Numerics, part of the Math.NET Project
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
-// http://mathnetnumerics.codeplex.com
 //
-// Copyright (c) 2009-2010 Math.NET
+// Copyright (c) 2009-2016 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -28,12 +27,14 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
+extern alias NUnitFramework;
+
 using System;
 using System.Globalization;
 using MathNet.Numerics.Distributions;
 using MathNet.Numerics.Statistics;
 using MathNet.Numerics.Statistics.Mcmc;
-using NUnit.Framework;
+using NUnitFramework.NUnit.Framework;
 
 namespace MathNet.Numerics.UnitTests.StatisticsTests.McmcTests
 {
