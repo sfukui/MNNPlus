@@ -100,6 +100,7 @@
     <Compile Include="IntegralTransforms\Fourier.cs" />
     <Compile Include="IntegralTransforms\Hartley.cs" />
     <Compile Include="Integration\GaussLegendreRule.cs" />
+    <Compile Include="Integration\GaussRule\GaussLegendrePoint.cs" />
     <Compile Include="Integration\GaussRule\GaussLegendrePointFactory.cs" />
     <Compile Include="Integration\GaussRule\GaussPoint.cs" />
     <Compile Include="Interpolation\Barycentric.cs" />
@@ -115,6 +116,8 @@
     <Compile Include="LinearAlgebra\MatrixExtensions.cs" />
     <Compile Include="LinearAlgebra\VectorExtensions.cs" />
     <Compile Include="LinearRegression\Options.cs" />
+    <Compile Include="OdeSolvers\AdamsBashforth.cs" />
+    <Compile Include="OdeSolvers\RungeKutta.cs" />
     <Compile Include="Precision.Comparison.cs" />
     <Compile Include="Precision.Equality.cs" />
     <Compile Include="Distributions\Bernoulli.cs" />

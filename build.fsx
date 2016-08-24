@@ -736,7 +736,7 @@ Target "DataNuGet" (fun _ ->
     CleanDir "out/Data/packages/NuGet"
     nugetPackExtension dataBundle "out/Data/packages/NuGet")
 "DataBuild" ?=> "DataNuGet"
-    
+
 
 // --------------------------------------------------------------------------------------
 // Documentation

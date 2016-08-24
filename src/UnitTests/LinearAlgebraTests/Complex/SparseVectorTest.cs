@@ -27,12 +27,10 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
-extern alias NUnitFramework;
-
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Complex;
 using MathNet.Numerics.LinearAlgebra.Storage;
-using NUnitFramework.NUnit.Framework;
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 
@@ -362,7 +360,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Complex
         }
 
         /// <summary>
-        /// Test for issues #52. When setting previous non-zero values to zero,
+        /// Test for issue #52. When setting previous non-zero values to zero,
         /// DoMultiply would copy non-zero values to the result, but use the
         /// length of nonzerovalues instead of NonZerosCount.
         /// </summary>

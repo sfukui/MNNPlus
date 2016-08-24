@@ -27,11 +27,9 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
-extern alias NUnitFramework;
-
 using System;
 using System.Globalization;
-using NUnitFramework.NUnit.Framework;
+using NUnit.Framework;
 
 namespace MathNet.Numerics.UnitTests.EuclidTests
 {
@@ -442,6 +440,24 @@ namespace MathNet.Numerics.UnitTests.EuclidTests
 
             Assert.DoesNotThrow(
                 () => ((long)0).PowerOfTwo());
+        }
+
+        /// <summary>
+        /// Log2 matches floating point for int32.
+        /// </summary>
+        [Test]
+        public void Log2MatchesFloatingPoint32()
+        {
+            for (var i = 0; i < 31; i++)
+            {
+                int number = i.PowerOfTwo();
+                Assert.AreEqual((int)Math.Log(number, 2), number.Log2());
+                Assert.AreEqual((int)Math.Log(number + 1, 2), (number + 1).Log2());
+                if (number > 1)
+                {
+                    Assert.AreEqual((int)Math.Log(number - 1, 2), (number - 1).Log2());
+                }
+            }
         }
 
         /// <summary>

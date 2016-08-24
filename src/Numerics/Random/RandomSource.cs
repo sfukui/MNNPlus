@@ -159,11 +159,11 @@ namespace MathNet.Numerics.Random
             {
                 lock (_lock)
                 {
-                    return DoSampleInteger(0, maxExclusive);
+                    return DoSampleInteger(maxExclusive);
                 }
             }
 
-            return DoSampleInteger(0, maxExclusive);
+            return DoSampleInteger(maxExclusive);
         }
 
         /// <summary>
@@ -182,9 +182,14 @@ namespace MathNet.Numerics.Random
                 throw new ArgumentException(Resources.ArgumentMinValueGreaterThanMaxValue);
             }
 
-            if (maxExclusive == int.MaxValue && minInclusive == 0)
+            if (minInclusive == 0)
             {
-                return Next();
+                if (maxExclusive == int.MaxValue)
+                {
+                    return Next();
+                }
+
+                return Next(maxExclusive);
             }
 
             if (_threadSafe)
@@ -238,6 +243,38 @@ namespace MathNet.Numerics.Random
         /// Fills an array with random numbers within a specified range.
         /// </summary>
         /// <param name="values">The array to fill with random values.</param>
+        /// <param name="maxExclusive">The exclusive upper bound of the random number returned.</param>
+        public void NextInt32s(int[] values, int maxExclusive)
+        {
+            if (maxExclusive == int.MaxValue)
+            {
+                NextInt32s(values);
+                return;
+            }
+
+            if (_threadSafe)
+            {
+                lock (_lock)
+                {
+                    for (var i = 0; i < values.Length; i++)
+                    {
+                        values[i] = DoSampleInteger(maxExclusive);
+                    }
+                }
+            }
+            else
+            {
+                for (var i = 0; i < values.Length; i++)
+                {
+                    values[i] = DoSampleInteger(maxExclusive);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Fills an array with random numbers within a specified range.
+        /// </summary>
+        /// <param name="values">The array to fill with random values.</param>
         /// <param name="minInclusive">The inclusive lower bound of the random number returned.</param>
         /// <param name="maxExclusive">The exclusive upper bound of the random number returned. <paramref name="maxExclusive"/> must be greater than or equal to <paramref name="minInclusive"/>.</param>
         public void NextInt32s(int[] values, int minInclusive, int maxExclusive)
@@ -250,6 +287,18 @@ namespace MathNet.Numerics.Random
             if (maxExclusive == int.MaxValue && minInclusive == 0)
             {
                 NextInt32s(values);
+                return;
+            }
+
+            if (minInclusive == 0)
+            {
+                if (maxExclusive == int.MaxValue)
+                {
+                    NextInt32s(values);
+                    return;
+                }
+
+                NextInt32s(values, maxExclusive);
                 return;
             }
 
@@ -339,7 +388,7 @@ namespace MathNet.Numerics.Random
         /// </summary>
         /// <param name="buffer">An array of bytes to contain random numbers.</param>
         /// <exception cref="T:System.ArgumentNullException"><paramref name="buffer"/> is null. </exception>
-        public override void NextBytes(byte[] buffer)
+        public sealed override void NextBytes(byte[] buffer)
         {
             if (buffer == null)
             {
@@ -350,19 +399,13 @@ namespace MathNet.Numerics.Random
             {
                 lock (_lock)
                 {
-                    for (var i = 0; i < buffer.Length; i++)
-                    {
-                        buffer[i] = (byte)(DoSampleInteger()%256);
-                    }
+                    DoSampleBytes(buffer);
                 }
 
                 return;
             }
 
-            for (var i = 0; i < buffer.Length; i++)
-            {
-                buffer[i] = (byte)(DoSampleInteger()%256);
-            }
+            DoSampleBytes(buffer);
         }
 
         /// <summary>
@@ -388,11 +431,85 @@ namespace MathNet.Numerics.Random
         protected abstract double DoSample();
 
         /// <summary>
-        /// Returns a random 32-bit signed integer greater than or equal to zero and less than <see cref="F:System.Int32.MaxValue"/>.
+        /// Returns a random 32-bit signed integer greater than or equal to zero and less than 2147483647 (<see cref="F:System.Int32.MaxValue"/>).
         /// </summary>
         protected virtual int DoSampleInteger()
         {
             return (int)(DoSample() * int.MaxValue);
+        }
+
+        /// <summary>
+        /// Fills the elements of a specified array of bytes with random numbers in full range, including zero and 255 (<see cref="F:System.Byte.MaxValue"/>).
+        /// </summary>
+        protected virtual void DoSampleBytes(byte[] buffer)
+        {
+            for (var i = 0; i < buffer.Length; i++)
+            {
+                buffer[i] = (byte)(DoSampleInteger() % 256);
+            }
+        }
+
+        /// <summary>
+        /// Returns a random N-bit signed integer greater than or equal to zero and less than 2^N.
+        /// N (bit count) is expected to be greater than zero and less than 32 (not verified).
+        /// </summary>
+        protected virtual int DoSampleInt32WithNBits(int bitCount)
+        {
+            var bytes = new byte[4];
+            DoSampleBytes(bytes);
+
+            // every bit with independent uniform distribution
+            uint uint32 = BitConverter.ToUInt32(bytes, 0);
+
+            // the least significant N bits with independend uniform distribution and the remaining bits zero
+            uint uintN = uint32 >> (32 - bitCount);
+            return (int)uintN;
+        }
+
+        /// <summary>
+        /// Returns a random N-bit signed long integer greater than or equal to zero and less than 2^N.
+        /// N (bit count) is expected to be greater than zero and less than 64 (not verified).
+        /// </summary>
+        protected virtual long DoSampleInt64WithNBits(int bitCount)
+        {
+            var bytes = new byte[8];
+            DoSampleBytes(bytes);
+
+            // every bit with independent uniform distribution
+            ulong uint64 = BitConverter.ToUInt64(bytes, 0);
+
+            // the least significant N bits with independend uniform distribution and the remaining bits zero
+            ulong uintN = uint64 >> (64 - bitCount);
+            return (long)uintN;
+        }
+
+        /// <summary>
+        /// Returns a random 32-bit signed integer within the specified range.
+        /// </summary>
+        /// <param name="maxExclusive">The exclusive upper bound of the random number returned.</param>
+        protected virtual int DoSampleInteger(int maxExclusive)
+        {
+            // non-biased implementation
+            // (biased: return (int)(DoSample() * maxExclusive);)
+
+            int bitCount = Euclid.Log2(maxExclusive);
+            int range = Euclid.PowerOfTwo(bitCount);
+
+            // Fast case: maxExclusive is a power of two
+            if (range == maxExclusive)
+            {
+                return DoSampleInt32WithNBits(bitCount);
+            }
+
+            // Rejection case: we need to use rejection to avoid introducing bias
+            bitCount++;
+            int sample;
+            do
+            {
+                sample = DoSampleInt32WithNBits(bitCount);
+            }
+            while (sample >= maxExclusive);
+            return sample;
         }
 
         /// <summary>
@@ -402,7 +519,7 @@ namespace MathNet.Numerics.Random
         /// <param name="maxExclusive">The exclusive upper bound of the random number returned. <paramref name="maxExclusive"/> must be greater than or equal to <paramref name="minInclusive"/>.</param>
         protected virtual int DoSampleInteger(int minInclusive, int maxExclusive)
         {
-            return (int)(DoSample()*(maxExclusive - minInclusive)) + minInclusive;
+            return DoSampleInteger(maxExclusive - minInclusive) + minInclusive;
         }
     }
 }

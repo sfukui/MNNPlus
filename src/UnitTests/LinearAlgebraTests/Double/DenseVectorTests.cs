@@ -27,11 +27,9 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
-extern alias NUnitFramework;
-
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
-using NUnitFramework.NUnit.Framework;
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 
@@ -328,7 +326,7 @@ namespace MathNet.Numerics.UnitTests.LinearAlgebraTests.Double
             var v = Vector<double>.Build.Dense(20);
             for (int i = 1; i < 25; i++)
             {
-                GC.KeepAlive(v.ToVectorString(i, 80));
+                Assert.NotNull(v.ToVectorString(i, 80));
             }
         }
     }
