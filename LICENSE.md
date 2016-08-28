@@ -1,7 +1,7 @@
 MNNPlus License (MIT/X11)
 ===================================================
 
-Copyright (c) 2013 Fukui Shogo
+Copyright (c) 2016 Fukui Shogo
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation

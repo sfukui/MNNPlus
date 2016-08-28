@@ -65,6 +65,7 @@
   <ItemGroup>
     <Compile Include="MCMC.fs" />
     <Compile Include="Optimization.fs" />
+    <Compile Include="LBFGSB.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\FSharp\FSharp.fsproj">
