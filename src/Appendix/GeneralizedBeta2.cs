@@ -474,12 +474,14 @@ namespace MathNet.Numerics.Distributions
         {
             if (theta.Length != 4)
             {
-                throw new ArgumentException(Resources.ArgumentArrayWrongLength);
+                // throw new ArgumentException(Resources.ArgumentArrayWrongLength);
+                return Double.NaN;
             }
 
             if (Array.Exists(theta, ot => ot <= 0.0) || Array.Exists(theta, ot => Double.IsNaN(ot)))
             {
-                throw new ArgumentOutOfRangeException(Resources.InvalidDistributionParameters);
+                // throw new ArgumentOutOfRangeException(Resources.InvalidDistributionParameters);
+                return Double.NaN;
             }
 
             double lnumer = System.Math.Log(theta[0]) + (theta[0] * theta[2] - 1.0) * System.Math.Log(x);

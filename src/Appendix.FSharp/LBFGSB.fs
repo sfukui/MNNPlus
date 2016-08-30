@@ -58,6 +58,9 @@ module internal AppendixFunctions =
                         let curMat = blocks.[matI].[matJ]
                         curMat.At(subI,subJ))
 
+type internal GeneralizedCauchyPointResult<'a, 'b> =
+    | Normal of 'a
+    | Corner of 'b
 
 module internal GeneralizedCauchyPoint =
     let private BreakPointsOnDirection (values: float array) (gradients: float array) (bounds: (float * float) array) : float array =
@@ -85,12 +88,12 @@ module internal GeneralizedCauchyPoint =
         let vecGraidents = gradients |> DenseVector.ofArray
 
         let rec search xs sortedBreaks dirs stepD oldStep =
-            if (Array.isEmpty sortedBreaks) then None
+            if (Array.isEmpty sortedBreaks) then Corner(xs)
             else if (stepD < (snd sortedBreaks.[0] - oldStep)) then
                 let step = oldStep + (max stepD 0.0)
                 let cp = Array.map2 (fun x d -> x + step * d) xs dirs
                 let freeIndice = Array.unzip sortedBreaks |> fst |> Array.sort
-                Some(cp, freeIndice)
+                Normal(cp, freeIndice)
             else
                 let (newXs, newDirs) =
                     Array.mapi2 (fun i x dir -> if i <> (fst sortedBreaks.[0]) then (x, dir)
@@ -124,12 +127,12 @@ module internal GeneralizedCauchyPoint =
         let vecGraidents = gradients |> DenseVector.ofArray
 
         let rec search xs sortedBreaks dirs stepD (p: Vector<float>) (c: Vector<float>) derivative1 derivative2 oldStep =
-            if Array.isEmpty sortedBreaks then None
+            if Array.isEmpty sortedBreaks then Corner(xs)
             else if stepD < (snd sortedBreaks.[0] - oldStep) then
                 let step = oldStep + (max stepD 0.0)
                 let gcp = Array.map2 (fun x d -> x + step * d) xs dirs
                 let freeIndice = Array.unzip sortedBreaks |> fst |> Array.sort
-                Some(gcp, freeIndice, (c + stepD * p))
+                Normal(gcp, freeIndice, (c + stepD * p))
             else
                 let b = sortedBreaks.[0] |> fst
                 let (newXs, newDirs) =
@@ -191,21 +194,22 @@ module internal DirectPrimalMethod =
         
         let backtrackedDirs = SimpleBacktracking values valuesGCP freeIndice bounds dirsCandidate
 
-        let rec summarize (restFreeIndice: int array) (index: int) (xs: float array) (ds: float array) =
+        let rec summarize (restFreeIndice: int array) (index: int) (bdirCounter: int) (xs: float array) (ds: float array) =
             if restFreeIndice.Length = 0 then (xs, ds)
             else
                 if index = restFreeIndice.[0] then
-                    let (newx, newd) = (xs.[index] + backtrackedDirs.[0], backtrackedDirs.[0])
+                    //let (newx, newd) = (xs.[index] + backtrackedDirs.[bdirCounter], backtrackedDirs.[bdirCounter])
+                    let (newx, newd) = (xs.[index], backtrackedDirs.[bdirCounter])
                     do xs.[index] <- newx
                     do ds.[index] <- newd
-                    summarize (Array.tail restFreeIndice) (index+1) xs ds
+                    summarize (Array.tail restFreeIndice) (index+1) (bdirCounter+1) xs ds
                 else
-                    summarize (restFreeIndice) (index + 1) xs ds
+                    summarize (restFreeIndice) (index + 1) bdirCounter xs ds
 
-        summarize freeIndice 0 (Array.copy valuesGCP) (Array.init gradients.Length (fun _ -> 0.0)) 
+        summarize freeIndice 0 0 (Array.copy valuesGCP) (Array.init gradients.Length (fun _ -> 0.0)) 
 
     let Search (values: float array) (valuesGCP: float array) (freeIndice: int array) (gradients: float array) (bounds: (float * float) array)
-        (theta: float) (matM: Matrix<float>) (matW: Matrix<float>) (vecC: Vector<float>) =
+        (theta: float) (matW: Matrix<float>) (matM: Matrix<float>) (vecC: Vector<float>) =
         let matWT = matW.Transpose()
         // Matrix $Z_k$
         let matZ = PartialIdentityMatrix freeIndice values.Length
@@ -233,18 +237,19 @@ module internal DirectPrimalMethod =
 
         let backtrackedDirs = SimpleBacktracking values valuesGCP freeIndice bounds dirsCandidate
 
-        let rec summarize (restFreeIndice: int array) (index: int) (xs: float array) (ds: float array) =
+        let rec summarize (restFreeIndice: int array) (index: int) (bdirCounter: int) (xs: float array) (ds: float array) =
             if restFreeIndice.Length = 0 then (xs, ds)
             else
                 if index = restFreeIndice.[0] then
-                    let (newx, newd) = (xs.[index] + backtrackedDirs.[0], backtrackedDirs.[0])
+                    //let (newx, newd) = (xs.[index] + backtrackedDirs.[bdirCounter], backtrackedDirs.[bdirCounter])
+                    let (newx, newd) = (xs.[index], backtrackedDirs.[bdirCounter])
                     do xs.[index] <- newx
                     do ds.[index] <- newd
-                    summarize (Array.tail restFreeIndice) (index+1) xs ds
+                    summarize (Array.tail restFreeIndice) (index+1) (bdirCounter + 1) xs ds
                 else
-                    summarize (restFreeIndice) (index + 1) xs ds
+                    summarize (restFreeIndice) (index + 1) bdirCounter xs ds
 
-        summarize freeIndice 0 (Array.copy valuesGCP) (Array.init gradients.Length (fun _ -> 0.0)) 
+        summarize freeIndice 0 0 (Array.copy valuesGCP) (Array.init gradients.Length (fun _ -> 0.0)) 
 
 [<CompiledName "SubOptimizationTypeFSharp">]
 type SubOptimizationType =
@@ -301,10 +306,10 @@ type LBFGSBResult = { Status: int; Parameters: float[]; FunctionValue: System.Nu
 type LBFGSB(f: BoundedFunction, iteration: int, tolerance: float, approxdimension: int) = 
     let (defaultCentralDerivation, defaultForwardDerivation, defaultBackwardDerivation)
         = (new NumericalDerivative(3,1), new NumericalDerivative(3,0), new NumericalDerivative(3,2))
-    let bounds = f.Bounds
+    let mutable m_Bounds = f.Bounds
     let mutable m_DerivationMethod =
         new System.Func<float[], float[]>(fun xs -> Array.init f.ParameterNum
-                                                        (fun i -> let (lbound, ubound) = bounds.[i]
+                                                        (fun i -> let (lbound, ubound) = m_Bounds.[i]
                                                                   if xs.[i] - lbound < Double.Epsilon then defaultForwardDerivation.EvaluatePartialDerivative(f.Func, xs, i, 1)
                                                                   else if ubound - xs.[i] < Double.Epsilon then defaultBackwardDerivation.EvaluatePartialDerivative(f.Func, xs, i, 1)
                                                                   else defaultCentralDerivation.EvaluatePartialDerivative(f.Func, xs, i, 1) ) )
@@ -314,6 +319,8 @@ type LBFGSB(f: BoundedFunction, iteration: int, tolerance: float, approxdimensio
     let mutable valueCorrections = new Correction(approxBFGSMatrixDimension)
     // Matrix $Y_k$
     let mutable gradientCorrections = new Correction(approxBFGSMatrixDimension)
+    
+    let mutable m_WriteTrace = NoTrace
 
     /// Fields for optimization.
     member this.BoundedFunction = f
@@ -324,7 +331,7 @@ type LBFGSB(f: BoundedFunction, iteration: int, tolerance: float, approxdimensio
     // Variable $m$
     member this.ApproxBFGSMatrixDimension with get () = approxBFGSMatrixDimension and set (v) = approxBFGSMatrixDimension <- v
     // Bounds of variables
-    member this.ValueBounds with get() = f.Bounds
+    member this.ValueBounds with get() = m_Bounds
     // Debug
     member this.ValueCorrection with get() = valueCorrections and set v = valueCorrections <- v
     member this.GradientCorrection with get() = gradientCorrections and set v = gradientCorrections <- v
@@ -336,6 +343,15 @@ type LBFGSB(f: BoundedFunction, iteration: int, tolerance: float, approxdimensio
         LBFGSB(f, iteration, tolerance, 3)
     new(f: System.Func<float array, float>, bounds: (float * float) array, iteration: int, tolerance: float) =
         LBFGSB(f, bounds, iteration, tolerance, 3)
+
+    member this.TraceToStdOut = 
+        do m_WriteTrace <- StdOut
+
+    member this.TraceToTextWriter (writer: System.IO.TextWriter) =
+        do m_WriteTrace <- TextWriter(writer)
+
+    member this.TraceNone =
+        do m_WriteTrace <- NoTrace
 
     member this.FSResultToCSResult(result: LBFGSBStatus<float[] * float * float[,]>) : LBFGSBResult =
         match result with
@@ -456,18 +472,43 @@ type LBFGSB(f: BoundedFunction, iteration: int, tolerance: float, approxdimensio
 
             (1.0 / theta) * matI + matBarW * matBarM * matBarW.Transpose()
 
+    member private this.Trace (writeline: string -> unit) (values: float array) (gradients: float array) (sw: System.Diagnostics.Stopwatch) =
+        let (vecValues, vecGradients, inverseBFGSMatrix) =
+            (DenseVector.ofArray values), (DenseVector.ofArray gradients), (this.InverseOfBFGSMatrix())
+        do writeline("---- Tracing Log of BFGS Optimization ----")
+        do writeline("Elapsed Time:")
+        do writeline(sw.Elapsed.ToString())
+        do writeline("Estimated Parameters:")
+        writeline(vecValues.ToVectorString())
+        do writeline("Gradients:")
+        writeline(vecGradients.ToVectorString())
+        do writeline("Inverted Weight Matrix:")
+        writeline(inverseBFGSMatrix.ToMatrixString(inverseBFGSMatrix.RowCount, inverseBFGSMatrix.ColumnCount, null))
+        do writeline("")
+
     // Minimization
     member this.Minimize(initVal: float array) =
         let lineSearch = new Optimization.LineSearch(this.BoundedFunction.Func, 1.0, 10.0, 10)
         let arrayDiff = Array.map2 (fun x y -> x - y)
-    
+        let sw = new System.Diagnostics.Stopwatch()
+        do sw.Start()
+
         let initGradients = this.DerivationMethod.Invoke(initVal)
 
         let rec search (currentValues: float array) (currentGradients: float array) (currentFreeVariableIndice: int array) (count: int) =
             let freeVarDirections = Array.map (fun fi -> currentGradients.[fi]) currentFreeVariableIndice
+
+            match m_WriteTrace with
+            | StdOut -> do this.Trace (System.Console.WriteLine) currentValues currentGradients sw
+            | TextWriter(writer) -> do this.Trace writer.WriteLine currentValues currentGradients sw
+                                    do writer.Flush()
+            | NoTrace -> ()
+
             if this.Tolerance > AppendixFunctions.InfinityNormOfArray freeVarDirections then
+                do sw.Stop()
                 Converged(currentValues, this.BoundedFunction.EvaluateRaw(currentValues), this.InverseOfBFGSMatrix().ToArray())
             else if count >= this.Iteration then
+                do sw.Stop()
                 NotConverged(currentValues, this.BoundedFunction.EvaluateRaw(currentValues), this.InverseOfBFGSMatrix().ToArray())
             else
                 let (subOptimizationResults, freeVarIndice) =
@@ -476,8 +517,8 @@ type LBFGSB(f: BoundedFunction, iteration: int, tolerance: float, approxdimensio
                         -> let bfgsMatrix = this.BFGSMatrix()
                            let (gcp, freeIndice) =
                                 match GeneralizedCauchyPoint.SearchWithBFGSMatrix currentValues currentGradients this.ValueBounds bfgsMatrix with
-                                | Some(cp, indice) -> (cp, indice)
-                                | None -> failwith "Cannot find GCP."   // Change to use discrimanated union
+                                | Normal(cp, indice) -> (cp, indice)
+                                | Corner(xs) -> failwith "Cannot find GCP."   // Change to use discrimanated union
                            ((DirectPrimalMethod.SearchWithBFGSMatrix currentValues gcp freeIndice currentGradients this.ValueBounds bfgsMatrix), freeIndice)
                     | DirectPrimal when this.ValueCorrection.CurrentSize = 0 || this.GradientCorrection.CurrentSize = 0
                         -> failwith "Information about correction of value and gradient is invalid."
@@ -486,24 +527,29 @@ type LBFGSB(f: BoundedFunction, iteration: int, tolerance: float, approxdimensio
                            let (matW, matM) = (this.WMatrix(theta), this.MMatrix(-matD, matL, matS, theta))
                            let (gcp, freeIndice, vecC) =
                                 match GeneralizedCauchyPoint.Search currentValues currentGradients this.ValueBounds theta matW matM with
-                                | Some(cp, indice, c) -> (cp, indice, c)
-                                | None -> failwith "Cannot find GCP."   // Change to use discrimanated union
-                           ((DirectPrimalMethod.Search currentValues gcp freeIndice currentGradients this.ValueBounds theta matM matW vecC), freeIndice)
+                                | Normal(cp, indice, c) -> (cp, indice, c)
+                                | Corner(xs) -> failwith "Cannot find GCP."   // Change to use discrimanated union
+                           ((DirectPrimalMethod.Search currentValues gcp freeIndice currentGradients this.ValueBounds theta matW matM vecC), freeIndice)
                 
-                let (subXs, subDirs) = subOptimizationResults                                             
+                let (subXs, subDirs) = subOptimizationResults                   
                 let step =
-                    if Array.forall (fun x -> (abs x) < Double.Epsilon) subDirs then 0.0
+                    if (Array.forall (fun d -> (abs d) < Double.Epsilon) subDirs ) || count = 0 then 0.0
                     else
-                        lineSearch.Search subXs subDirs
-                let newx = Array.map2 (fun x d -> x + step * d) subXs subDirs
-                let newg = this.DerivationMethod.Invoke(newx)
+                        let negSubDirs = Array.map(fun d -> -d) subDirs
+                        lineSearch.Search subXs negSubDirs
+                let newValues = Array.map3 (fun x d bounds -> let newValue = x - step * d
+                                                              let (lbound, ubound) = bounds
+                                                              if newValue < lbound then lbound
+                                                              else if newValue > ubound then ubound
+                                                              else newValue) subXs subDirs this.ValueBounds
+                let newGradients = this.DerivationMethod.Invoke(newValues)
 
-                let (newxd, newgd) = ((arrayDiff newx currentValues), (arrayDiff newg currentGradients))
+                let (newxd, newgd) = ((arrayDiff newValues currentValues), (arrayDiff newGradients currentGradients))
                 if (AppendixFunctions.InnerProductOfTwoArrays newxd newgd > Double.Epsilon * (AppendixFunctions.L2NormOfArray newgd)) then
                     do this.ValueCorrection.Add(newxd)
                     do this.GradientCorrection.Add(newgd)
 
-                search newx newg freeVarIndice (count + 1)
+                search newValues newGradients freeVarIndice (count + 1)
 
         search initVal initGradients (Array.init initVal.Length (fun i -> i)) 0
 

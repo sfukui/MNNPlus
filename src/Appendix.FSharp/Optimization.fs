@@ -453,7 +453,7 @@ type BFGS (f: System.Func<float[], float>, iteration: int, tolerance: float) =
         do writeline("")
 
     member this.Minimize(initVal: float[]) =
-        let sw = new System.Diagnostics.Stopwatch();
+        let sw = new System.Diagnostics.Stopwatch()
         do sw.Start()
 
         let rec search (winv: Matrix<float>) (r: Vector<float>) (g: Vector<float>) count = 
