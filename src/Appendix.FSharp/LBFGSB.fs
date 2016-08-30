@@ -44,7 +44,11 @@ module internal AppendixFunctions =
     let InfinityNormOfArray (values: float array) =
         values |> Array.map (fun v -> abs v) |> Array.max
 
-    // Inner product between twe arrays.
+    // Pairwise difference between two arrays.
+    let PairwiseDifferenceOfTwoArrays =
+        Array.map2 (fun x y -> x - y)
+
+    // Inner product between two arrays.
     let InnerProductOfTwoArrays (values1: float array) (values2: float array) =
                 Array.map2 (fun a1 a2 -> a1 * a2) values1 values2 |> Array.sum
     
@@ -57,6 +61,11 @@ module internal AppendixFunctions =
                         let (matJ,subJ) = if j < blocks.[0].[0].ColumnCount then (0,j) else (1, j - blocks.[0].[0].ColumnCount)
                         let curMat = blocks.[matI].[matJ]
                         curMat.At(subI,subJ))
+
+    // Check whether a float number is invalid.  
+    let IsInvalidFloat (x: float) =
+        if System.Double.IsInfinity x || System.Double.IsNaN x then true
+        else false
 
 type internal GeneralizedCauchyPointResult<'a, 'b> =
     | Normal of 'a
@@ -288,19 +297,46 @@ type BoundedFunction(f: System.Func<float array, float>, bounds: (float * float)
 
 [<CompiledName "LBFGSBStatusFSharp">]
 type LBFGSBStatus<'a> =
-    Converged of 'a
+    | InProcess of 'a
+    | Converged of 'a
     | NotConverged of 'a
     | FunctionValueInvalid
     | GradientInvalid
-    | WeightMatrixInvalid
+    | BFGSMatrixInvalid
     | LineSearchFailure
-    | InvertedWeightMatrixInvalid
+    | InvertedBFGSMatrixInvalid
     | NoGeneralizedCauchyPoint
+    | BlockOfBFGSMatrixInvalid
+    | BlockOfInvertedBFGSMatrixInvalid
+    | CorrectionHistoryInvalid
+    | ConvergedAtCorner of 'a
 
 [<CompiledName "LBFGSBResultFSharp">]
-type LBFGSBResult = { Status: int; Parameters: float[]; FunctionValue: System.Nullable<float>; InvertedWeightMatrix: float[,] }
+type LBFGSBResult = { Status: int; Parameters: float[]; FunctionValue: System.Nullable<float>; InvertedBFGSMatrix: float[,] }
 
-// Add: New builder for L-BFGS-B optimization.
+type LBFGSSearchBuilder() =
+    member this.Bind(result: LBFGSBStatus<'a>, rest: 'a -> LBFGSBStatus<'b>) : LBFGSBStatus<'b> =
+        match result with
+        | InProcess(x) -> rest x
+        | Converged(x) -> failwith "\"Converged\" case cannot be passed to bind function."
+        | NotConverged(x) -> failwith "\"NotConverged\" case cannot be passed to bind function."
+        | FunctionValueInvalid -> FunctionValueInvalid
+        | GradientInvalid -> GradientInvalid
+        | BFGSMatrixInvalid -> BFGSMatrixInvalid
+        | LineSearchFailure -> LineSearchFailure
+        | InvertedBFGSMatrixInvalid -> InvertedBFGSMatrixInvalid
+        | NoGeneralizedCauchyPoint -> NoGeneralizedCauchyPoint
+        | BlockOfBFGSMatrixInvalid -> BlockOfBFGSMatrixInvalid
+        | BlockOfInvertedBFGSMatrixInvalid -> BlockOfInvertedBFGSMatrixInvalid
+        | CorrectionHistoryInvalid -> CorrectionHistoryInvalid
+        | ConvergedAtCorner(x)-> failwith "\"ConvergedAtCorner\" case cannot be passed to bind function."
+
+    member this.ReturnFrom(result: LBFGSBStatus<'a>) : LBFGSBStatus<'a> =
+        result
+
+    member this.Return(result: 'a) : LBFGSBStatus<'a> =
+        NotConverged(result)
+
 
 [<CompiledName "LBFGSBFSharp">]
 type LBFGSB(f: BoundedFunction, iteration: int, tolerance: float, approxdimension: int) = 
@@ -313,12 +349,13 @@ type LBFGSB(f: BoundedFunction, iteration: int, tolerance: float, approxdimensio
                                                                   if xs.[i] - lbound < Double.Epsilon then defaultForwardDerivation.EvaluatePartialDerivative(f.Func, xs, i, 1)
                                                                   else if ubound - xs.[i] < Double.Epsilon then defaultBackwardDerivation.EvaluatePartialDerivative(f.Func, xs, i, 1)
                                                                   else defaultCentralDerivation.EvaluatePartialDerivative(f.Func, xs, i, 1) ) )
+    let mutable m_LineSearchMethod = new Optimization.LineSearch(f.Func, 1.0, 10.0, 10)
     let mutable m_SubOptimizationMethod = DirectPrimal
-    let mutable approxBFGSMatrixDimension = approxdimension
+    let mutable m_ApproxBFGSMatrixDimension = approxdimension
     // Matrix $S_k$
-    let mutable valueCorrections = new Correction(approxBFGSMatrixDimension)
+    let mutable m_ValueCorrections = new Correction(m_ApproxBFGSMatrixDimension)
     // Matrix $Y_k$
-    let mutable gradientCorrections = new Correction(approxBFGSMatrixDimension)
+    let mutable m_GradientCorrections = new Correction(m_ApproxBFGSMatrixDimension)
     
     let mutable m_WriteTrace = NoTrace
 
@@ -329,12 +366,11 @@ type LBFGSB(f: BoundedFunction, iteration: int, tolerance: float, approxdimensio
     member this.DerivationMethod with get() = m_DerivationMethod and set v = m_DerivationMethod <- v
     member this.SubOptimizationMethod with get() = m_SubOptimizationMethod and set v = m_SubOptimizationMethod <- v
     // Variable $m$
-    member this.ApproxBFGSMatrixDimension with get () = approxBFGSMatrixDimension and set (v) = approxBFGSMatrixDimension <- v
+    member this.ApproxBFGSMatrixDimension with get () = m_ApproxBFGSMatrixDimension and set (v) = m_ApproxBFGSMatrixDimension <- v
     // Bounds of variables
     member this.ValueBounds with get() = m_Bounds
-    // Debug
-    member this.ValueCorrection with get() = valueCorrections and set v = valueCorrections <- v
-    member this.GradientCorrection with get() = gradientCorrections and set v = gradientCorrections <- v
+    // Line search method
+    member this.LineSearchMethod with get() = m_LineSearchMethod and set (v) = m_LineSearchMethod <- v
 
     new(f: System.Func<float array, float>, bounds: (float * float) array, iteration: int, tolerance: float, approxdimension: int) =
         let boundedFunc = new BoundedFunction(f, bounds)
@@ -355,66 +391,71 @@ type LBFGSB(f: BoundedFunction, iteration: int, tolerance: float, approxdimensio
 
     member this.FSResultToCSResult(result: LBFGSBStatus<float[] * float * float[,]>) : LBFGSBResult =
         match result with
-            Converged((x, f, w)) -> { Status = 0; Parameters = x; FunctionValue = new System.Nullable<float>(f); InvertedWeightMatrix = w }
-            | NotConverged((x, f, w)) -> { Status = 1; Parameters = x; FunctionValue = new System.Nullable<float>(f); InvertedWeightMatrix = w }
-            | FunctionValueInvalid -> { Status = 2; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
-            | GradientInvalid -> { Status = 3; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
-            | WeightMatrixInvalid -> { Status = 4; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
-            | LineSearchFailure -> { Status = 5; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
-            | InvertedWeightMatrixInvalid -> { Status = 6; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
-            | NoGeneralizedCauchyPoint -> { Status = 7; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
+        | InProcess(_) -> failwith "\"InProcess\" case never become the result of minimization."
+        | Converged((x, f, w)) -> { Status = 0; Parameters = x; FunctionValue = new System.Nullable<float>(f); InvertedBFGSMatrix = w }
+        | NotConverged((x, f, w)) -> { Status = 1; Parameters = x; FunctionValue = new System.Nullable<float>(f); InvertedBFGSMatrix = w }
+        | FunctionValueInvalid -> { Status = 2; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedBFGSMatrix = null }
+        | GradientInvalid -> { Status = 3; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedBFGSMatrix = null }
+        | BFGSMatrixInvalid -> { Status = 4; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedBFGSMatrix = null }
+        | LineSearchFailure -> { Status = 5; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedBFGSMatrix = null }
+        | InvertedBFGSMatrixInvalid -> { Status = 6; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedBFGSMatrix = null }
+        | NoGeneralizedCauchyPoint -> { Status = 7; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedBFGSMatrix = null }
+        | BlockOfBFGSMatrixInvalid -> { Status = 8; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedBFGSMatrix = null }
+        | BlockOfInvertedBFGSMatrixInvalid -> { Status = 9; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedBFGSMatrix = null }
+        | CorrectionHistoryInvalid -> { Status = 10; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedBFGSMatrix = null }
+        | ConvergedAtCorner((x, f, w)) -> { Status = 11; Parameters = x; FunctionValue = new System.Nullable<float>(f); InvertedBFGSMatrix = w }
 
     /// Fields and methods for limited memory BFGS matrix computation. 
     // Multiplier $\theta$ calculator.
     member this.Theta() =
-        if valueCorrections.CurrentSize = 0 || gradientCorrections.CurrentSize = 0
+        if m_ValueCorrections.CurrentSize = 0 || m_GradientCorrections.CurrentSize = 0
             then 1.0
         else
-            let (newestS, newestY) = (valueCorrections.[valueCorrections.CurrentSize - 1], gradientCorrections.[gradientCorrections.CurrentSize - 1])
+            let (newestS, newestY) = (m_ValueCorrections.[m_ValueCorrections.CurrentSize - 1], m_GradientCorrections.[m_GradientCorrections.CurrentSize - 1])
             (AppendixFunctions.InnerProductOfTwoArrays newestY newestY) / (AppendixFunctions.InnerProductOfTwoArrays newestY newestS)        
 
     // Matrix $L_k$ calculator.
     member this.LMatrix() =
-        if valueCorrections.CurrentSize = 0 || gradientCorrections.CurrentSize = 0
+        if m_ValueCorrections.CurrentSize = 0 || m_GradientCorrections.CurrentSize = 0
             then failwith "There exist no correnctions about value/gradient."
         else
-            DenseMatrix.init valueCorrections.CurrentSize gradientCorrections.CurrentSize
-                (fun i j -> if i > j then AppendixFunctions.InnerProductOfTwoArrays valueCorrections.[i] gradientCorrections.[j] else 0.0)
+            DenseMatrix.init m_ValueCorrections.CurrentSize m_GradientCorrections.CurrentSize
+                (fun i j -> if i > j then AppendixFunctions.InnerProductOfTwoArrays m_ValueCorrections.[i] m_GradientCorrections.[j] else 0.0)
 
     // Matrix $R_k$ calculator.
     member this.RMatrix() =
-        if valueCorrections.CurrentSize = 0 || gradientCorrections.CurrentSize = 0
+        if m_ValueCorrections.CurrentSize = 0 || m_GradientCorrections.CurrentSize = 0
             then failwith "There exist no correnctions about value/gradient."
         else
-            DenseMatrix.init valueCorrections.CurrentSize gradientCorrections.CurrentSize
-                (fun i j -> if i <= j then AppendixFunctions.InnerProductOfTwoArrays valueCorrections.[i] gradientCorrections.[j] else 0.0)        
+            DenseMatrix.init m_ValueCorrections.CurrentSize m_GradientCorrections.CurrentSize
+                (fun i j -> if i <= j then AppendixFunctions.InnerProductOfTwoArrays m_ValueCorrections.[i] m_GradientCorrections.[j] else 0.0)        
 
     // Matrix $D_k$ calculator.
     member this.DMatrix() =
-        if valueCorrections.CurrentSize = 0 || gradientCorrections.CurrentSize = 0
+        if m_ValueCorrections.CurrentSize = 0 || m_GradientCorrections.CurrentSize = 0
             then failwith "There exist no correnctions about value/gradient."
         else
-            DenseMatrix.initDiag valueCorrections.CurrentSize gradientCorrections.CurrentSize
-                (fun i -> AppendixFunctions.InnerProductOfTwoArrays valueCorrections.[i] gradientCorrections.[i])
+            DenseMatrix.initDiag m_ValueCorrections.CurrentSize m_GradientCorrections.CurrentSize
+                (fun i -> AppendixFunctions.InnerProductOfTwoArrays m_ValueCorrections.[i] m_GradientCorrections.[i])
 
     // Matrix $W_k$ calculator.
     member this.WMatrix(theta: float) =
-        if valueCorrections.CurrentSize = 0 || gradientCorrections.CurrentSize = 0
+        if m_ValueCorrections.CurrentSize = 0 || m_GradientCorrections.CurrentSize = 0
             then failwith "There exist no correnctions about value/gradient."
         else
-            let (matY, thetaMatS) = (gradientCorrections.GetMatrix(), theta * valueCorrections.GetMatrix())
+            let (matY, thetaMatS) = (m_GradientCorrections.GetMatrix(), theta * m_ValueCorrections.GetMatrix())
             matY.Append(thetaMatS)
 
     // Matrix $\bar{W}_k$ calculator.
     member this.BarWMatrix(theta: float) =
-        if valueCorrections.CurrentSize = 0 || gradientCorrections.CurrentSize = 0
+        if m_ValueCorrections.CurrentSize = 0 || m_GradientCorrections.CurrentSize = 0
             then failwith "There exist no correnctions about value/gradient."
         else
-            let (rThetaMatY, MatS) = ((1.0 / theta) * gradientCorrections.GetMatrix(), valueCorrections.GetMatrix())
+            let (rThetaMatY, MatS) = ((1.0 / theta) * m_GradientCorrections.GetMatrix(), m_ValueCorrections.GetMatrix())
             rThetaMatY.Append(MatS)
 
     // An matrix($M_k$) in BFGS matrix approximation.
-    member this.MMatrix(negMatD: Matrix<float>, matL: Matrix<float>, matS: Matrix<float>, theta: float) : Matrix<float> =
+    member this.MMatrix(negMatD: Matrix<float>, matL: Matrix<float>, matS: Matrix<float>, theta: float) : LBFGSBStatus<Matrix<float>> =
         if negMatD.RowCount <> matL.ColumnCount || matL.RowCount <> matS.ColumnCount || negMatD.ColumnCount <> matL.ColumnCount || matL.RowCount <> matS.ColumnCount
             then failwith "One or more sets of block have different rows/columns each other."
         else
@@ -423,25 +464,31 @@ type LBFGSB(f: BoundedFunction, iteration: int, tolerance: float, approxdimensio
 
             let inverseNegMatD = DenseMatrix.initDiag negMatD.RowCount negMatD.ColumnCount (fun i -> 1.0 / negMatD.At(i, i))
             let temp1 = (thetaSS - (matL * inverseNegMatD * matLT)).Inverse()
-            AppendixFunctions.CreateMatrixFrom2x2Blocks
-                (inverseNegMatD + inverseNegMatD * matLT * temp1 * matL * inverseNegMatD) (-inverseNegMatD * matLT * temp1)
-                (-temp1 * matL * inverseNegMatD)                                          (temp1)
+            if Matrix.exists AppendixFunctions.IsInvalidFloat temp1 then BlockOfBFGSMatrixInvalid
+            else
+                AppendixFunctions.CreateMatrixFrom2x2Blocks
+                    (inverseNegMatD + inverseNegMatD * matLT * temp1 * matL * inverseNegMatD) (-inverseNegMatD * matLT * temp1)
+                    (-temp1 * matL * inverseNegMatD)                                          (temp1)
+                    |> InProcess
     
-    member this.BarMMatrix(matD: Matrix<float>, matR: Matrix<float>, matY: Matrix<float>, theta: float) : Matrix<float> =
+    member this.BarMMatrix(matD: Matrix<float>, matR: Matrix<float>, matY: Matrix<float>, theta: float) : LBFGSBStatus<Matrix<float>> =
         if matD.RowCount <> matR.RowCount || matY.ColumnCount <> matD.ColumnCount
             then failwith "One or more sets of block have different rows/columns each other."
         else
             let invMatR = matR.Inverse()
-            let negInvMatR = (-1.0) * invMatR
-            let temp1 = matD + (1.0 / theta) * (matY.Transpose() * matY)
-            let block22 = invMatR.Transpose() * temp1 * invMatR
-            AppendixFunctions.CreateMatrixFrom2x2Blocks
-                (DenseMatrix.init negInvMatR.RowCount negInvMatR.RowCount (fun _ _ -> 0.0))  (negInvMatR)
-                (negInvMatR.Transpose())                                           (block22) 
+            if Matrix.exists AppendixFunctions.IsInvalidFloat invMatR then BlockOfInvertedBFGSMatrixInvalid
+            else
+                let negInvMatR = (-1.0) * invMatR
+                let temp1 = matD + (1.0 / theta) * (matY.Transpose() * matY)
+                let block22 = invMatR.Transpose() * temp1 * invMatR
+                AppendixFunctions.CreateMatrixFrom2x2Blocks
+                    (DenseMatrix.init negInvMatR.RowCount negInvMatR.RowCount (fun _ _ -> 0.0))  (negInvMatR)
+                    (negInvMatR.Transpose())                                                     (block22)
+                    |> InProcess
 
     // BFGS matrix($B_k$) computation
-    member this.BFGSMatrix() =
-        if valueCorrections.CurrentSize = 0 || gradientCorrections.CurrentSize = 0 then DenseMatrix.identity f.ParameterNum
+    member this.BFGSMatrix() : LBFGSBStatus<Matrix<float>> =
+        if m_ValueCorrections.CurrentSize = 0 || m_GradientCorrections.CurrentSize = 0 then DenseMatrix.identity f.ParameterNum |> InProcess
         else
             // Variable $\theta$
             let theta = this.Theta()
@@ -452,12 +499,15 @@ type LBFGSB(f: BoundedFunction, iteration: int, tolerance: float, approxdimensio
             // Matrix $W_k$
             let matW = this.WMatrix(theta)
             // Matrix $M$ calculated from other matrices.
-            let matM = this.MMatrix(-matD, matL, valueCorrections.GetMatrix(), theta)
-
-            theta * matI - matW * matM * matW.Transpose()
+            let optMatM = this.MMatrix(-matD, matL, m_ValueCorrections.GetMatrix(), theta)
+            
+            match optMatM with
+            | InProcess(matM) -> theta * matI - matW * matM * matW.Transpose() |> InProcess
+            | BlockOfBFGSMatrixInvalid -> BFGSMatrixInvalid
+            | _ -> failwith "Unexpected error in matrix $M$ calculation."
     
-    member this.InverseOfBFGSMatrix() =
-        if valueCorrections.CurrentSize = 0 || gradientCorrections.CurrentSize = 0 then DenseMatrix.identity f.ParameterNum
+    member this.InverseOfBFGSMatrix() : LBFGSBStatus<Matrix<float>> =
+        if m_ValueCorrections.CurrentSize = 0 || m_GradientCorrections.CurrentSize = 0 then DenseMatrix.identity f.ParameterNum |> InProcess
         else
             // Variable $\theta$
             let theta = this.Theta()
@@ -468,9 +518,12 @@ type LBFGSB(f: BoundedFunction, iteration: int, tolerance: float, approxdimensio
             // Matrix $\bar{W}_k$
             let matBarW = this.BarWMatrix(theta)
             // Matrix $\bar{M}$ calculated from other matrices.
-            let matBarM = this.BarMMatrix(matD, matR, gradientCorrections.GetMatrix(), theta)
+            let optMatBarM = this.BarMMatrix(matD, matR, m_GradientCorrections.GetMatrix(), theta)
 
-            (1.0 / theta) * matI + matBarW * matBarM * matBarW.Transpose()
+            match optMatBarM with
+            | InProcess(matBarM) -> (1.0 / theta) * matI + matBarW * matBarM * matBarW.Transpose() |> InProcess
+            | BlockOfInvertedBFGSMatrixInvalid -> InvertedBFGSMatrixInvalid
+            | _ -> failwith "Unexpected error in matrix $M$ calculation."
 
     member private this.Trace (writeline: string -> unit) (values: float array) (gradients: float array) (sw: System.Diagnostics.Stopwatch) =
         let (vecValues, vecGradients, inverseBFGSMatrix) =
@@ -482,14 +535,39 @@ type LBFGSB(f: BoundedFunction, iteration: int, tolerance: float, approxdimensio
         writeline(vecValues.ToVectorString())
         do writeline("Gradients:")
         writeline(vecGradients.ToVectorString())
-        do writeline("Inverted Weight Matrix:")
-        writeline(inverseBFGSMatrix.ToMatrixString(inverseBFGSMatrix.RowCount, inverseBFGSMatrix.ColumnCount, null))
+        do writeline("Inverted BFGS Matrix:")
+        match inverseBFGSMatrix with
+        | InProcess(mat) -> writeline(mat.ToMatrixString(mat.RowCount, mat.ColumnCount, null))
+        | _ -> writeline("Inverted BFGS matrix could not be calculated.")
         do writeline("")
+
+    member private this.LineSearch(subOptimizedValues: float array, subOptimizedDirections: float array, count: int) : LBFGSBStatus<(float array) * (float array)> =  
+        try
+            let step =
+                if (Array.forall (fun d -> (abs d) < Double.Epsilon) subOptimizedDirections ) || count = 0 then 0.0
+                else
+                    let negSubDirs = Array.map(fun d -> -d) subOptimizedDirections
+                    this.LineSearchMethod.Search subOptimizedValues negSubDirs
+            let newValues = Array.map3 (fun x d bounds -> let newValue = x - step * d
+                                                          let (lbound, ubound) = bounds
+                                                          if newValue < lbound then lbound
+                                                          else if newValue > ubound then ubound
+                                                          else newValue) subOptimizedValues subOptimizedDirections this.ValueBounds
+            let newGradients = this.DerivationMethod.Invoke(newValues)
+            InProcess(newValues, newGradients)     
+        with
+            | ex -> LineSearchFailure
+
+    member private this.CorrectionUpdate(currentValues: float array, currentGradients: float array, newValues: float array, newGradients: float array) : unit =
+        let (newValuedDiff, newGradientsDiff) = ((AppendixFunctions.PairwiseDifferenceOfTwoArrays newValues currentValues),
+                                                 (AppendixFunctions.PairwiseDifferenceOfTwoArrays newGradients currentGradients))
+        if (AppendixFunctions.InnerProductOfTwoArrays newValuedDiff newGradientsDiff > Double.Epsilon * (AppendixFunctions.L2NormOfArray newGradientsDiff)) then
+            do m_ValueCorrections.Add(newValuedDiff)
+            do m_GradientCorrections.Add(newGradientsDiff)
 
     // Minimization
     member this.Minimize(initVal: float array) =
-        let lineSearch = new Optimization.LineSearch(this.BoundedFunction.Func, 1.0, 10.0, 10)
-        let arrayDiff = Array.map2 (fun x y -> x - y)
+        let lbfgsbSearch = new LBFGSSearchBuilder()
         let sw = new System.Diagnostics.Stopwatch()
         do sw.Start()
 
@@ -504,52 +582,98 @@ type LBFGSB(f: BoundedFunction, iteration: int, tolerance: float, approxdimensio
                                     do writer.Flush()
             | NoTrace -> ()
 
-            if this.Tolerance > AppendixFunctions.InfinityNormOfArray freeVarDirections then
-                do sw.Stop()
-                Converged(currentValues, this.BoundedFunction.EvaluateRaw(currentValues), this.InverseOfBFGSMatrix().ToArray())
-            else if count >= this.Iteration then
-                do sw.Stop()
-                NotConverged(currentValues, this.BoundedFunction.EvaluateRaw(currentValues), this.InverseOfBFGSMatrix().ToArray())
-            else
-                let (subOptimizationResults, freeVarIndice) =
+            lbfgsbSearch {
+                if freeVarDirections.Length > 0 && this.Tolerance > AppendixFunctions.InfinityNormOfArray freeVarDirections then
+                    do sw.Stop()
+                    let! inverseBFGSMatrix = this.InverseOfBFGSMatrix()
+                    return! Converged(currentValues, this.BoundedFunction.EvaluateRaw(currentValues), inverseBFGSMatrix.ToArray())
+                else if count >= this.Iteration then
+                    do sw.Stop()
+                    let! inverseBFGSMatrix = this.InverseOfBFGSMatrix()
+                    return! NotConverged(currentValues, this.BoundedFunction.EvaluateRaw(currentValues), inverseBFGSMatrix.ToArray())
+                else
                     match this.SubOptimizationMethod with
-                    | DirectPrimal when this.ValueCorrection.CurrentSize = 0 && this.GradientCorrection.CurrentSize = 0
-                        -> let bfgsMatrix = this.BFGSMatrix()
-                           let (gcp, freeIndice) =
-                                match GeneralizedCauchyPoint.SearchWithBFGSMatrix currentValues currentGradients this.ValueBounds bfgsMatrix with
-                                | Normal(cp, indice) -> (cp, indice)
-                                | Corner(xs) -> failwith "Cannot find GCP."   // Change to use discrimanated union
-                           ((DirectPrimalMethod.SearchWithBFGSMatrix currentValues gcp freeIndice currentGradients this.ValueBounds bfgsMatrix), freeIndice)
-                    | DirectPrimal when this.ValueCorrection.CurrentSize = 0 || this.GradientCorrection.CurrentSize = 0
-                        -> failwith "Information about correction of value and gradient is invalid."
-                    | DirectPrimal
-                        -> let (theta, matD, matL, matS) = (this.Theta(), this.DMatrix(), this.LMatrix(), this.ValueCorrection.GetMatrix())
-                           let (matW, matM) = (this.WMatrix(theta), this.MMatrix(-matD, matL, matS, theta))
-                           let (gcp, freeIndice, vecC) =
-                                match GeneralizedCauchyPoint.Search currentValues currentGradients this.ValueBounds theta matW matM with
-                                | Normal(cp, indice, c) -> (cp, indice, c)
-                                | Corner(xs) -> failwith "Cannot find GCP."   // Change to use discrimanated union
-                           ((DirectPrimalMethod.Search currentValues gcp freeIndice currentGradients this.ValueBounds theta matW matM vecC), freeIndice)
-                
-                let (subXs, subDirs) = subOptimizationResults                   
-                let step =
-                    if (Array.forall (fun d -> (abs d) < Double.Epsilon) subDirs ) || count = 0 then 0.0
-                    else
-                        let negSubDirs = Array.map(fun d -> -d) subDirs
-                        lineSearch.Search subXs negSubDirs
-                let newValues = Array.map3 (fun x d bounds -> let newValue = x - step * d
-                                                              let (lbound, ubound) = bounds
-                                                              if newValue < lbound then lbound
-                                                              else if newValue > ubound then ubound
-                                                              else newValue) subXs subDirs this.ValueBounds
-                let newGradients = this.DerivationMethod.Invoke(newValues)
+                    | DirectPrimal ->
+                        if m_ValueCorrections.CurrentSize = 0 && m_GradientCorrections.CurrentSize = 0 then
+                            let! bfgsMatrix = this.BFGSMatrix()
+                            match GeneralizedCauchyPoint.SearchWithBFGSMatrix currentValues currentGradients this.ValueBounds bfgsMatrix with
+                            | Corner(xs) -> if Array.forall2 (fun oldX newX -> abs (oldX - newX) < Double.Epsilon) currentValues xs then
+                                                let! inverseBFGSMatrix = this.InverseOfBFGSMatrix()
+                                                return! ConvergedAtCorner(xs, this.BoundedFunction.EvaluateRaw(xs), inverseBFGSMatrix.ToArray())
+                                            else
+                                                let newGradients = this.DerivationMethod.Invoke(xs)
+                                                return! search xs newGradients Array.empty (count + 1)
+                            | Normal(gcp, freeVarIndice) ->
+                                let (subXs, subDirs) = DirectPrimalMethod.SearchWithBFGSMatrix currentValues gcp freeVarIndice currentGradients this.ValueBounds bfgsMatrix
+                                let! (newValues, newGradients) = this.LineSearch(subXs, subDirs, count)
+                                do this.CorrectionUpdate(currentValues, currentGradients, newValues, newGradients)
+                                return! search newValues newGradients freeVarIndice (count + 1)
+                        else if m_ValueCorrections.CurrentSize = 0 || m_GradientCorrections.CurrentSize = 0 then
+                            return! CorrectionHistoryInvalid
+                        else
+                            let (theta, matD, matL, matS) = (this.Theta(), this.DMatrix(), this.LMatrix(), m_ValueCorrections.GetMatrix())
+                            let matW = this.WMatrix(theta)
+                            let! matM = this.MMatrix(-matD, matL, matS, theta)
+                            match GeneralizedCauchyPoint.Search currentValues currentGradients this.ValueBounds theta matW matM with
+                            | Corner(xs) -> if Array.forall2 (fun oldX newX -> abs (oldX - newX) < Double.Epsilon) currentValues xs then
+                                                let! inverseBFGSMatrix = this.InverseOfBFGSMatrix()
+                                                return! ConvergedAtCorner(xs, this.BoundedFunction.EvaluateRaw(xs), inverseBFGSMatrix.ToArray())
+                                            else
+                                                let newGradients = this.DerivationMethod.Invoke(xs)
+                                                return! search xs newGradients Array.empty (count + 1)
+                            | Normal(gcp, freeVarIndice, vecC) ->
+                                let (subXs, subDirs) = DirectPrimalMethod.Search currentValues gcp freeVarIndice currentGradients this.ValueBounds theta matW matM vecC
+                                let! (newValues, newGradients) = this.LineSearch(subXs, subDirs, count)
+                                do this.CorrectionUpdate(currentValues, currentGradients, newValues, newGradients)
+                                return! search newValues newGradients freeVarIndice (count + 1)
+            }
 
-                let (newxd, newgd) = ((arrayDiff newValues currentValues), (arrayDiff newGradients currentGradients))
-                if (AppendixFunctions.InnerProductOfTwoArrays newxd newgd > Double.Epsilon * (AppendixFunctions.L2NormOfArray newgd)) then
-                    do this.ValueCorrection.Add(newxd)
-                    do this.GradientCorrection.Add(newgd)
-
-                search newValues newGradients freeVarIndice (count + 1)
+//            if this.Tolerance > AppendixFunctions.InfinityNormOfArray freeVarDirections then
+//                do sw.Stop()
+//                Converged(currentValues, this.BoundedFunction.EvaluateRaw(currentValues), this.InverseOfBFGSMatrix().ToArray())
+//            else if count >= this.Iteration then
+//                do sw.Stop()
+//                NotConverged(currentValues, this.BoundedFunction.EvaluateRaw(currentValues), this.InverseOfBFGSMatrix().ToArray())
+//            else
+//                let (subOptimizationResults, freeVarIndice) =
+//                    match this.SubOptimizationMethod with
+//                    | DirectPrimal when m_ValueCorrections.CurrentSize = 0 && m_GradientCorrections.CurrentSize = 0
+//                        -> let bfgsMatrix = this.BFGSMatrix()
+//                           let (gcp, freeIndice) =
+//                                match GeneralizedCauchyPoint.SearchWithBFGSMatrix currentValues currentGradients this.ValueBounds bfgsMatrix with
+//                                | Normal(cp, indice) -> (cp, indice)
+//                                | Corner(xs) -> failwith "Cannot find GCP."   // Change to use discrimanated union
+//                           ((DirectPrimalMethod.SearchWithBFGSMatrix currentValues gcp freeIndice currentGradients this.ValueBounds bfgsMatrix), freeIndice)
+//                    | DirectPrimal when m_ValueCorrections.CurrentSize = 0 || m_GradientCorrections.CurrentSize = 0
+//                        -> failwith "Information about correction of value and gradient is invalid."
+//                    | DirectPrimal
+//                        -> let (theta, matD, matL, matS) = (this.Theta(), this.DMatrix(), this.LMatrix(), m_ValueCorrections.GetMatrix())
+//                           let (matW, matM) = (this.WMatrix(theta), this.MMatrix(-matD, matL, matS, theta))
+//                           let (gcp, freeIndice, vecC) =
+//                                match GeneralizedCauchyPoint.Search currentValues currentGradients this.ValueBounds theta matW matM with
+//                                | Normal(cp, indice, c) -> (cp, indice, c)
+//                                | Corner(xs) -> failwith "Cannot find GCP."   // Change to use discrimanated union
+//                           ((DirectPrimalMethod.Search currentValues gcp freeIndice currentGradients this.ValueBounds theta matW matM vecC), freeIndice)
+//                
+//                let (subXs, subDirs) = subOptimizationResults                   
+//                let step =
+//                    if (Array.forall (fun d -> (abs d) < Double.Epsilon) subDirs ) || count = 0 then 0.0
+//                    else
+//                        let negSubDirs = Array.map(fun d -> -d) subDirs
+//                        this.LineSearchMethod.Search subXs negSubDirs
+//                let newValues = Array.map3 (fun x d bounds -> let newValue = x - step * d
+//                                                              let (lbound, ubound) = bounds
+//                                                              if newValue < lbound then lbound
+//                                                              else if newValue > ubound then ubound
+//                                                              else newValue) subXs subDirs this.ValueBounds
+//                let newGradients = this.DerivationMethod.Invoke(newValues)
+//
+//                let (newxd, newgd) = ((arrayDiff newValues currentValues), (arrayDiff newGradients currentGradients))
+//                if (AppendixFunctions.InnerProductOfTwoArrays newxd newgd > Double.Epsilon * (AppendixFunctions.L2NormOfArray newgd)) then
+//                    do m_ValueCorrections.Add(newxd)
+//                    do m_GradientCorrections.Add(newgd)
+//
+//                search newValues newGradients freeVarIndice (count + 1)
 
         search initVal initGradients (Array.init initVal.Length (fun i -> i)) 0
 

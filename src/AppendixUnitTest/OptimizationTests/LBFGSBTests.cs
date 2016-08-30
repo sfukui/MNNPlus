@@ -67,7 +67,8 @@ namespace MathNet.Numerics.UnitTests.OptimizationTests
         /// <param name="xInit">Initial value of x[0].</param>
         [TestCase(0.0)]
         [TestCase(Math.PI)]
-        [TestCase(9.0)]
+        [TestCase(2.0 * Math.PI)]
+        [TestCase(3.0 * Math.PI)]
         [TestCase(4.0 * Math.PI)]
         public void LBFGSBOptimization(double xInit)
         {

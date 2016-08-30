@@ -63,7 +63,7 @@ namespace MathNet.Numerics.Optimization
             Status = (LBFGSBResultStatus)(result.Status);
             Parameters = result.Parameters;
             FunctionValue = result.FunctionValue;
-            InvertedWeightMatrix = result.InvertedWeightMatrix;
+            InvertedWeightMatrix = result.InvertedBFGSMatrix;
         }
     }
 
