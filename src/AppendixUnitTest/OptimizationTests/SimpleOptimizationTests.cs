@@ -84,7 +84,7 @@ namespace AppendixUnitTest.OptimizationTests
             double[] expectedParams = new double[2] { 1.0, 1.0 };
             var result = bfgs.Minimize(initParams);
 
-            Assert.AreEqual(QuasiNewtonMethodResultStatus.Converged, result.Status);
+            Assert.AreEqual(BFGSResultStatus.Converged, result.Status);
 
             int i = 0;
             while (i < result.Parameters.Length)

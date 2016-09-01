@@ -50,6 +50,9 @@ namespace MathNet.Numerics.UnitTests.OptimizationTests
         [SetUp]
         public void SetUp()
         {
+            var currentPath = System.AppDomain.CurrentDomain.BaseDirectory;
+            System.Environment.CurrentDirectory = currentPath;
+
             using (var reader = new System.IO.StreamReader(@"..\..\TestData\XYData.csv"))
             {
                 while(reader.EndOfStream != true)
@@ -83,7 +86,7 @@ namespace MathNet.Numerics.UnitTests.OptimizationTests
             var nmResult = nm.Minimize(initParameters);
             var bfgsResult = bfgs.Minimize(nmResult.Parameters);
 
-            Assert.AreEqual(QuasiNewtonMethodResultStatus.Converged, bfgsResult.Status);
+            Assert.AreEqual(BFGSResultStatus.Converged, bfgsResult.Status);
 
             int i = 0;
             double delta = 0.0;
@@ -162,6 +165,9 @@ namespace MathNet.Numerics.UnitTests.OptimizationTests
         [SetUp]
         public void SetUp()
         {
+            var currentPath = System.AppDomain.CurrentDomain.BaseDirectory;
+            System.Environment.CurrentDirectory = currentPath;
+
             using (var reader = new System.IO.StreamReader(@"..\..\TestData\GB2Sample.csv"))
             {
                 while(reader.EndOfStream != true)

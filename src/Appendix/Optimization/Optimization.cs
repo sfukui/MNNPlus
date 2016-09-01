@@ -158,30 +158,31 @@ namespace MathNet.Numerics.Optimization
         }
     }
 
-    public class QuasiNewtonMethodResult
+    public class BFGSResult
     {
-        public QuasiNewtonMethodResultStatus Status { get; private set; }
+        public BFGSResultStatus Status { get; private set; }
         public double[] Parameters { get; private set; }
         public double? FunctionValue { get; private set; }
         public double[,] InvertedWeightMatrix { get; private set; }
 
-        public QuasiNewtonMethodResult(QuasiNewtonMethodResultFSharp result)
+        public BFGSResult(BFGSResultFSharp result)
         {
-            Status = (QuasiNewtonMethodResultStatus)(result.Status);
+            Status = (BFGSResultStatus)(result.Status);
             Parameters = result.Parameters;
             FunctionValue = result.FunctionValue;
             InvertedWeightMatrix = result.InvertedWeightMatrix;
         }
     }
 
-    public enum QuasiNewtonMethodResultStatus
+    public enum BFGSResultStatus
     {
         Converged = 0,
         NotConverged = 1,
         FunctionValueInvalid = 2,
         GradientInvalid = 3,
-        WeightMatrixInvalid = 4,
+        BFGSMatrixInvalid = 4,
         LineSearchFailure = 5,
+        InverseBFGSMatrixInvalid = 6,
     }
 
     public class BFGS
@@ -205,10 +206,10 @@ namespace MathNet.Numerics.Optimization
             set { m_BFGSFS.Tolerance = value; }
         }
 
-        public QuasiNewtonMethodResult Minimize(double[] initVal)
+        public BFGSResult Minimize(double[] initVal)
         {
             var resFS = m_BFGSFS.Minimize(initVal);
-            return new QuasiNewtonMethodResult(m_BFGSFS.FSResultToCSResult(resFS));
+            return new BFGSResult(m_BFGSFS.FSResultToCSResult(resFS));
         }
 
         public System.Func<double[], double[]> DerivationMethod

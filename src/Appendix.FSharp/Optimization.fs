@@ -34,7 +34,7 @@ open MathNet.Numerics.LinearAlgebra.Double
 
 type internal LineSearchInfo = { A: float; Phi: float; DPhi: float; }
 
-type internal searchInterpolationResult = | Plain of LineSearchInfo
+type internal SearchInterpolationResult = | Plain of LineSearchInfo
                                           | Conditioned of LineSearchInfo
                                           | Failed
 
@@ -50,8 +50,8 @@ type LineSearch ( f: System.Func<float[], float>, xInit: float, xMax: float, tri
     let mutable m_NextStepMult = 0.1                // Multiplier to get next step size candidate.
     let mutable m_DerivationMethod = defaultDerivationMethod // Numerical differentiation function.
 
-    let createFuncs (v: float[]) (d: float[]) =
-        let vad a = Array.map2 (fun vi di -> vi + a * di) v d
+    let createFuncs (values: float[]) (direction: float[]) =
+        let vad a = Array.map2 (fun vi di -> vi + a * di) values direction
         let phi = fun (a: float) -> let ov = a |> vad
                                     in f.Invoke(ov)
         let phiFunc = new System.Func<float, float>(phi)
@@ -80,14 +80,14 @@ type LineSearch ( f: System.Func<float[], float>, xInit: float, xMax: float, tri
                         else if tRes > oldInfo.A then Some(oldInfo.A)
                         else Some(tRes)
 
-    let searchDownValidStep (xCurrentMax: float) (v: float[]) (d: float[]) =
-        if Array.exists System.Double.IsNaN v || Array.exists System.Double.IsInfinity v then Failed
-        else if Array.exists System.Double.IsNaN d || Array.exists System.Double.IsInfinity d then Failed
+    let searchDownValidStep (xCurrentMax: float) (values: float[]) (direction: float[]) =
+        if Array.exists System.Double.IsNaN values || Array.exists System.Double.IsInfinity values then Failed
+        else if Array.exists System.Double.IsNaN direction || Array.exists System.Double.IsInfinity direction then Failed
         else
             let rec searchStep (cMax: float, searchCount: int) =
                 if searchCount >= m_MaxStepSearchTrial then Failed
                 else
-                    let (phi, dphi) = let funcs = createFuncs v d
+                    let (phi, dphi) = let funcs = createFuncs values direction
                                       in (fst funcs, snd funcs)
                     let phiCMax = phi cMax
                     let dphiCMax = dphi cMax
@@ -102,12 +102,12 @@ type LineSearch ( f: System.Func<float[], float>, xInit: float, xMax: float, tri
 
             searchStep(xCurrentMax, 0)
 
-    let searchValidCubicInterpolation (v: float[]) (d: float[]) =
+    let searchValidCubicInterpolation (values: float[]) (direction: float[]) =
         let rec searchValidPoint (oldInfo: LineSearchInfo) (newInfo: LineSearchInfo) (count: int) =
             let tempInterpolation = cubicInterpolation oldInfo newInfo
             if (count >= m_InterpolationSearchTrial) then None
             else match tempInterpolation with
-                 | Some x -> match searchDownValidStep x v d with
+                 | Some x -> match searchDownValidStep x values direction with
                              | Plain info -> Some info
                              | Conditioned info -> if oldInfo.A <= newInfo.A then searchValidPoint oldInfo info (count + 1)
                                                    else searchValidPoint info newInfo (count + 1)
@@ -126,16 +126,16 @@ type LineSearch ( f: System.Func<float[], float>, xInit: float, xMax: float, tri
     member this.NextStepMultiplier with get() = m_NextStepMult and set v = m_NextStepMult <- if v <= 0.0 || v >= 1.0 then 0.1 else v
     member this.NumericalDerivation with get() = m_DerivationMethod and set v = m_DerivationMethod <- v
          
-    member this.Search (v: float[]) (d: float[]) =
-        let actualMaxStep = searchDownValidStep xMax v d
-        let validCubicInterpolationSearch = searchValidCubicInterpolation v d
+    member this.Search (values: float[]) (direction: float[]) =
+        let actualMaxStep = searchDownValidStep xMax values direction
+        let validCubicInterpolationSearch = searchValidCubicInterpolation values direction
         match actualMaxStep with
         | Failed -> System.Double.NaN
         | Plain infoMax | Conditioned infoMax -> 
             let actualInitialStep = let tempInit = if xInit >= infoMax.A then infoMax.A * 0.5 else xInit
-                                    searchDownValidStep tempInit v d
+                                    searchDownValidStep tempInit values direction
             let maxStep = infoMax.A
-            let (phi, dphi) = let funcs = createFuncs v d
+            let (phi, dphi) = let funcs = createFuncs values direction
                               in (fst funcs, snd funcs)
             let info0  = let (phi0, dphi0) = 0.0 |> (fun x -> (phi x, dphi x))
                          in { LineSearchInfo.A = 0.0; LineSearchInfo.Phi = phi0; LineSearchInfo.DPhi = dphi0 }
@@ -169,7 +169,7 @@ type LineSearch ( f: System.Func<float[], float>, xInit: float, xMax: float, tri
                     | _ -> match currentInfo.DPhi with
                            | _ when (abs currentInfo.DPhi) <= -m_c2 * info0.DPhi -> currentInfo.A
                            | _ when currentInfo.DPhi >= 0.0 -> zoom currentInfo oldInfo trialCount
-                           | _ -> let newInfoInterpolation = searchDownValidStep (currentInfo.A + searchNextStepRange) v d
+                           | _ -> let newInfoInterpolation = searchDownValidStep (currentInfo.A + searchNextStepRange) values direction
                                   match newInfoInterpolation with
                                   | Failed -> failwith "Cannot find next step value in line search."
                                   | Plain newInfo | Conditioned newInfo ->
@@ -207,7 +207,7 @@ type NelderMead (f:(float[] -> float), iteration: int, tolerance: float) =
     member this.Psi with get() = m_Psi and set v = m_Psi <- v
     member this.Sigma with get() = m_Sigma and set v = m_Sigma <- v
                 
-    member this.Minimize(initval: float[]) =
+    member this.Minimize(initialValues: float[]) =
         // Creating Simplex
         let rec loopCS (vec: float[]) acc simplex =
             if acc = vec.Length then simplex
@@ -216,7 +216,7 @@ type NelderMead (f:(float[] -> float), iteration: int, tolerance: float) =
                                                                | x -> (1.0 + this.Delta) * x
                                                 else x) 
                      |> (fun s -> loopCS vec (acc+1) (s :: simplex))
-        let ss = initval :: (loopCS initval 0 []) |> List.map (fun x -> ((DenseVector.OfArray x) :> Vector<float>, (f x)))
+        let ss = initialValues :: (loopCS initialValues 0 []) |> List.map (fun x -> ((DenseVector.OfArray x) :> Vector<float>, (f x)))
         
         let rec loopIT (oldSimplex: (Vector<float> * float) list) (newSimplex: (Vector<float> * float) list) (count: int) =
             let ascendingSimplex = List.sortBy (fun elem -> (snd elem)) newSimplex
@@ -241,7 +241,7 @@ type NelderMead (f:(float[] -> float), iteration: int, tolerance: float) =
             if f_L2 < this.Tolerance && count > 0 then (List.head newSimplex) |> (fun x -> ((fst x), (snd x), true)) 
             else if count > this.Iteration && count > 0 then (List.head newSimplex) |> (fun x -> ((fst x), (snd x), false))
             else if System.Double.IsNaN(f_L2) || System.Double.IsInfinity(f_L2) then
-                let invalidres = List.init initval.Length (fun i -> System.Double.NaN) |> DenseVector.ofList |> Vector.map (fun x -> x)
+                let invalidres = List.init initialValues.Length (fun i -> System.Double.NaN) |> DenseVector.ofList |> Vector.map (fun x -> x)
                 (invalidres, f_L2, false)
             else
                 let (best, worst, sndWorst) =
@@ -282,32 +282,39 @@ type NelderMead (f:(float[] -> float), iteration: int, tolerance: float) =
         let (parameters, fValue, converged) = result
         { Parameters = parameters; FunctionValue = fValue; Converged = converged } 
 
-[<CompiledName "QuasiNewtonMethodStatusFSharp">]
-type QuasiNewtonMethodStatus<'a> =
-    Converged of 'a
+
+[<CompiledName "BFGSStatusFSharp">]
+type BFGSStatus<'a> =
+    | InProcess of 'a
+    | Converged of 'a
     | NotConverged of 'a
     | FunctionValueInvalid
     | GradientInvalid
-    | WeightMatrixInvalid
+    | BFGSMatrixInvalid
     | LineSearchFailure
-    | InvertedWeightMatrixInvalid
+    | InverseBFGSMatrixInvalid
 
-[<CompiledName "QuasiNewtonSearchBuilderFSharp">]
-type QuasiNewtonSearchBuilder() =
-    member this.Bind(result: QuasiNewtonMethodStatus<'a>, rest: 'a -> QuasiNewtonMethodStatus<'b>) =
+
+type internal BFGSSearchBuilder() =
+    member this.Bind(result: BFGSStatus<'a>, rest: 'a -> BFGSStatus<'b>) : BFGSStatus<'b> =
         match result with
-        Converged(x)
-        | NotConverged(x) -> rest x
+        | InProcess(x) -> rest x
+        | Converged(x) -> failwith "\"Converged\" case cannot be passed to bind function."
+        | NotConverged(x) -> failwith  "\"NotConverged\" case cannot be passed to bind function."
         | FunctionValueInvalid -> FunctionValueInvalid
         | GradientInvalid -> GradientInvalid
-        | WeightMatrixInvalid -> WeightMatrixInvalid
+        | BFGSMatrixInvalid -> BFGSMatrixInvalid
         | LineSearchFailure -> LineSearchFailure
-        | InvertedWeightMatrixInvalid -> InvertedWeightMatrixInvalid
+        | InverseBFGSMatrixInvalid -> InverseBFGSMatrixInvalid
 
-    member this.Return(result) = result
+    member this.ReturnFrom(result: BFGSStatus<'a>) : BFGSStatus<'a> =
+        result
+
+    member this.Return(result: 'a) : BFGSStatus<'a> =
+        NotConverged(result)
 
 
-type QuasiNewtonMethodResultFSharp = { Status: int; Parameters: float[]; FunctionValue: System.Nullable<float>; InvertedWeightMatrix: float[,] }
+type BFGSResultFSharp = { Status: int; Parameters: float[]; FunctionValue: System.Nullable<float>; InvertedWeightMatrix: float[,] }
 
 [<CompiledName "TraceOutputFSharp">]
 type TraceOutput<'a> =
@@ -349,8 +356,6 @@ type BFGS (f: System.Func<float[], float>, iteration: int, tolerance: float) =
     let insideDerivationMethod (xVec: Vector<float>) =
         let xArr = xVec.ToArray()
         m_DerivationMethod.Invoke(xArr) |> DenseVector.ofArray
-         
-    let qnsearch = new QuasiNewtonSearchBuilder()
 
     member this.Iteration with get() = m_Iteration and set v = m_Iteration <- if v <= 0 then defaultIteration else v
     member this.Tolerance with get() = m_Tolerance and set v = m_Tolerance <- if v <= 0.0 then defaultTolerance else v
@@ -381,24 +386,24 @@ type BFGS (f: System.Func<float[], float>, iteration: int, tolerance: float) =
              GradientInvalid
         else
              do m_LatestGradientVector <- Some(tRes)
-             NotConverged(tRes)
+             InProcess(tRes)
 
     member private this.BFGSWeightMatrix (w: Matrix<float>) (xds: Vector<float>) (dds: Vector<float>) =
         let tRes = w + ((1.0 / (dds * xds)) * Vector.OuterProduct(dds, dds)) - ((1.0 / (xds * w * xds)) * Vector.OuterProduct((w * xds), (w * xds)))
         if Matrix.exists isInvalidFloat tRes then
-            WeightMatrixInvalid
-        else NotConverged(tRes)
+            BFGSMatrixInvalid
+        else InProcess(tRes)
 
-    member private this.InverseOfBFGSWeightMatrix (wInv: Matrix<float>) (xds: Vector<float>) (dds: Vector<float>) =
+    member private this.InverseBFGSMatrix (wInv: Matrix<float>) (xds: Vector<float>) (dds: Vector<float>) =
         let (rho, ident) = (1.0 / (dds * xds), (DenseMatrix.identity xds.Count))
         let tRes = let (matL, matR) = (ident - rho * Vector.OuterProduct(xds, dds), ident - rho * Vector.OuterProduct(dds, xds))
                    in matL * wInv * matR + rho * Vector.OuterProduct(xds, xds)
         if Matrix.exists isInvalidFloat tRes then
             do m_LatestInvertedWeightMatrix <- None
-            InvertedWeightMatrixInvalid
+            InverseBFGSMatrixInvalid
         else
             do m_LatestInvertedWeightMatrix <- Some(tRes)
-            NotConverged(tRes)
+            InProcess(tRes)
 
     member private this.lineSearch (r: Vector<float>) (g: Vector<float>) =
         let (rArr, gArr) = (r.ToArray(), g.ToArray())
@@ -407,27 +412,29 @@ type BFGS (f: System.Func<float[], float>, iteration: int, tolerance: float) =
             do m_LatestStepSize <- InvalidStep
             LineSearchFailure
         else do m_LatestStepSize <- ValidStep(tRes)
-             NotConverged(tRes)
+             InProcess(tRes)
 
-    member this.GetResults(result: QuasiNewtonMethodStatus<Vector<float> * float * Matrix<float>>) =
+    member this.GetResults(result: BFGSStatus<Vector<float> * float * Matrix<float>>) =
         match result with
-            Converged(x, f, w) -> Converged(x.ToArray(), f, w.ToArray())
-            | NotConverged(x, f, w) -> NotConverged(x.ToArray(), f, w.ToArray())
-            | FunctionValueInvalid -> FunctionValueInvalid
-            | GradientInvalid -> GradientInvalid
-            | WeightMatrixInvalid -> WeightMatrixInvalid
-            | LineSearchFailure -> LineSearchFailure
-            | InvertedWeightMatrixInvalid -> InvertedWeightMatrixInvalid
+        | InProcess(_) -> failwith "\"InProcess\" case never become the result of minimization."
+        | Converged(x, f, w) -> Converged(x.ToArray(), f, w.ToArray())
+        | NotConverged(x, f, w) -> NotConverged(x.ToArray(), f, w.ToArray())
+        | FunctionValueInvalid -> FunctionValueInvalid
+        | GradientInvalid -> GradientInvalid
+        | BFGSMatrixInvalid -> BFGSMatrixInvalid
+        | LineSearchFailure -> LineSearchFailure
+        | InverseBFGSMatrixInvalid -> InverseBFGSMatrixInvalid
 
-    member this.FSResultToCSResult(result: QuasiNewtonMethodStatus<float[] * float * float[,]>) =
+    member this.FSResultToCSResult(result: BFGSStatus<float[] * float * float[,]>) =
         match result with
-            Converged((x, f, w)) -> { Status = 0; Parameters = x; FunctionValue = new System.Nullable<float>(f); InvertedWeightMatrix = w }
-            | NotConverged((x, f, w)) -> { Status = 1; Parameters = x; FunctionValue = new System.Nullable<float>(f); InvertedWeightMatrix = w }
-            | FunctionValueInvalid -> { Status = 2; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
-            | GradientInvalid -> { Status = 3; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
-            | WeightMatrixInvalid -> { Status = 4; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
-            | LineSearchFailure -> { Status = 5; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
-            | InvertedWeightMatrixInvalid -> { Status = 6; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
+        | InProcess(_) -> failwith "\"InProcess\" case never become the result of minimization."
+        | Converged((x, f, w)) -> { Status = 0; Parameters = x; FunctionValue = new System.Nullable<float>(f); InvertedWeightMatrix = w }
+        | NotConverged((x, f, w)) -> { Status = 1; Parameters = x; FunctionValue = new System.Nullable<float>(f); InvertedWeightMatrix = w }
+        | FunctionValueInvalid -> { Status = 2; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
+        | GradientInvalid -> { Status = 3; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
+        | BFGSMatrixInvalid -> { Status = 4; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
+        | LineSearchFailure -> { Status = 5; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
+        | InverseBFGSMatrixInvalid -> { Status = 6; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
 
     member private this.Trace (writeline: string -> unit) (sw: System.Diagnostics.Stopwatch) =
         do writeline("---- Tracing Log of BFGS Optimization ----")
@@ -453,6 +460,7 @@ type BFGS (f: System.Func<float[], float>, iteration: int, tolerance: float) =
         do writeline("")
 
     member this.Minimize(initVal: float[]) =
+        let bfgssearch = new BFGSSearchBuilder()
         let sw = new System.Diagnostics.Stopwatch()
         do sw.Start()
 
@@ -463,23 +471,23 @@ type BFGS (f: System.Func<float[], float>, iteration: int, tolerance: float) =
                                     do writer.Flush()
             | NoTrace -> ()
 
-            qnsearch {
+            bfgssearch {
                 let cur_fval = f.Invoke(r.ToArray())
 
-                if System.Double.IsNaN(cur_fval) || System.Double.IsInfinity(cur_fval) then return FunctionValueInvalid
+                if System.Double.IsNaN(cur_fval) || System.Double.IsInfinity(cur_fval) then return! FunctionValueInvalid
                 else if g.Norm(2.0) < this.Tolerance
                 then do sw.Stop()
-                     return Converged(r, cur_fval, winv)
-                else if (count >= this.Iteration) then return NotConverged(r, cur_fval, winv)
+                     return! Converged(r, cur_fval, winv)
+                else if (count >= this.Iteration) then return! NotConverged(r, cur_fval, winv)
                 else let! step = this.lineSearch r ((-1.0) * (winv * g))
                      let newR = r - step * (winv * g)
                      do m_LatestXVector <- Some(newR)
                      let! newG = this.differentiation newR
-                     let! newWInv = this.InverseOfBFGSWeightMatrix winv (newR - r) (newG - g)
-                     return search newWInv newR newG (count + 1)
+                     let! newWInv = this.InverseBFGSMatrix winv (newR - r) (newG - g)
+                     return! search newWInv newR newG (count + 1)
             }
 
-        qnsearch {
+        bfgssearch {
             let initX = initVal |> DenseVector.ofArray
             let! initD = this.differentiation initX
             let initW = let mult = if this.FirstTimeStepSizeMultiplier = 1.0 then 1.0
@@ -490,5 +498,5 @@ type BFGS (f: System.Func<float[], float>, iteration: int, tolerance: float) =
 
             do m_LatestXVector <- Some(initX)
             do m_LatestInvertedWeightMatrix <- Some(initWInv)
-            return (search initWInv initX initD 0) |> this.GetResults
+            return! (search initWInv initX initD 0) |> this.GetResults
         }
