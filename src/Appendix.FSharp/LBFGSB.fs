@@ -634,52 +634,5 @@ type LBFGSB(f: BoundedFunction, iteration: int, tolerance: float, approxdimensio
                                 return! search newValues newGradients freeVarIndice (count + 1)
             }
 
-//            if this.Tolerance > AppendixFunctions.InfinityNormOfArray freeVarDirections then
-//                do sw.Stop()
-//                Converged(currentValues, this.BoundedFunction.EvaluateRaw(currentValues), this.InverseOfBFGSMatrix().ToArray())
-//            else if count >= this.Iteration then
-//                do sw.Stop()
-//                NotConverged(currentValues, this.BoundedFunction.EvaluateRaw(currentValues), this.InverseOfBFGSMatrix().ToArray())
-//            else
-//                let (subOptimizationResults, freeVarIndice) =
-//                    match this.SubOptimizationMethod with
-//                    | DirectPrimal when m_ValueCorrections.CurrentSize = 0 && m_GradientCorrections.CurrentSize = 0
-//                        -> let bfgsMatrix = this.BFGSMatrix()
-//                           let (gcp, freeIndice) =
-//                                match GeneralizedCauchyPoint.SearchWithBFGSMatrix currentValues currentGradients this.ValueBounds bfgsMatrix with
-//                                | Normal(cp, indice) -> (cp, indice)
-//                                | Corner(xs) -> failwith "Cannot find GCP."   // Change to use discrimanated union
-//                           ((DirectPrimalMethod.SearchWithBFGSMatrix currentValues gcp freeIndice currentGradients this.ValueBounds bfgsMatrix), freeIndice)
-//                    | DirectPrimal when m_ValueCorrections.CurrentSize = 0 || m_GradientCorrections.CurrentSize = 0
-//                        -> failwith "Information about correction of value and gradient is invalid."
-//                    | DirectPrimal
-//                        -> let (theta, matD, matL, matS) = (this.Theta(), this.DMatrix(), this.LMatrix(), m_ValueCorrections.GetMatrix())
-//                           let (matW, matM) = (this.WMatrix(theta), this.MMatrix(-matD, matL, matS, theta))
-//                           let (gcp, freeIndice, vecC) =
-//                                match GeneralizedCauchyPoint.Search currentValues currentGradients this.ValueBounds theta matW matM with
-//                                | Normal(cp, indice, c) -> (cp, indice, c)
-//                                | Corner(xs) -> failwith "Cannot find GCP."   // Change to use discrimanated union
-//                           ((DirectPrimalMethod.Search currentValues gcp freeIndice currentGradients this.ValueBounds theta matW matM vecC), freeIndice)
-//                
-//                let (subXs, subDirs) = subOptimizationResults                   
-//                let step =
-//                    if (Array.forall (fun d -> (abs d) < Double.Epsilon) subDirs ) || count = 0 then 0.0
-//                    else
-//                        let negSubDirs = Array.map(fun d -> -d) subDirs
-//                        this.LineSearchMethod.Search subXs negSubDirs
-//                let newValues = Array.map3 (fun x d bounds -> let newValue = x - step * d
-//                                                              let (lbound, ubound) = bounds
-//                                                              if newValue < lbound then lbound
-//                                                              else if newValue > ubound then ubound
-//                                                              else newValue) subXs subDirs this.ValueBounds
-//                let newGradients = this.DerivationMethod.Invoke(newValues)
-//
-//                let (newxd, newgd) = ((arrayDiff newValues currentValues), (arrayDiff newGradients currentGradients))
-//                if (AppendixFunctions.InnerProductOfTwoArrays newxd newgd > Double.Epsilon * (AppendixFunctions.L2NormOfArray newgd)) then
-//                    do m_ValueCorrections.Add(newxd)
-//                    do m_GradientCorrections.Add(newgd)
-//
-//                search newValues newGradients freeVarIndice (count + 1)
-
         search initVal initGradients (Array.init initVal.Length (fun i -> i)) 0
 
