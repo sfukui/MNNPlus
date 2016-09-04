@@ -474,14 +474,12 @@ namespace MathNet.Numerics.Distributions
         {
             if (theta.Length != 4)
             {
-                // throw new ArgumentException(Resources.ArgumentArrayWrongLength);
-                return Double.NaN;
+                throw new ArgumentException(Resources.ArgumentArrayWrongLength);
             }
 
             if (Array.Exists(theta, ot => ot <= 0.0) || Array.Exists(theta, ot => Double.IsNaN(ot)))
             {
-                // throw new ArgumentOutOfRangeException(Resources.InvalidDistributionParameters);
-                return Double.NaN;
+                throw new ArgumentOutOfRangeException(Resources.InvalidDistributionParameters);
             }
 
             double lnumer = System.Math.Log(theta[0]) + (theta[0] * theta[2] - 1.0) * System.Math.Log(x);
@@ -536,6 +534,119 @@ namespace MathNet.Numerics.Distributions
         double IUnivariateDistribution.CumulativeDistribution(double x)
         {
             throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Computes the probability density of the distribution (PDF) at x with parameters given by arguments;
+        /// alpha, beta, p, and q.
+        /// The functional form is as follows:
+        /// ln(alpha) + (alpha * p - 1.0) * ln(x) - (alpha * p) * ln(beta) - BetaLn(p,q) - (p + q) * ln(1.0 + (x / beta)^alpha)
+        /// </summary>
+        /// <param name="alpha">One of the shape parameters "alpha". Range: alpha > 0.</param>
+        /// <param name="beta">The scale parameter "beta". Range: beta > 0.</param>
+        /// <param name="p">One of the shape parameters "p". Range: p > 0.</param>
+        /// <param name="q">One of the shape parameters "q". Range: q > 0.</param>
+        /// <param name="x">The location at which to compute the density.</param>
+        /// <returns>the density at <paramref name="x"/>.</returns>
+        /// <seealso cref="DensityLn"/>
+        public static double PDFLnWithoutException(double alpha, double beta, double p, double q, double x)
+        {
+            double[] theta = new double[4] { alpha, beta, p, q };
+
+            return PDFLnWithoutException(theta, x);
+        }
+
+        /// <summary>
+        /// Computes the probability density of the distribution (PDF) at x with parameters given by arguments;
+        /// alpha, beta, p, and q.
+        /// The value is calculated as exp(PDFLn(alpha, beta, p, q, x)).
+        /// </summary>
+        /// <param name="alpha">One of the shape parameters "alpha". Range: alpha > 0.</param>
+        /// <param name="beta">The scale parameter "beta". Range: beta > 0.</param>
+        /// <param name="p">One of the shape parameters "p". Range: p > 0.</param>
+        /// <param name="q">One of the shape parameters "q". Range: q > 0.</param>
+        /// <param name="x">The location at which to compute the density.</param>
+        /// <returns>the density at <paramref name="x"/>.</returns>
+        /// <seealso cref="Density"/>
+        public static double PDFWithoutException(double alpha, double beta, double p, double q, double x)
+        {
+            return System.Math.Exp(PDFLnWithoutException(alpha, beta, p, q, x));
+        }
+
+        /// <summary>
+        /// Computes the cumulative distribution (CDF) of the distribution at x with parameters given by arguments;
+        /// alpha, beta, p, and q.
+        /// The value is derived from numerical integration.
+        /// </summary>
+        /// <param name="alpha">One of the shape parameters "alpha". Range: alpha > 0.</param>
+        /// <param name="beta">The scale parameter "beta". Range: beta > 0.</param>
+        /// <param name="p">One of the shape parameters "p". Range: p > 0.</param>
+        /// <param name="q">One of the shape parameters "q". Range: q > 0.</param>
+        /// <param name="x">The location at which to compute the cumulative distribution function.</param>
+        /// <returns>The cumulative distribution at location <paramref name="x"/>.</returns>
+        /// <seealso cref="CumulativeDistribution"/>
+        public static double CDFWithoutException(double alpha, double beta, double p, double q, double x)
+        {
+            return Integration.DoubleExponentialTransformation.Integrate(y => PDFWithoutException(alpha, beta, p, q, y), 0.0, x, 0.001);
+        }
+
+        /// <summary>
+        /// Computes the probability density of the distribution (PDF) at x with parameters given by the argument "theta".
+        /// If one or more parameter values are below 0, this returns NaN.
+        /// The functional form is as follows:
+        /// ln(theta[0]) + (theta[0] * theta[2] - 1.0) * ln(x) - (theta[0] * theta[2]) * ln(theta[1]) 
+        /// - BetaLn(theta[2],theta[3]) - (theta[2] + theta[3]) * ln(1.0 + (x / theta[1])^theta[0])
+        /// </summary>
+        /// <param name="theta">Parameters "alpha", "beta", "p", and "q". Range: alpha > 0, beta > 0, p > 0, and q > 0.</param>
+        /// <param name="x">The location at which to compute the density.</param>
+        /// <returns>the density at <paramref name="x"/>.</returns>
+        /// <seealso cref="DensityLn"/>
+        public static double PDFLnWithoutException(double[] theta, double x)
+        {
+            if (theta.Length != 4)
+            {
+                return Double.NaN;
+            }
+
+            if (Array.Exists(theta, ot => ot <= 0.0) || Array.Exists(theta, ot => Double.IsNaN(ot)))
+            {
+                return Double.NaN;
+            }
+
+            double lnumer = System.Math.Log(theta[0]) + (theta[0] * theta[2] - 1.0) * System.Math.Log(x);
+            double ldenom = (theta[0] * theta[2]) * System.Math.Log(theta[1])
+                + SpecialFunctions.BetaLn(theta[2], theta[3])
+                + (theta[2] + theta[3]) * System.Math.Log(1.0 + System.Math.Pow((x / theta[1]), theta[0]));
+
+            return (lnumer - ldenom);
+        }
+
+        /// <summary>
+        /// Computes the probability density of the distribution (PDF) at x with parameters given by the argument "theta".
+        /// The value is calculated as exp(PDFLn(theta, x)).
+        /// If one or more parameter values are below 0, this returns NaN.
+        /// </summary>
+        /// <param name="theta">Parameters "alpha", "beta", "p", and "q". Range: alpha > 0, beta > 0, p > 0, and q > 0.</param>
+        /// <param name="x">The location at which to compute the density.</param>
+        /// <returns>the density at <paramref name="x"/>.</returns>
+        /// <seealso cref="Density"/>
+        public static double PDFWithoutException(double[] theta, double x)
+        {
+            return System.Math.Exp(PDFLnWithoutException(theta, x));
+        }
+
+        /// <summary>
+        /// Computes the cumulative distribution (CDF) of the distribution at x with parameters given by the argument "theta".
+        /// The value is calculated with numerical integration.
+        /// If one or more parameter values are below 0, this returns NaN.
+        /// </summary>
+        /// <param name="theta">Parameters "alpha", "beta", "p", and "q". Range: alpha > 0, beta > 0, p > 0, and q > 0.</param>
+        /// <param name="x">The location at which to compute the cumulative distribution function.</param>
+        /// <returns>The cumulative distribution at location <paramref name="x"/>.</returns>
+        /// <seealso cref="CumulativeDistribution"/>
+        public static double CDFWithoutException(double[] theta, double x)
+        {
+            return Integration.DoubleExponentialTransformation.Integrate(y => PDFWithoutException(theta, y), 0.0, x, 0.001);
         }
     }
 }
