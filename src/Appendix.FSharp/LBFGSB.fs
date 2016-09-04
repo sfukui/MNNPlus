@@ -242,7 +242,7 @@ module internal DirectPrimalMethod =
             let temp = matM * (matWT * matZ * rc)
             matN.Inverse() * temp
 
-        let dirsCandidate = (1.0 / theta) * rc + (1.0 / (theta * theta)) * matZT * matW * nu
+        let dirsCandidate = (1.0 / theta) * rc + (1.0 / (theta * theta)) * matZT * matW * nu |> (*) (-1.0)
 
         let backtrackedDirs = SimpleBacktracking values valuesGCP freeIndice bounds dirsCandidate
 
@@ -552,9 +552,8 @@ type LBFGSB(f: BoundedFunction, iteration: int, tolerance: float, approxdimensio
             let step =
                 if (Array.forall (fun d -> (abs d) < Double.Epsilon) subOptimizedDirections ) || count = 0 then 0.0
                 else
-                    let negSubDirs = Array.map(fun d -> -d) subOptimizedDirections
-                    this.LineSearchMethod.Search subOptimizedValues negSubDirs
-            let newValues = Array.map3 (fun x d bounds -> let newValue = x - step * d
+                    this.LineSearchMethod.Search subOptimizedValues subOptimizedDirections
+            let newValues = Array.map3 (fun x d bounds -> let newValue = x + step * d
                                                           let (lbound, ubound) = bounds
                                                           if newValue < lbound then lbound
                                                           else if newValue > ubound then ubound
