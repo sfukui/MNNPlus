@@ -283,9 +283,9 @@ type Correction(size: int) =
         DenseMatrix.ofColumnArrays this.Memory
 
 
-[<CompiledName "BoundedFunctionFSharp">]
-type BoundedFunction(f: System.Func<float array, float>, bounds: (float * float) array) =
-    member this.ParameterNum with get() = bounds.Length
+[<CompiledName "FuncWithBoundsFSharp">]
+type FuncWithBounds(f: System.Func<float array, float>, bounds: (float * float) array) =
+    member this.VariableNumber with get() = bounds.Length
     member this.Bounds with get() = bounds
     member this.Func with get() = f
 
@@ -294,8 +294,8 @@ type BoundedFunction(f: System.Func<float array, float>, bounds: (float * float)
 
     member this.EvaluateRaw(xs: float array) = this.Func.Invoke(xs)
     member this.Evaluate(xs: float array) =
-        if xs.Length <> bounds.Length then failwith "The lengths of x and bounds are not same."
-        else if this.ValidateBounds(xs) = false then failwith "One or more x are out of the bounds."
+        if xs.Length <> bounds.Length then invalidArg "xs" "The lengths of x and bounds are not same."
+        else if this.ValidateBounds(xs) = false then invalidArg "xs" "One or more x are outside of the bounds."
         else this.EvaluateRaw(xs)
 
 
@@ -311,13 +311,13 @@ type LBFGSBStatus<'a> =
     | InverseBFGSMatrixInvalid
     | NoGeneralizedCauchyPoint
     | BlockOfBFGSMatrixInvalid
-    | BlockOfInvertedBFGSMatrixInvalid
+    | BlockOfInverseBFGSMatrixInvalid
     | CorrectionHistoryInvalid
     | ConvergedAtCorner of 'a
 
 
 [<CompiledName "LBFGSBResultFSharp">]
-type LBFGSBResult = { Status: int; Parameters: float[]; FunctionValue: System.Nullable<float>; InvertedBFGSMatrix: float[,] }
+type LBFGSBResult = { Status: int; Values: float[]; FunctionValue: System.Nullable<float>; InverseBFGSMatrix: float[,] }
 
 
 type internal LBFGSBSearchBuilder() =
@@ -333,7 +333,7 @@ type internal LBFGSBSearchBuilder() =
         | InverseBFGSMatrixInvalid -> InverseBFGSMatrixInvalid
         | NoGeneralizedCauchyPoint -> NoGeneralizedCauchyPoint
         | BlockOfBFGSMatrixInvalid -> BlockOfBFGSMatrixInvalid
-        | BlockOfInvertedBFGSMatrixInvalid -> BlockOfInvertedBFGSMatrixInvalid
+        | BlockOfInverseBFGSMatrixInvalid -> BlockOfInverseBFGSMatrixInvalid
         | CorrectionHistoryInvalid -> CorrectionHistoryInvalid
         | ConvergedAtCorner(x)-> failwith "\"ConvergedAtCorner\" case cannot be passed to bind function."
 
@@ -345,12 +345,12 @@ type internal LBFGSBSearchBuilder() =
 
 
 [<CompiledName "LBFGSBFSharp">]
-type LBFGSB(f: BoundedFunction, iteration: int, tolerance: float, approxdimension: int) = 
+type LBFGSB(f: FuncWithBounds, iteration: int, tolerance: float, approxdimension: int) = 
     let (defaultCentralDerivation, defaultForwardDerivation, defaultBackwardDerivation)
         = (new NumericalDerivative(3,1), new NumericalDerivative(3,0), new NumericalDerivative(3,2))
     let mutable m_Bounds = f.Bounds
     let mutable m_DerivationMethod =
-        new System.Func<float[], float[]>(fun xs -> Array.init f.ParameterNum
+        new System.Func<float[], float[]>(fun xs -> Array.init f.VariableNumber
                                                         (fun i -> let (lbound, ubound) = m_Bounds.[i]
                                                                   if xs.[i] - lbound < Double.Epsilon then defaultForwardDerivation.EvaluatePartialDerivative(f.Func, xs, i, 1)
                                                                   else if ubound - xs.[i] < Double.Epsilon then defaultBackwardDerivation.EvaluatePartialDerivative(f.Func, xs, i, 1)
@@ -379,9 +379,9 @@ type LBFGSB(f: BoundedFunction, iteration: int, tolerance: float, approxdimensio
     member this.LineSearchMethod with get() = m_LineSearchMethod and set (v) = m_LineSearchMethod <- v
 
     new(f: System.Func<float array, float>, bounds: (float * float) array, iteration: int, tolerance: float, approxdimension: int) =
-        let boundedFunc = new BoundedFunction(f, bounds)
+        let boundedFunc = new FuncWithBounds(f, bounds)
         LBFGSB(boundedFunc, iteration, tolerance, approxdimension)
-    new(f: BoundedFunction, iteration: int, tolerance: float) =
+    new(f: FuncWithBounds, iteration: int, tolerance: float) =
         LBFGSB(f, iteration, tolerance, 3)
     new(f: System.Func<float array, float>, bounds: (float * float) array, iteration: int, tolerance: float) =
         LBFGSB(f, bounds, iteration, tolerance, 3)
@@ -398,18 +398,18 @@ type LBFGSB(f: BoundedFunction, iteration: int, tolerance: float, approxdimensio
     member this.FSResultToCSResult(result: LBFGSBStatus<float[] * float * float[,]>) : LBFGSBResult =
         match result with
         | InProcess(_) -> failwith "\"InProcess\" case never become the result of minimization."
-        | Converged((x, f, w)) -> { Status = 0; Parameters = x; FunctionValue = new System.Nullable<float>(f); InvertedBFGSMatrix = w }
-        | NotConverged((x, f, w)) -> { Status = 1; Parameters = x; FunctionValue = new System.Nullable<float>(f); InvertedBFGSMatrix = w }
-        | FunctionValueInvalid -> { Status = 2; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedBFGSMatrix = null }
-        | GradientInvalid -> { Status = 3; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedBFGSMatrix = null }
-        | BFGSMatrixInvalid -> { Status = 4; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedBFGSMatrix = null }
-        | LineSearchFailure -> { Status = 5; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedBFGSMatrix = null }
-        | InverseBFGSMatrixInvalid -> { Status = 6; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedBFGSMatrix = null }
-        | NoGeneralizedCauchyPoint -> { Status = 7; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedBFGSMatrix = null }
-        | BlockOfBFGSMatrixInvalid -> { Status = 8; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedBFGSMatrix = null }
-        | BlockOfInvertedBFGSMatrixInvalid -> { Status = 9; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedBFGSMatrix = null }
-        | CorrectionHistoryInvalid -> { Status = 10; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedBFGSMatrix = null }
-        | ConvergedAtCorner((x, f, w)) -> { Status = 11; Parameters = x; FunctionValue = new System.Nullable<float>(f); InvertedBFGSMatrix = w }
+        | Converged((x, f, w)) -> { Status = 1; Values = x; FunctionValue = new System.Nullable<float>(f); InverseBFGSMatrix = w }
+        | NotConverged((x, f, w)) -> { Status = 2; Values = x; FunctionValue = new System.Nullable<float>(f); InverseBFGSMatrix = w }
+        | FunctionValueInvalid -> { Status = 3; Values = null; FunctionValue = new System.Nullable<float>(); InverseBFGSMatrix = null }
+        | GradientInvalid -> { Status = 4; Values = null; FunctionValue = new System.Nullable<float>(); InverseBFGSMatrix = null }
+        | BFGSMatrixInvalid -> { Status = 5; Values = null; FunctionValue = new System.Nullable<float>(); InverseBFGSMatrix = null }
+        | LineSearchFailure -> { Status = 6; Values = null; FunctionValue = new System.Nullable<float>(); InverseBFGSMatrix = null }
+        | InverseBFGSMatrixInvalid -> { Status = 7; Values = null; FunctionValue = new System.Nullable<float>(); InverseBFGSMatrix = null }
+        | NoGeneralizedCauchyPoint -> { Status = 8; Values = null; FunctionValue = new System.Nullable<float>(); InverseBFGSMatrix = null }
+        | BlockOfBFGSMatrixInvalid -> { Status = 9; Values = null; FunctionValue = new System.Nullable<float>(); InverseBFGSMatrix = null }
+        | BlockOfInverseBFGSMatrixInvalid -> { Status = 10; Values = null; FunctionValue = new System.Nullable<float>(); InverseBFGSMatrix = null }
+        | CorrectionHistoryInvalid -> { Status = 11; Values = null; FunctionValue = new System.Nullable<float>(); InverseBFGSMatrix = null }
+        | ConvergedAtCorner((x, f, w)) -> { Status = 12; Values = x; FunctionValue = new System.Nullable<float>(f); InverseBFGSMatrix = w }
 
     /// Fields and methods for limited memory BFGS matrix computation. 
     // Multiplier $\theta$ calculator.
@@ -482,7 +482,7 @@ type LBFGSB(f: BoundedFunction, iteration: int, tolerance: float, approxdimensio
             then failwith "One or more sets of block have different rows/columns each other."
         else
             let invMatR = matR.Inverse()
-            if Matrix.exists AppendixFunctions.IsInvalidFloat invMatR then BlockOfInvertedBFGSMatrixInvalid
+            if Matrix.exists AppendixFunctions.IsInvalidFloat invMatR then BlockOfInverseBFGSMatrixInvalid
             else
                 let negInvMatR = (-1.0) * invMatR
                 let temp1 = matD + (1.0 / theta) * (matY.Transpose() * matY)
@@ -494,12 +494,12 @@ type LBFGSB(f: BoundedFunction, iteration: int, tolerance: float, approxdimensio
 
     // BFGS matrix($B_k$) computation
     member this.BFGSMatrix() : LBFGSBStatus<Matrix<float>> =
-        if m_ValueCorrections.CurrentSize = 0 || m_GradientCorrections.CurrentSize = 0 then DenseMatrix.identity f.ParameterNum |> InProcess
+        if m_ValueCorrections.CurrentSize = 0 || m_GradientCorrections.CurrentSize = 0 then DenseMatrix.identity f.VariableNumber |> InProcess
         else
             // Variable $\theta$
             let theta = this.Theta()
             // Matrix $I$
-            let matI = DenseMatrix.identity f.ParameterNum
+            let matI = DenseMatrix.identity f.VariableNumber
             // Matrix $L_k$ and $D_k$
             let (matL, matD) = (this.LMatrix(), this.DMatrix())
             // Matrix $W_k$
@@ -513,12 +513,12 @@ type LBFGSB(f: BoundedFunction, iteration: int, tolerance: float, approxdimensio
             | _ -> failwith "Unexpected error in matrix $M$ calculation."
     
     member this.InverseBFGSMatrix() : LBFGSBStatus<Matrix<float>> =
-        if m_ValueCorrections.CurrentSize = 0 || m_GradientCorrections.CurrentSize = 0 then DenseMatrix.identity f.ParameterNum |> InProcess
+        if m_ValueCorrections.CurrentSize = 0 || m_GradientCorrections.CurrentSize = 0 then DenseMatrix.identity f.VariableNumber |> InProcess
         else
             // Variable $\theta$
             let theta = this.Theta()
             // Matrix $I$
-            let matI = DenseMatrix.identity f.ParameterNum
+            let matI = DenseMatrix.identity f.VariableNumber
             // Matrix $R_k$ and $D_k$
             let (matR, matD) = (this.RMatrix(), this.DMatrix())
             // Matrix $\bar{W}_k$
@@ -528,7 +528,7 @@ type LBFGSB(f: BoundedFunction, iteration: int, tolerance: float, approxdimensio
 
             match optMatBarM with
             | InProcess(matBarM) -> (1.0 / theta) * matI + matBarW * matBarM * matBarW.Transpose() |> InProcess
-            | BlockOfInvertedBFGSMatrixInvalid -> InverseBFGSMatrixInvalid
+            | BlockOfInverseBFGSMatrixInvalid -> InverseBFGSMatrixInvalid
             | _ -> failwith "Unexpected error in matrix $M$ calculation."
 
     member private this.Trace (writeline: string -> unit) (values: float array) (gradients: float array) (sw: System.Diagnostics.Stopwatch) =

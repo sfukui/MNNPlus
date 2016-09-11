@@ -176,13 +176,14 @@ namespace MathNet.Numerics.Optimization
 
     public enum BFGSResultStatus
     {
-        Converged = 0,
-        NotConverged = 1,
-        FunctionValueInvalid = 2,
-        GradientInvalid = 3,
-        BFGSMatrixInvalid = 4,
-        LineSearchFailure = 5,
-        InverseBFGSMatrixInvalid = 6,
+        InProcess = 0,
+        Converged = 1,
+        NotConverged = 2,
+        FunctionValueInvalid = 3,
+        GradientInvalid = 4,
+        BFGSMatrixInvalid = 5,
+        LineSearchFailure = 6,
+        InverseBFGSMatrixInvalid = 7,
     }
 
     public class BFGS

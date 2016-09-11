@@ -77,7 +77,7 @@ namespace MathNet.Numerics.UnitTests.OptimizationTests
             var result = m_lbfgsb.Minimize(init);
 
             Assert.AreEqual(LBFGSBResultStatus.Converged, result.Status);
-            double actualDValue = derivTargetFunction(result.Parameters);
+            double actualDValue = derivTargetFunction(result.Values);
             Assert.AreEqual(expectedDValue, actualDValue, acceptRangeRate);
         }
     }
@@ -209,10 +209,10 @@ namespace MathNet.Numerics.UnitTests.OptimizationTests
 
             int i = 0;
             double delta = 0.0;
-            while (i < lbfgsbResult.Parameters.Length)
+            while (i < lbfgsbResult.Values.Length)
             {
                 delta = Math.Abs(acceptRangeRate * expectedParams[i]);
-                Assert.AreEqual(expectedParams[i], lbfgsbResult.Parameters[i], delta);
+                Assert.AreEqual(expectedParams[i], lbfgsbResult.Values[i], delta);
                 i++;
             }
         }

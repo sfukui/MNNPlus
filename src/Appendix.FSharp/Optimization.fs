@@ -428,13 +428,13 @@ type BFGS (f: System.Func<float[], float>, iteration: int, tolerance: float) =
     member this.FSResultToCSResult(result: BFGSStatus<float[] * float * float[,]>) =
         match result with
         | InProcess(_) -> failwith "\"InProcess\" case never become the result of minimization."
-        | Converged((x, f, w)) -> { Status = 0; Parameters = x; FunctionValue = new System.Nullable<float>(f); InvertedWeightMatrix = w }
-        | NotConverged((x, f, w)) -> { Status = 1; Parameters = x; FunctionValue = new System.Nullable<float>(f); InvertedWeightMatrix = w }
-        | FunctionValueInvalid -> { Status = 2; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
-        | GradientInvalid -> { Status = 3; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
-        | BFGSMatrixInvalid -> { Status = 4; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
-        | LineSearchFailure -> { Status = 5; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
-        | InverseBFGSMatrixInvalid -> { Status = 6; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
+        | Converged((x, f, w)) -> { Status = 1; Parameters = x; FunctionValue = new System.Nullable<float>(f); InvertedWeightMatrix = w }
+        | NotConverged((x, f, w)) -> { Status = 2; Parameters = x; FunctionValue = new System.Nullable<float>(f); InvertedWeightMatrix = w }
+        | FunctionValueInvalid -> { Status = 3; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
+        | GradientInvalid -> { Status = 4; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
+        | BFGSMatrixInvalid -> { Status = 5; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
+        | LineSearchFailure -> { Status = 6; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
+        | InverseBFGSMatrixInvalid -> { Status = 7; Parameters = null; FunctionValue = new System.Nullable<float>(); InvertedWeightMatrix = null }
 
     member private this.Trace (writeline: string -> unit) (sw: System.Diagnostics.Stopwatch) =
         do writeline("---- Tracing Log of BFGS Optimization ----")

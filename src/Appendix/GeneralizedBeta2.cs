@@ -184,6 +184,9 @@ namespace MathNet.Numerics.Distributions
             }
         }
 
+        /// <summary>
+        /// Gets or sets parameters of the generalized beta distribution of second kind.
+        /// </summary>
         public double[] Parameters
         {
             get
