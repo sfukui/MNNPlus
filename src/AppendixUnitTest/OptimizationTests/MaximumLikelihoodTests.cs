@@ -73,7 +73,7 @@ namespace MathNet.Numerics.UnitTests.OptimizationTests
         public void LinearModelMLEstimationTest()
         {
             int nmIter = 100, bfgsIter = 100;
-            double nmToler = 1e-3, bfgsToler = 1e-3;
+            double nmToler = 1e-3, bfgsToler = 1e-1;
 
             Func<double[], double> targetFunction = (parameters) => { return (-1.0) * likehood(parameters); };
 
@@ -182,7 +182,7 @@ namespace MathNet.Numerics.UnitTests.OptimizationTests
         public void GB2MLEstimationTest()
         {
             int nmIter = 100, bfgsIter = 100;
-            double nmToler = 1e-3, bfgsToler = 1e-3;
+            double nmToler = 1e-3, bfgsToler = 1e-1;
 
             Func<double[], double> targetfunction = (parameters) => { return (-1.0) * (1e-3) * likelihood(parameters); };
             var nm = new NelderMead(targetfunction, nmIter, nmToler);

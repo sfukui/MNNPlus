@@ -63,6 +63,7 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AppendixFunctions.fs" />
     <Compile Include="MCMC.fs" />
     <Compile Include="Optimization.fs" />
     <Compile Include="LBFGSB.fs" />

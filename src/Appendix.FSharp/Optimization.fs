@@ -475,7 +475,7 @@ type BFGS (f: System.Func<float[], float>, iteration: int, tolerance: float) =
                 let cur_fval = f.Invoke(r.ToArray())
 
                 if System.Double.IsNaN(cur_fval) || System.Double.IsInfinity(cur_fval) then return! FunctionValueInvalid
-                else if g.Norm(2.0) < this.Tolerance
+                else if AppendixFunctions.InfinityNormOfVector g < this.Tolerance
                 then do sw.Stop()
                      return! Converged(r, cur_fval, winv)
                 else if (count >= this.Iteration) then return! NotConverged(r, cur_fval, winv)
