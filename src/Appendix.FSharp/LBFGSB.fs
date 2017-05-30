@@ -27,10 +27,10 @@
 namespace MathNet.Numerics.Optimization
 
 open System
-open System.Collections.Generic
+//open System.Collections.Generic
 open MathNet.Numerics
 open MathNet.Numerics.Differentiation
-open MathNet.Numerics.Interpolation
+//open MathNet.Numerics.Interpolation
 open MathNet.Numerics.LinearAlgebra
 open MathNet.Numerics.LinearAlgebra.Double
 

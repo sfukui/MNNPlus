@@ -236,7 +236,7 @@ namespace MathNet.Numerics.Distributions
         /// </summary>
         /// <param name="x">The location at which to compute the density.</param>
         /// <returns>the density at <paramref name="x"/>.</returns>
-        /// <seealso cref="PDF"/>
+        /// <seealso cref="PDF(double[], double)"/>
         public double Density(double x)
         {
             return System.Math.Exp(DensityLn(x));
@@ -249,7 +249,7 @@ namespace MathNet.Numerics.Distributions
         /// </summary>
         /// <param name="x">The location at which to compute the log density.</param>
         /// <returns>the log density at <paramref name="x"/>.</returns>
-        /// <seealso cref="PDFLn"/>
+        /// <seealso cref="PDFLn(double[], double)"/>
         public double DensityLn(double x)
         {
             return PDFLn(_alpha, _beta, _p, _q, x);
@@ -342,7 +342,7 @@ namespace MathNet.Numerics.Distributions
         /// </summary>
         /// <param name="x">The location at which to compute the cumulative distribution function.</param>
         /// <returns>The cumulative distribution at location <paramref name="x"/>.</returns>
-        /// <seealso cref="CDF"/>
+        /// <seealso cref="CDF(double[], double)"/>
         public double CumulativeDistribution(double x)
         {
             return CDF(_alpha, _beta, _p, _q, x);

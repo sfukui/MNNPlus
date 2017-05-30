@@ -20,7 +20,7 @@ namespace MathNet.Numerics.UnitTests.OptimizationTests
         /// </summary>
         /// <param name="x">Vector value of input variable.</param>
         /// <returns></returns>
-        private double targetFunction(double[] x)
+        private double TargetFunction(double[] x)
         {
             return 0.1 * x[0] * Math.Sin(x[0]);
         }
@@ -29,7 +29,7 @@ namespace MathNet.Numerics.UnitTests.OptimizationTests
         /// Differentiation of target function.
         /// If an x is at one of local minima, this function value become 0.0.
         /// </summary>
-        private double derivTargetFunction(double[] x)
+        private double DerivTargetFunction(double[] x)
         {
             return Math.Sin(x[0]) + x[0] * Math.Cos(x[0]);
         }
@@ -58,7 +58,7 @@ namespace MathNet.Numerics.UnitTests.OptimizationTests
         [SetUp]
         public void SetUp()
         {
-            m_lbfgsb = new LBFGSB(targetFunction, m_bounds, lbfgsbIteration, lbfgsbTolerance);
+            m_lbfgsb = new LBFGSB(TargetFunction, m_bounds, lbfgsbIteration, lbfgsbTolerance);
         }
 
         /// <summary>
@@ -77,7 +77,7 @@ namespace MathNet.Numerics.UnitTests.OptimizationTests
             var result = m_lbfgsb.Minimize(init);
 
             Assert.AreEqual(LBFGSBResultStatus.Converged, result.Status);
-            double actualDValue = derivTargetFunction(result.Values);
+            double actualDValue = DerivTargetFunction(result.Values);
             Assert.AreEqual(expectedDValue, actualDValue, acceptRangeRate);
         }
     }
@@ -105,7 +105,7 @@ namespace MathNet.Numerics.UnitTests.OptimizationTests
         /// <param name="x">Value of variable.</param>
         /// <param name="parameters">Vector value of parameters.</param>
         /// <returns>Natural log of density.</returns>
-        private double lnPDF_GB2(double x, Vector<double> parameters)
+        private double LnPDF_GB2(double x, Vector<double> parameters)
         {
             double lnumer = Math.Log(parameters[0]) + (parameters[0] * parameters[2] - 1.0) * Math.Log(x);
             double ldenom = (parameters[0] * parameters[2]) * Math.Log(parameters[1]) +
@@ -120,9 +120,9 @@ namespace MathNet.Numerics.UnitTests.OptimizationTests
         /// <param name="x">Value of variable.</param>
         /// <param name="parameters">Vector value of parameters.</param>
         /// <returns>Value of density.</returns>
-        private double pdf_GB2(double x, Vector<double> parameters)
+        private double PDF_GB2(double x, Vector<double> parameters)
         {
-            return Math.Exp(lnPDF_GB2(x, parameters));
+            return Math.Exp(LnPDF_GB2(x, parameters));
         }
 
         /// <summary>
@@ -130,14 +130,14 @@ namespace MathNet.Numerics.UnitTests.OptimizationTests
         /// </summary>
         /// <param name="parameters">Vector value of parameters.</param>
         /// <returns>Value of log-likelihood.</returns>
-        private double likelihood(double[] parameters)
+        private double Likelihood(double[] parameters)
         {
             int i = 0;
             double res = 0.0;
             while (i < TestData.Count)
             {
                 var paramVec = DenseVector.OfArray(parameters);
-                res += lnPDF_GB2(TestData[i], paramVec);
+                res += LnPDF_GB2(TestData[i], paramVec);
                 i++;
             }
 
@@ -189,7 +189,7 @@ namespace MathNet.Numerics.UnitTests.OptimizationTests
 
             double scale = 1.0e-3;
             m_TargetFunc =
-                    (parameters) => { return (-1.0) * scale * likelihood(parameters); };
+                    (parameters) => { return (-1.0) * scale * Likelihood(parameters); };
 
             m_nm = new NelderMead(m_TargetFunc, nmIteration, nmTolerance);
             m_lbfgsb = new LBFGSB(m_TargetFunc, m_Bounds, lbfgsbIteration, lbfgsbTolerance);
