@@ -1,47 +1,61 @@
-Math.NET Numerics
-=================
-
-Math.NET Numerics is an opensource **numerical library for .Net, Silverlight and Mono**.
-
-Math.NET Numerics is the numerical foundation of the Math.NET project, aiming to provide methods and algorithms for numerical computations in science, engineering and every day use. Covered topics include special functions, linear algebra, probability models, random numbers, statistics, interpolation, integration, curve fitting, integral transforms (FFT) and more.
-
-In addition to the core .NET package (which is written entirely in C#), Numerics specifically supports F# 3.0 with idiomatic extension modules and maintains mathematical data structures like BigRational that originated in the F# PowerPack. If a performance boost is needed, the managed-code provider backing its linear algebra routines and decompositions can be exchanged with wrappers for optimized native implementations such as Intel MKL.
-
-Supports Mono and .NET 4.0 on Linux, Mac and Windows, the portable version also Silverlight 5, WindowsPhone 8 and .NET for Windows Store apps.
-
-Math.NET Numerics is covered under the terms of the [MIT/X11](http://mathnetnumerics.codeplex.com/license) license. You may therefore link to it and use it in both opensource and proprietary software projects. See also the [license](LICENSE.md) file in the root folder.
-
-Maintained by [Christoph Rüegg](http://christoph.ruegg.name/) but brought to you by all our awesome [contributors](CONTRIBUTORS.md) of Math.NET Numerics and its predecessors [dnAnalytics](http://dnanalytics.codeplex.com/) and [Math.NET Iridium](http://www.mathdotnet.com/Iridium.aspx). We accept contributions!
+=======
+![Math.NET Numerics Version](https://buildstats.info/nuget/MathNet.Numerics) Math.NET Numerics  
+![MKL Native Provider Version](https://buildstats.info/nuget/MathNet.Numerics.MKL.Win) MKL Native Provider  
+![OpenBLAS Native Provider Version](https://buildstats.info/nuget/MathNet.Numerics.OpenBLAS.Win) OpenBLAS Native Provider  
+![Data Extensions Version](https://buildstats.info/nuget/MathNet.Numerics.Data.Text) Data Extensions
 
 Installation Instructions
 -------------------------
 
-**[Release Notes & Changes](RELEASENOTES.md)**
+The recommended way to get Math.NET Numerics is to use NuGet. The following packages are provided and maintained in the public [NuGet Gallery](https://nuget.org/profiles/mathnet/).
 
-Download the *MathNet.Numerics.dll* assembly, add a reference to it to your project and you're done. To make this even simpler we publish binary releases to the [**NuGet Gallery**](http://nuget.org/) as package *MathNet.Numerics* (or *MathNet.Numerics.FSharp* for F# integration; we also have code sample packages there, see the release notes for details). Alternatively we also publish binary releases and documentation to [CodePlex](http://mathnetnumerics.codeplex.com/releases).
+Core Package:
 
-Quick Links
------------
+- **MathNet.Numerics** - core package, including .Net 4, .Net 3.5 and portable/PCL builds.
+- **MathNet.Numerics.FSharp** - optional extensions for a better F# experience. BigRational.
+- **MathNet.Numerics.Signed** - strong-named version of the core package *(not recommended)*.
+- **MathNet.Numerics.FSharp.Signed** - strong-named version of the F# package *(not recommended)*.
 
-* [**Project Website**](http://numerics.mathdotnet.com)
-* [Source Code](http://github.com/mathnet/mathnet-numerics)
-* [Downloads](http://mathnetnumerics.codeplex.com/releases)
-* [Documentation](http://mathnetnumerics.codeplex.com/documentation), see also new [experimental documentation](http://numerics.mathdotnet.com/docs/)
-* [API Reference](http://numerics.mathdotnet.com/api/)
-* [Code Samples](http://github.com/mathnet/mathnet-numerics/tree/master/src/Examples)
-* [Discussions](http://mathnetnumerics.codeplex.com/discussions)
-* [Work Items and Bug Tracker](http://github.com/mathnet/mathnet-numerics/issues)
-* [Ideas & Feedback](http://feedback.mathdotnet.com/forums/2060-math-net-numerics)
+Alternative Provider Packages (optional):
 
-Feeds:
+- **MathNet.Numerics.MKL.Win-x86** - Native Intel MKL Linear Algebra provider (Windows/32-bit).
+- **MathNet.Numerics.MKL.Win-x64** - Native Intel MKL Linear Algebra provider (Windows/64-bit).
 
-* [Blog Feed](http://christoph.ruegg.name/blog/categories/math-net-numerics/atom.xml)
-* [Activity Feed](http://feeds.mathdotnet.com/MathNetNumericsActivity)
+Data/IO Packages for reading and writing data (optional):
 
-Math.NET Numerics on other sites:
+- **MathNet.Numerics.Data.Text** - Text-based matrix formats like CSV and MatrixMarket.
+- **MathNet.Numerics.Data.Matlab** - MATLAB Level-5 matrix file format.
 
-* [Twitter @MathDotNet](http://twitter.com/MathDotNet)
-* [Google+](https://plus.google.com/112484567926928665204)
-* [Ohloh](https://www.ohloh.net/p/mathnet)
-* [Stack Overflow](http://stackoverflow.com/questions/tagged/mathdotnet)
-* [Wikipedia](http://en.wikipedia.org/wiki/Math.NET_Numerics)
+Platform Support and Dependencies
+---------------------------------
+
+Supported Platforms:
+
+- .Net 4.0, .Net 3.5 and Mono: Windows, Linux and Mac.
+- PCL Portable Profiles 7, 47, 78, 259 and 328: Windows 8, Silverlight 5, Windows Phone/SL 8, Windows Phone 8.1.
+- Xamarin: Android, iOS
+
+For full details, dependencies and platform discrepancies see [Platform Compatibility](http://numerics.mathdotnet.com/Compatibility.html).
+
+Building Math.NET Numerics
+--------------------------
+
+Windows (.Net): [![AppVeyor build status](https://ci.appveyor.com/api/projects/status/79j22c061saisces/branch/master)](https://ci.appveyor.com/project/cdrnet/mathnet-numerics)  
+Linux (Mono): [![Travis Build Status](https://travis-ci.org/mathnet/mathnet-numerics.svg?branch=master)](https://travis-ci.org/mathnet/mathnet-numerics)
+
+You can build Math.NET Numerics with an IDE like VisualStudio or Xamarin,
+with MsBuild or with FAKE.
+
+MsBuild/XBuild:
+
+    restore.cmd (or restore.sh)
+    msbuild MathNet.Numerics.sln
+
+FAKE:
+
+    build.cmd Build    # build from the Windows console with .Net
+    ./build.sh Build   # build from Bash, with Mono on Linux/Mac or .Net on Windows
+    ./build.sh Test    # build and run unit tests
+
+See [Build & Tools](http://numerics.mathdotnet.com/Build.html) for full details
+on how to build, generate documentation or even create a full release.

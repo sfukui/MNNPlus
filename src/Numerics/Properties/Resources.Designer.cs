@@ -316,6 +316,16 @@ namespace MathNet.Numerics.Properties {
         
         /// <summary>
         ///   In the specified range, the minimum is greater than maximum. に類似しているローカライズされた文字列を検索します。
+        ///   Looks up a localized string similar to In the specified range, the exclusive maximum must be greater than the inclusive minimum..
+        /// </summary>
+        public static string ArgumentMaxExclusiveMustBeLargerThanMinInclusive {
+            get {
+                return ResourceManager.GetString("ArgumentMaxExclusiveMustBeLargerThanMinInclusive", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   In the specified range, the minimum is greater than maximum. に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string ArgumentMinValueGreaterThanMaxValue {
             get {

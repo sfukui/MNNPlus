@@ -16,5 +16,3 @@ Then, add references to them in your project.
 Author
 -------------------
 Fukui Shogo
-
-
