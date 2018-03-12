@@ -41,12 +41,7 @@ using MathNet.Numerics.Threading;
 
 namespace MathNet.Numerics.LinearAlgebra.Complex
 {
-
-#if NOSYSNUMERICS
-    using Complex = Numerics.Complex;
-#else
     using Complex = System.Numerics.Complex;
-#endif
 
     /// <summary>
     /// A Matrix class with dense storage. The underlying storage is a one dimensional array in column-major order (column by column).
@@ -409,21 +404,21 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         /// <returns>The maximum absolute column sum of the matrix.</returns>
         public override double L1Norm()
         {
-            return Control.LinearAlgebraProvider.MatrixNorm(Norm.OneNorm, _rowCount, _columnCount, _values);
+            return LinearAlgebraControl.Provider.MatrixNorm(Norm.OneNorm, _rowCount, _columnCount, _values);
         }
 
         /// <summary>Calculates the induced infinity norm of this matrix.</summary>
         /// <returns>The maximum absolute row sum of the matrix.</returns>
         public override double InfinityNorm()
         {
-            return Control.LinearAlgebraProvider.MatrixNorm(Norm.InfinityNorm, _rowCount, _columnCount, _values);
+            return LinearAlgebraControl.Provider.MatrixNorm(Norm.InfinityNorm, _rowCount, _columnCount, _values);
         }
 
         /// <summary>Calculates the entry-wise Frobenius norm of this matrix.</summary>
         /// <returns>The square root of the sum of the squared values.</returns>
         public override double FrobeniusNorm()
         {
-            return Control.LinearAlgebraProvider.MatrixNorm(Norm.FrobeniusNorm, _rowCount, _columnCount, _values);
+            return LinearAlgebraControl.Provider.MatrixNorm(Norm.FrobeniusNorm, _rowCount, _columnCount, _values);
         }
 
         /// <summary>
@@ -435,7 +430,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
             var denseResult = result as DenseMatrix;
             if (denseResult != null)
             {
-                Control.LinearAlgebraProvider.ScaleArray(-1, _values, denseResult._values);
+                LinearAlgebraControl.Provider.ScaleArray(-1, _values, denseResult._values);
                 return;
             }
 
@@ -451,7 +446,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
             var denseResult = result as DenseMatrix;
             if (denseResult != null)
             {
-                Control.LinearAlgebraProvider.ConjugateArray(_values, denseResult._values);
+                LinearAlgebraControl.Provider.ConjugateArray(_values, denseResult._values);
                 return;
             }
 
@@ -496,7 +491,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
             var denseResult = result.Storage as DenseColumnMajorMatrixStorage<Complex>;
             if (denseOther != null && denseResult != null)
             {
-                Control.LinearAlgebraProvider.AddArrays(_values, denseOther.Data, denseResult.Data);
+                LinearAlgebraControl.Provider.AddArrays(_values, denseOther.Data, denseResult.Data);
                 return;
             }
 
@@ -552,7 +547,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
             var denseResult = result.Storage as DenseColumnMajorMatrixStorage<Complex>;
             if (denseOther != null && denseResult != null)
             {
-                Control.LinearAlgebraProvider.SubtractArrays(_values, denseOther.Data, denseResult.Data);
+                LinearAlgebraControl.Provider.SubtractArrays(_values, denseOther.Data, denseResult.Data);
                 return;
             }
 
@@ -586,7 +581,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
             }
             else
             {
-                Control.LinearAlgebraProvider.ScaleArray(scalar, _values, denseResult._values);
+                LinearAlgebraControl.Provider.ScaleArray(scalar, _values, denseResult._values);
             }
         }
 
@@ -606,7 +601,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
             }
             else
             {
-                Control.LinearAlgebraProvider.MatrixMultiply(
+                LinearAlgebraControl.Provider.MatrixMultiply(
                     _values,
                     _rowCount,
                     _columnCount,
@@ -628,7 +623,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
             var denseResult = result as DenseMatrix;
             if (denseOther != null && denseResult != null)
             {
-                Control.LinearAlgebraProvider.MatrixMultiply(
+                LinearAlgebraControl.Provider.MatrixMultiply(
                     _values,
                     _rowCount,
                     _columnCount,
@@ -674,7 +669,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
             var denseResult = result as DenseMatrix;
             if (denseOther != null && denseResult != null)
             {
-                Control.LinearAlgebraProvider.MatrixMultiplyWithUpdate(
+                LinearAlgebraControl.Provider.MatrixMultiplyWithUpdate(
                     Providers.LinearAlgebra.Transpose.DontTranspose,
                     Providers.LinearAlgebra.Transpose.Transpose,
                     1.0,
@@ -724,7 +719,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
             var denseResult = result as DenseMatrix;
             if (denseOther != null && denseResult != null)
             {
-                Control.LinearAlgebraProvider.MatrixMultiplyWithUpdate(
+                LinearAlgebraControl.Provider.MatrixMultiplyWithUpdate(
                     Providers.LinearAlgebra.Transpose.DontTranspose,
                     Providers.LinearAlgebra.Transpose.ConjugateTranspose,
                     1.0,
@@ -780,7 +775,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
             var denseResult = result as DenseVector;
             if (denseRight != null && denseResult != null)
             {
-                Control.LinearAlgebraProvider.MatrixMultiplyWithUpdate(
+                LinearAlgebraControl.Provider.MatrixMultiplyWithUpdate(
                     Providers.LinearAlgebra.Transpose.Transpose,
                     Providers.LinearAlgebra.Transpose.DontTranspose,
                     1.0,
@@ -809,7 +804,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
             var denseResult = result as DenseVector;
             if (denseRight != null && denseResult != null)
             {
-                Control.LinearAlgebraProvider.MatrixMultiplyWithUpdate(
+                LinearAlgebraControl.Provider.MatrixMultiplyWithUpdate(
                     Providers.LinearAlgebra.Transpose.ConjugateTranspose,
                     Providers.LinearAlgebra.Transpose.DontTranspose,
                     1.0,
@@ -838,7 +833,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
             var denseResult = result as DenseMatrix;
             if (denseOther != null && denseResult != null)
             {
-                Control.LinearAlgebraProvider.MatrixMultiplyWithUpdate(
+                LinearAlgebraControl.Provider.MatrixMultiplyWithUpdate(
                     Providers.LinearAlgebra.Transpose.Transpose,
                     Providers.LinearAlgebra.Transpose.DontTranspose,
                     1.0,
@@ -889,7 +884,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
             var denseResult = result as DenseMatrix;
             if (denseOther != null && denseResult != null)
             {
-                Control.LinearAlgebraProvider.MatrixMultiplyWithUpdate(
+                LinearAlgebraControl.Provider.MatrixMultiplyWithUpdate(
                     Providers.LinearAlgebra.Transpose.ConjugateTranspose,
                     Providers.LinearAlgebra.Transpose.DontTranspose,
                     1.0,
@@ -943,7 +938,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
             }
             else
             {
-                Control.LinearAlgebraProvider.ScaleArray(1.0/divisor, _values, denseResult._values);
+                LinearAlgebraControl.Provider.ScaleArray(1.0/divisor, _values, denseResult._values);
             }
         }
 
@@ -963,7 +958,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
             }
             else
             {
-                Control.LinearAlgebraProvider.PointWiseMultiplyArrays(_values, denseOther._values, denseResult._values);
+                LinearAlgebraControl.Provider.PointWiseMultiplyArrays(_values, denseOther._values, denseResult._values);
             }
         }
 
@@ -974,16 +969,36 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         /// <param name="result">The matrix to store the result of the pointwise division.</param>
         protected override void DoPointwiseDivide(Matrix<Complex> divisor, Matrix<Complex> result)
         {
-            var denseOther = divisor as DenseMatrix;
+            var denseDivisor = divisor as DenseMatrix;
             var denseResult = result as DenseMatrix;
 
-            if (denseOther == null || denseResult == null)
+            if (denseDivisor == null || denseResult == null)
             {
                 base.DoPointwiseDivide(divisor, result);
             }
             else
             {
-                Control.LinearAlgebraProvider.PointWiseDivideArrays(_values, denseOther._values, denseResult._values);
+                LinearAlgebraControl.Provider.PointWiseDivideArrays(_values, denseDivisor._values, denseResult._values);
+            }
+        }
+
+        /// <summary>
+        /// Pointwise raise this matrix to an exponent and store the result into the result matrix.
+        /// </summary>
+        /// <param name="exponent">The exponent to raise this matrix values to.</param>
+        /// <param name="result">The vector to store the result of the pointwise power.</param>
+        protected override void DoPointwisePower(Matrix<Complex> exponent, Matrix<Complex> result)
+        {
+            var denseExponent = exponent as DenseMatrix;
+            var denseResult = result as DenseMatrix;
+
+            if (denseExponent == null || denseResult == null)
+            {
+                base.DoPointwisePower(exponent, result);
+            }
+            else
+            {
+                LinearAlgebraControl.Provider.PointWisePowerArrays(_values, denseExponent._values, denseResult._values);
             }
         }
 
@@ -1244,7 +1259,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         }
 
         /// <summary>
-        /// Evaluates whether this matrix is hermitian (conjugate symmetric).
+        /// Evaluates whether this matrix is Hermitian (conjugate symmetric).
         /// </summary>
         public override bool IsHermitian()
         {

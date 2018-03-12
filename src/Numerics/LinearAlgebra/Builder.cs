@@ -187,11 +187,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single
 
 namespace MathNet.Numerics.LinearAlgebra.Complex
 {
-#if NOSYSNUMERICS
-    using Complex = Numerics.Complex;
-#else
     using Complex = System.Numerics.Complex;
-#endif
 
     internal class MatrixBuilder : MatrixBuilder<Complex>
     {
@@ -343,14 +339,6 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32
 
 namespace MathNet.Numerics.LinearAlgebra
 {
-
-#if NOSYSNUMERICS
-    using Complex64 = Numerics.Complex;
-#else
-    using Complex64 = System.Numerics.Complex;
-
-#endif
-
     /// <summary>
     /// Generic linear algebra type builder, for situations where a matrix or vector
     /// must be created in a generic way. Usage of generic builders should not be
@@ -685,6 +673,17 @@ namespace MathNet.Numerics.LinearAlgebra
         public Matrix<T> DenseOfColumnVectors(IEnumerable<Vector<T>> columns)
         {
             return Dense(DenseColumnMajorMatrixStorage<T>.OfColumnVectors(columns.Select(c => c.Storage).ToArray()));
+        }
+
+        /// <summary>
+        /// Create a new dense matrix as a copy of the given enumerable.
+        /// The enumerable is assumed to be in row-major order (row by row).
+        /// This new matrix will be independent from the enumerable.
+        /// A new memory block will be allocated for storing the matrix.
+        /// </summary>
+        public Matrix<T> DenseOfRowMajor(int rows, int columns, IEnumerable<T> columnMajor)
+        {
+            return Dense(DenseColumnMajorMatrixStorage<T>.OfRowMajorEnumerable(rows, columns, columnMajor));
         }
 
         /// <summary>
@@ -1576,11 +1575,11 @@ namespace MathNet.Numerics.LinearAlgebra
 
         static Tuple<MatrixBuilder<T>, VectorBuilder<T>> Create()
         {
-            if (typeof (T) == typeof (Complex64))
+            if (typeof (T) == typeof (System.Numerics.Complex))
             {
                 return new Tuple<MatrixBuilder<T>, VectorBuilder<T>>(
-                    (MatrixBuilder<T>)(object)new Complex.MatrixBuilder(),
-                    (VectorBuilder<T>)(object)new Complex.VectorBuilder());
+                    (MatrixBuilder<T>)(object)new LinearAlgebra.Complex.MatrixBuilder(),
+                    (VectorBuilder<T>)(object)new LinearAlgebra.Complex.VectorBuilder());
             }
 
             if (typeof (T) == typeof (Numerics.Complex32))

@@ -31,6 +31,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime;
+using System.Runtime.CompilerServices;
 using MathNet.Numerics.LinearAlgebra.Storage;
 using MathNet.Numerics.Properties;
 
@@ -43,7 +44,7 @@ namespace MathNet.Numerics.LinearAlgebra
     [Serializable]
     public abstract partial class Vector<T> :
         IFormattable, IEquatable<Vector<T>>, IList, IList<T>
-#if !PORTABLE
+#if !NETSTANDARD1_3
         , ICloneable
 #endif
         where T : struct, IEquatable<T>, IFormattable
@@ -76,20 +77,26 @@ namespace MathNet.Numerics.LinearAlgebra
         /// greater than the size of the vector.</exception>
         public T this[int index]
         {
+#if !NET40
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             [TargetedPatchingOptOut("Performance critical to inline across NGen image boundaries")]
-            //[MethodImpl(MethodImplOptions.AggressiveInlining)] .Net 4.5 only
             get { return Storage[index]; }
 
+#if !NET40
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             [TargetedPatchingOptOut("Performance critical to inline across NGen image boundaries")]
-            //[MethodImpl(MethodImplOptions.AggressiveInlining)] .Net 4.5 only
             set { Storage[index] = value; }
         }
 
         /// <summary>Gets the value at the given <paramref name="index"/> without range checking..</summary>
         /// <param name="index">The index of the value to get or set.</param>
         /// <returns>The value of the vector at the given <paramref name="index"/>.</returns>
+#if !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         [TargetedPatchingOptOut("Performance critical to inline across NGen image boundaries")]
-        //[MethodImpl(MethodImplOptions.AggressiveInlining)] .Net 4.5 only
         public T At(int index)
         {
             return Storage.At(index);
@@ -98,8 +105,10 @@ namespace MathNet.Numerics.LinearAlgebra
         /// <summary>Sets the <paramref name="value"/> at the given <paramref name="index"/> without range checking..</summary>
         /// <param name="index">The index of the value to get or set.</param>
         /// <param name="value">The value to set.</param>
+#if !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         [TargetedPatchingOptOut("Performance critical to inline across NGen image boundaries")]
-        //[MethodImpl(MethodImplOptions.AggressiveInlining)] .Net 4.5 only
         public void At(int index, T value)
         {
             Storage.At(index, value);
@@ -205,7 +214,7 @@ namespace MathNet.Numerics.LinearAlgebra
         /// Copies the values of a given vector into a region in this vector.
         /// </summary>
         /// <param name="index">The field to start copying to</param>
-        /// <param name="count">The number of fields to cpy. Must be positive.</param>
+        /// <param name="count">The number of fields to copy. Must be positive.</param>
         /// <param name="subVector">The sub-vector to copy from.</param>
         /// <exception cref="ArgumentNullException">If <paramref name="subVector"/> is <see langword="null" /></exception>
         public void SetSubVector(int index, int count, Vector<T> subVector)
@@ -238,15 +247,23 @@ namespace MathNet.Numerics.LinearAlgebra
 
         /// <summary>
         /// Returns the data contained in the vector as an array.
+        /// The returned array will be independent from this vector.
+        /// A new memory block will be allocated for the array.
         /// </summary>
-        /// <returns>
-        /// The vector's data as an array.
-        /// </returns>
+        /// <returns>The vector's data as an array.</returns>
         public T[] ToArray()
         {
-            var result = new DenseVectorStorage<T>(Count);
-            Storage.CopyToUnchecked(result, ExistingData.AssumeZeros);
-            return result.Data;
+            return Storage.ToArray();
+        }
+
+        /// <summary>
+        /// Returns the internal array of this vector if, and only if, this vector is stored by such an array internally.
+        /// Otherwise returns null. Changes to the returned array and the vector will affect each other.
+        /// Use ToArray instead if you always need an independent array.
+        /// </summary>
+        public T[] AsArray()
+        {
+            return Storage.AsArray();
         }
 
         /// <summary>
@@ -336,40 +353,13 @@ namespace MathNet.Numerics.LinearAlgebra
         }
 
         /// <summary>
-        /// Returns an IEnumerable that can be used to iterate through all non-zero values of the vector.
-        /// </summary>
-        /// <remarks>
-        /// The enumerator will skip all elements with a zero value.
-        /// </remarks>
-        [Obsolete("Use Enumerate(Zeros.AllowSkip) instead. Will be removed in v4.")]
-        public IEnumerable<T> EnumerateNonZero()
-        {
-            return Storage.EnumerateNonZero();
-        }
-
-        /// <summary>
-        /// Returns an IEnumerable that can be used to iterate through all non-zero values of the vector and their index.
-        /// </summary>
-        /// <remarks>
-        /// The enumerator returns a Tuple with the first value being the element index
-        /// and the second value being the value of the element at that index.
-        /// The enumerator will skip all elements with a zero value.
-        /// </remarks>
-        [Obsolete("Use EnumerateIndexed(Zeros.AllowSkip) instead. Will be removed in v4.")]
-        public IEnumerable<Tuple<int, T>> EnumerateNonZeroIndexed()
-        {
-            return Storage.EnumerateNonZeroIndexed();
-        }
-
-        /// <summary>
         /// Applies a function to each value of this vector and replaces the value with its result.
         /// If forceMapZero is not set to true, zero values may or may not be skipped depending
         /// on the actual data storage implementation (relevant mostly for sparse vectors).
         /// </summary>
         public void MapInplace(Func<T, T> f, Zeros zeros = Zeros.AllowSkip)
         {
-            // TODO: actual in-place
-            Storage.MapToUnchecked(Storage, f, zeros, ExistingData.AssumeZeros);
+            Storage.MapInplace(f, zeros);
         }
 
         /// <summary>
@@ -380,8 +370,7 @@ namespace MathNet.Numerics.LinearAlgebra
         /// </summary>
         public void MapIndexedInplace(Func<int, T, T> f, Zeros zeros = Zeros.AllowSkip)
         {
-            // TODO: actual in-place
-            Storage.MapIndexedToUnchecked(Storage, f, zeros, ExistingData.AssumeZeros);
+            Storage.MapIndexedInplace(f, zeros);
         }
 
         /// <summary>
@@ -389,12 +378,16 @@ namespace MathNet.Numerics.LinearAlgebra
         /// If forceMapZero is not set to true, zero values may or may not be skipped depending
         /// on the actual data storage implementation (relevant mostly for sparse vectors).
         /// </summary>
-        public void Map<TU>(Func<T, TU> f, Vector<TU> result, Zeros zeros = Zeros.AllowSkip)
-            where TU : struct, IEquatable<TU>, IFormattable
+        public void Map(Func<T, T> f, Vector<T> result, Zeros zeros = Zeros.AllowSkip)
         {
-            // TODO: in v4 update this method to replace TU with T (consistent with Matrix, see MapConvert)
-            //       then automatically do in-place if possible.
-            Storage.MapTo(result.Storage, f, zeros, zeros == Zeros.Include ? ExistingData.AssumeZeros : ExistingData.Clear);
+            if (ReferenceEquals(this, result))
+            {
+                Storage.MapInplace(f, zeros);
+            }
+            else
+            {
+                Storage.MapTo(result.Storage, f, zeros, zeros == Zeros.Include ? ExistingData.AssumeZeros : ExistingData.Clear);
+            }
         }
 
         /// <summary>
@@ -403,12 +396,16 @@ namespace MathNet.Numerics.LinearAlgebra
         /// If forceMapZero is not set to true, zero values may or may not be skipped depending
         /// on the actual data storage implementation (relevant mostly for sparse vectors).
         /// </summary>
-        public void MapIndexed<TU>(Func<int, T, TU> f, Vector<TU> result, Zeros zeros = Zeros.AllowSkip)
-            where TU : struct, IEquatable<TU>, IFormattable
+        public void MapIndexed(Func<int, T, T> f, Vector<T> result, Zeros zeros = Zeros.AllowSkip)
         {
-            // TODO: in v4 update this method to replace TU with T (consistent with Matrix, see MapIndexedConvert)
-            //       then automatically do in-place if possible.
-            Storage.MapIndexedTo(result.Storage, f, zeros, zeros == Zeros.Include ? ExistingData.AssumeZeros : ExistingData.Clear);
+            if (ReferenceEquals(this, result))
+            {
+                Storage.MapIndexedInplace(f, zeros);
+            }
+            else
+            {
+                Storage.MapIndexedTo(result.Storage, f, zeros, zeros == Zeros.Include ? ExistingData.AssumeZeros : ExistingData.Clear);
+            }
         }
 
         /// <summary>

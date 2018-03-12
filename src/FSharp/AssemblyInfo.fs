@@ -44,14 +44,11 @@ open System.Runtime.InteropServices
 [<assembly: AssemblyCulture("")>]
 [<assembly: NeutralResourcesLanguage("en")>]
 
-[<assembly: AssemblyVersion("3.13.1.0")>]
-[<assembly: AssemblyFileVersion("3.13.1.0")>]
-[<assembly: AssemblyInformationalVersion("3.13.1")>]
+[<assembly: AssemblyVersion("4.4.0.0")>]
+[<assembly: AssemblyFileVersion("4.4.0.0")>]
+[<assembly: AssemblyInformationalVersion("4.4.0")>]
 
-#if PORTABLE
-#else
 [<assembly: ComVisible(false)>]
 [<assembly: Guid("048BC4EB-CE2B-4040-9967-4784F5405B0F")>]
-#endif
 
 ()

@@ -491,6 +491,11 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             CopyToUnchecked(target, existingData);
         }
 
+        internal override void TransposeSquareInplaceUnchecked()
+        {
+            // nothing to do
+        }
+
         // EXTRACT
 
         public override T[] ToRowMajorArray()
@@ -730,7 +735,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
 
         // FUNCTIONAL COMBINATORS: MAP
 
-        public override void MapInplace(Func<T, T> f, Zeros zeros = Zeros.AllowSkip)
+        public override void MapInplace(Func<T, T> f, Zeros zeros)
         {
             if (zeros == Zeros.Include)
             {
@@ -746,7 +751,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             });
         }
 
-        public override void MapIndexedInplace(Func<int, int, T, T> f, Zeros zeros = Zeros.AllowSkip)
+        public override void MapIndexedInplace(Func<int, int, T, T> f, Zeros zeros)
         {
             if (zeros == Zeros.Include)
             {

@@ -28,17 +28,12 @@
 // </copyright>
 
 using System;
+using System.Numerics;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace MathNet.Numerics.Statistics
 {
-#if NOSYSNUMERICS
-    using Complex64 = Numerics.Complex;
-#else
-    using Complex64 = System.Numerics.Complex;
-#endif
-
     /// <summary>
     /// Extension methods to return basic statistics on set of data.
     /// </summary>
@@ -187,9 +182,9 @@ namespace MathNet.Numerics.Statistics
         /// </summary>
         /// <param name="data">The sample data.</param>
         /// <returns>The minimum value in the sample data.</returns>
-        public static Complex64 MinimumMagnitudePhase(this IEnumerable<Complex64> data)
+        public static Complex MinimumMagnitudePhase(this IEnumerable<Complex> data)
         {
-            var array = data as Complex64[];
+            var array = data as Complex[];
             return array != null
                 ? ArrayStatistics.MinimumMagnitudePhase(array)
                 : StreamingStatistics.MinimumMagnitudePhase(data);
@@ -215,9 +210,9 @@ namespace MathNet.Numerics.Statistics
         /// </summary>
         /// <param name="data">The sample data.</param>
         /// <returns>The minimum value in the sample data.</returns>
-        public static Complex64 MaximumMagnitudePhase(this IEnumerable<Complex64> data)
+        public static Complex MaximumMagnitudePhase(this IEnumerable<Complex> data)
         {
-            var array = data as Complex64[];
+            var array = data as Complex[];
             return array != null
                 ? ArrayStatistics.MaximumMagnitudePhase(array)
                 : StreamingStatistics.MaximumMagnitudePhase(data);
@@ -403,7 +398,7 @@ namespace MathNet.Numerics.Statistics
 
         /// <summary>
         /// Evaluates the variance from the provided full population.
-        /// On a dataset of size N will use an N normalize and would thus be biased if applied to a subsetr.
+        /// On a dataset of size N will use an N normalize and would thus be biased if applied to a subset.
         /// Returns NaN if data is empty or if any entry is NaN.
         /// Null-entries are ignored.
         /// </summary>
@@ -1272,7 +1267,7 @@ namespace MathNet.Numerics.Statistics
         /// </summary>
         /// <param name="data">The data sample sequence.</param>
         /// <param name="definition">Rank definition, to choose how ties should be handled and what product/definition it should be consistent with</param>
-        public static double[] Ranks(this IEnumerable<float> data, RankDefinition definition = RankDefinition.Default)
+        public static float[] Ranks(this IEnumerable<float> data, RankDefinition definition = RankDefinition.Default)
         {
             float[] array = data.ToArray();
             return ArrayStatistics.RanksInplace(array, definition);

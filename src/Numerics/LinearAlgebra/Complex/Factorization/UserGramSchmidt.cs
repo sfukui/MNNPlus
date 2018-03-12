@@ -32,12 +32,7 @@ using MathNet.Numerics.Properties;
 
 namespace MathNet.Numerics.LinearAlgebra.Complex.Factorization
 {
-
-#if NOSYSNUMERICS
-    using Numerics;
-#else
-    using System.Numerics;
-#endif
+    using Complex = System.Numerics.Complex;
 
     /// <summary>
     /// <para>A class which encapsulates the functionality of the QR decomposition Modified Gram-Schmidt Orthogonalization.</para>
@@ -49,7 +44,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex.Factorization
     internal sealed class UserGramSchmidt : GramSchmidt
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="UserGramSchmidt"/> class. This object creates an unitary matrix 
+        /// Initializes a new instance of the <see cref="UserGramSchmidt"/> class. This object creates an unitary matrix
         /// using the modified Gram-Schmidt method.
         /// </summary>
         /// <param name="matrix">The matrix to factor.</param>
@@ -64,7 +59,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex.Factorization
             }
 
             var q = matrix.Clone();
-            var r = Matrix<Complex>.Build.SameAs(matrix, matrix.ColumnCount, matrix.ColumnCount);
+            var r = Matrix<Complex>.Build.SameAs(matrix, matrix.ColumnCount, matrix.ColumnCount, fullyMutable: true);
 
             for (var k = 0; k < q.ColumnCount; k++)
             {
@@ -87,7 +82,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex.Factorization
                     {
                         dot += q.Column(k)[i].Conjugate() * q.Column(j)[i];
                     }
-                    
+
                     r.At(k, j, dot);
                     for (var i = 0; i < q.RowCount; i++)
                     {
@@ -131,7 +126,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex.Factorization
             }
 
             var inputCopy = input.Clone();
-            
+
             // Compute Y = transpose(Q)*B
             var column = new Complex[Q.RowCount];
             for (var j = 0; j < input.ColumnCount; j++)

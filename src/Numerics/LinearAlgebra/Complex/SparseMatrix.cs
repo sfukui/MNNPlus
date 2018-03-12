@@ -32,15 +32,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using MathNet.Numerics.LinearAlgebra.Storage;
+using MathNet.Numerics.Providers.LinearAlgebra;
 
 namespace MathNet.Numerics.LinearAlgebra.Complex
 {
-
-#if NOSYSNUMERICS
-    using Numerics;
-#else
-    using System.Numerics;
-#endif
+    using Complex = System.Numerics.Complex;
 
     /// <summary>
     /// A Matrix with sparse storage, intended for very large matrices where most of the cells are zero.
@@ -725,7 +721,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
                     CopyTo(result);
                 }
 
-                Control.LinearAlgebraProvider.ScaleArray(2.0, sparseResult._storage.Values, sparseResult._storage.Values);
+                LinearAlgebraControl.Provider.ScaleArray(2.0, sparseResult._storage.Values, sparseResult._storage.Values);
                 return;
             }
 
@@ -875,7 +871,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
                     CopyTo(sparseResult);
                 }
 
-                Control.LinearAlgebraProvider.ScaleArray(scalar, sparseResult._storage.Values, sparseResult._storage.Values);
+                LinearAlgebraControl.Provider.ScaleArray(scalar, sparseResult._storage.Values, sparseResult._storage.Values);
             }
         }
 
@@ -911,7 +907,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
             }
 
             result.Clear();
-            
+
 
             var rowPointers = _storage.RowPointers;
             var columnIndices = _storage.ColumnIndices;
@@ -1274,7 +1270,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         }
 
         /// <summary>
-        /// Evaluates whether this matrix is hermitian (conjugate symmetric).
+        /// Evaluates whether this matrix is Hermitian (conjugate symmetric).
         /// </summary>
         public override bool IsHermitian()
         {

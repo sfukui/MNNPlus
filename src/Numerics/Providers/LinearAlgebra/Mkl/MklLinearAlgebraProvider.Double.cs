@@ -34,13 +34,14 @@ using System.Numerics;
 using System.Security;
 using MathNet.Numerics.LinearAlgebra.Factorization;
 using MathNet.Numerics.Properties;
+using MathNet.Numerics.Providers.Common.Mkl;
 
 namespace MathNet.Numerics.Providers.LinearAlgebra.Mkl
 {
     /// <summary>
     /// Intel's Math Kernel Library (MKL) linear algebra provider.
     /// </summary>
-    public partial class MklLinearAlgebraProvider
+    internal partial class MklLinearAlgebraProvider
     {
         /// <summary>
         /// Computes the requested <see cref="Norm"/> of the matrix.
@@ -357,7 +358,7 @@ namespace MathNet.Numerics.Providers.LinearAlgebra.Mkl
             if (info > 0)
             {
                 throw new SingularUMatrixException(info);
-            } 
+            }
         }
 
         /// <summary>
@@ -1091,14 +1092,54 @@ namespace MathNet.Numerics.Providers.LinearAlgebra.Mkl
         }
 
         /// <summary>
+        /// Does a point wise power of two arrays <c>z = x ^ y</c>. This can be used
+        /// to raise elements of vectors or matrices to the powers of another vector or matrix.
+        /// </summary>
+        /// <param name="x">The array x.</param>
+        /// <param name="y">The array y.</param>
+        /// <param name="result">The result of the point wise power.</param>
+        /// <remarks>There is no equivalent BLAS routine, but many libraries
+        /// provide optimized (parallel and/or vectorized) versions of this
+        /// routine.</remarks>
+        public override void PointWisePowerArrays(double[] x, double[] y, double[] result)
+        {
+            if (_vectorFunctionsMajor != 0 || _vectorFunctionsMinor < 1)
+            {
+                base.PointWisePowerArrays(x, y, result);
+            }
+
+            if (y == null)
+            {
+                throw new ArgumentNullException("y");
+            }
+
+            if (x == null)
+            {
+                throw new ArgumentNullException("x");
+            }
+
+            if (x.Length != y.Length)
+            {
+                throw new ArgumentException(Resources.ArgumentArraysSameLength);
+            }
+
+            if (x.Length != result.Length)
+            {
+                throw new ArgumentException(Resources.ArgumentArraysSameLength);
+            }
+
+            SafeNativeMethods.d_vector_power(x.Length, x, y, result);
+        }
+
+        /// <summary>
         /// Computes the eigenvalues and eigenvectors of a matrix.
         /// </summary>
         /// <param name="isSymmetric">Whether the matrix is symmetric or not.</param>
         /// <param name="order">The order of the matrix.</param>
-        /// <param name="matrix">The matrix to decompose. The lenth of the array must be order * order.</param>
-        /// <param name="matrixEv">On output, the matrix contains the eigen vectors. The lenth of the array must be order * order.</param>
-        /// <param name="vectorEv">On output, the eigen values (λ) of matrix in ascending value. The length of the arry must <paramref name="order"/>.</param>
-        /// <param name="matrixD">On output, the block diagonal eigenvalue matrix. The lenth of the array must be order * order.</param>
+        /// <param name="matrix">The matrix to decompose. The length of the array must be order * order.</param>
+        /// <param name="matrixEv">On output, the matrix contains the eigen vectors. The length of the array must be order * order.</param>
+        /// <param name="vectorEv">On output, the eigen values (λ) of matrix in ascending value. The length of the array must <paramref name="order"/>.</param>
+        /// <param name="matrixD">On output, the block diagonal eigenvalue matrix. The length of the array must be order * order.</param>
         public override void EigenDecomp(bool isSymmetric, int order, double[] matrix, double[] matrixEv, Complex[] vectorEv, double[] matrixD)
         {
             if (matrix == null)

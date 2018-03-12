@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 using MathNet.Numerics.Properties;
 
 namespace MathNet.Numerics.Random
@@ -38,6 +39,8 @@ namespace MathNet.Numerics.Random
     /// and the Math.Net Numerics random number generators to provide thread safety.
     /// When used directly it use the System.Random as random number source.
     /// </summary>
+    [Serializable]
+    [DataContract(Namespace = "urn:MathNet/Numerics/Random")]
     public abstract class RandomSource : System.Random
     {
         readonly bool _threadSafe;
@@ -528,7 +531,7 @@ namespace MathNet.Numerics.Random
             // every bit with independent uniform distribution
             uint uint32 = BitConverter.ToUInt32(bytes, 0);
 
-            // the least significant N bits with independend uniform distribution and the remaining bits zero
+            // the least significant N bits with independent uniform distribution and the remaining bits zero
             uint uintN = uint32 >> (32 - bitCount);
             return (int)uintN;
         }
@@ -552,7 +555,7 @@ namespace MathNet.Numerics.Random
             // every bit with independent uniform distribution
             ulong uint64 = BitConverter.ToUInt64(bytes, 0);
 
-            // the least significant N bits with independend uniform distribution and the remaining bits zero
+            // the least significant N bits with independent uniform distribution and the remaining bits zero
             ulong uintN = uint64 >> (64 - bitCount);
             return (long)uintN;
         }

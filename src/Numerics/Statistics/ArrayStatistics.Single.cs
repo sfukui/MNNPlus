@@ -514,7 +514,7 @@ namespace MathNet.Numerics.Statistics
         /// <summary>
         /// Estimates the tau-th quantile from the unsorted data array.
         /// The tau-th quantile is the data value where the cumulative distribution
-        /// function crosses tau. The quantile defintion can be specified
+        /// function crosses tau. The quantile definition can be specified
         /// by 4 parameters a, b, c and d, consistent with Mathematica.
         /// WARNING: Works inplace and can thus causes the data array to be reordered.
         /// </summary>
@@ -532,11 +532,7 @@ namespace MathNet.Numerics.Statistics
             }
 
             var x = a + (data.Length + b) * tau - 1;
-#if PORTABLE
-            var ip = (int)x;
-#else
             var ip = Math.Truncate(x);
-#endif
             var fp = x - ip;
 
             if (Math.Abs(fp) < 1e-9)
@@ -763,9 +759,9 @@ namespace MathNet.Numerics.Statistics
         /// with an existing system.
         /// WARNING: Works inplace and can thus causes the data array to be reordered.
         /// </summary>
-        public static double[] RanksInplace(float[] data, RankDefinition definition = RankDefinition.Default)
+        public static float[] RanksInplace(float[] data, RankDefinition definition = RankDefinition.Default)
         {
-            var ranks = new double[data.Length];
+            var ranks = new float[data.Length];
             var index = new int[data.Length];
             for (int i = 0; i < index.Length; i++)
             {
@@ -806,6 +802,40 @@ namespace MathNet.Numerics.Statistics
 
             RanksTies(ranks, index, previousIndex, data.Length, definition);
             return ranks;
+        }
+
+        static void RanksTies(float[] ranks, int[] index, int a, int b, RankDefinition definition)
+        {
+            // TODO: potential for PERF optimization
+            float rank;
+            switch (definition)
+            {
+                case RankDefinition.Average:
+                {
+                    rank = (b + a - 1) / 2f + 1;
+                    break;
+                }
+
+                case RankDefinition.Min:
+                {
+                    rank = a + 1;
+                    break;
+                }
+
+                case RankDefinition.Max:
+                {
+                    rank = b;
+                    break;
+                }
+
+                default:
+                    throw new NotSupportedException();
+            }
+
+            for (int k = a; k < b; k++)
+            {
+                ranks[index[k]] = rank;
+            }
         }
     }
 }

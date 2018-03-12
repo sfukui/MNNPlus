@@ -27,20 +27,17 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
-using MathNet.Numerics.LinearAlgebra.Storage;
-using MathNet.Numerics.Threading;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
+using MathNet.Numerics.LinearAlgebra.Storage;
+using MathNet.Numerics.Providers.LinearAlgebra;
+using MathNet.Numerics.Threading;
+
 namespace MathNet.Numerics.LinearAlgebra.Complex
 {
-
-#if NOSYSNUMERICS
-    using Numerics;
-#else
-    using System.Numerics;
-#endif
+    using Complex = System.Numerics.Complex;
 
     /// <summary>
     /// A vector with sparse storage, intended for very large vectors where most of the cells are zero.
@@ -173,7 +170,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
                     vnonZeroValues[indices[j]] = values[j] + scalar;
                 }
 
-                //assign this vectors arrary to the new arrays.
+                //assign this vectors array to the new arrays.
                 _storage.Values = vnonZeroValues;
                 _storage.Indices = vnonZeroIndices;
                 _storage.ValueCount = Count;
@@ -399,7 +396,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
                 Array.Copy(_storage.Values, 0, sparseResult._storage.Values, 0, _storage.ValueCount);
             }
 
-            Control.LinearAlgebraProvider.ScaleArray(-Complex.One, sparseResult._storage.Values, sparseResult._storage.Values);
+            LinearAlgebraControl.Provider.ScaleArray(-Complex.One, sparseResult._storage.Values, sparseResult._storage.Values);
         }
 
         /// <summary>
@@ -420,7 +417,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
                     Array.Copy(_storage.Values, 0, sparseResult._storage.Values, 0, _storage.ValueCount);
                 }
 
-                Control.LinearAlgebraProvider.ConjugateArray(sparseResult._storage.Values, sparseResult._storage.Values);
+                LinearAlgebraControl.Provider.ConjugateArray(sparseResult._storage.Values, sparseResult._storage.Values);
                 return;
             }
 
@@ -462,7 +459,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
                     Array.Copy(_storage.Values, 0, sparseResult._storage.Values, 0, _storage.ValueCount);
                 }
 
-                Control.LinearAlgebraProvider.ScaleArray(scalar, sparseResult._storage.Values, sparseResult._storage.Values);
+                LinearAlgebraControl.Provider.ScaleArray(scalar, sparseResult._storage.Values, sparseResult._storage.Values);
             }
         }
 

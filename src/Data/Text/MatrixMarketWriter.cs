@@ -47,7 +47,7 @@ namespace MathNet.Numerics.Data.Text
 
         public static void WriteMatrix<T>(string filePath, Matrix<T> matrix, Compression compression = Compression.Uncompressed) where T : struct, IEquatable<T>, IFormattable
         {
-            using (var stream = File.OpenWrite(filePath))
+            using (var stream = File.Create(filePath))
             {
                 switch (compression)
                 {
@@ -61,8 +61,12 @@ namespace MathNet.Numerics.Data.Text
 
                     case Compression.GZip:
                         using (var compressed = new GZipStream(stream, CompressionMode.Compress))
+#if NETSTANDARD1_3
+                        using (var writer = new StreamWriter(compressed))
+#else
                         using (var buffered = new BufferedStream(compressed, 4096))
                         using (var writer = new StreamWriter(buffered))
+#endif
                         {
                             WriteMatrix(writer, matrix);
                         }
@@ -77,7 +81,7 @@ namespace MathNet.Numerics.Data.Text
 
         public static void WriteVector<T>(string filePath, Vector<T> vector, Compression compression = Compression.Uncompressed) where T : struct, IEquatable<T>, IFormattable
         {
-            using (var stream = File.OpenWrite(filePath))
+            using (var stream = File.Create(filePath))
             {
                 switch (compression)
                 {
@@ -91,8 +95,12 @@ namespace MathNet.Numerics.Data.Text
 
                     case Compression.GZip:
                         using (var compressed = new GZipStream(stream, CompressionMode.Compress))
+#if NETSTANDARD1_3
+                        using (var writer = new StreamWriter(compressed))
+#else
                         using (var buffered = new BufferedStream(compressed, 4096))
                         using (var writer = new StreamWriter(buffered))
+#endif
                         {
                             WriteVector(writer, vector);
                         }

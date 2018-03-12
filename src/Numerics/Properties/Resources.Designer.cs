@@ -12,8 +12,8 @@ using System.Reflection;
 
 namespace MathNet.Numerics.Properties {
     using System;
-    
-    
+
+
     /// <summary>
     ///   ローカライズされた文字列などを検索するための、厳密に型指定されたリソース クラスです。
     /// </summary>
@@ -25,22 +25,22 @@ namespace MathNet.Numerics.Properties {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class Resources {
-        
+
         private static global::System.Resources.ResourceManager resourceMan;
-        
+
         private static global::System.Globalization.CultureInfo resourceCulture;
-        
+
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         internal Resources() {
         }
-        
+
         /// <summary>
         ///   このクラスで使用されているキャッシュされた ResourceManager インスタンスを返します。
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
         public static global::System.Resources.ResourceManager ResourceManager {
             get {
-#if NET45REFLECTION
+#if NETSTANDARD1_3
                 if (object.ReferenceEquals(resourceMan, null))
                 {
                     global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("MathNet.Numerics.Properties.Resources", typeof(Resources).GetTypeInfo().Assembly);
@@ -56,7 +56,7 @@ namespace MathNet.Numerics.Properties {
                 return resourceMan;
             }
         }
-        
+
         /// <summary>
         ///   厳密に型指定されたこのリソース クラスを使用して、すべての検索リソースに対し、
         ///   現在のスレッドの CurrentUICulture プロパティをオーバーライドします。
@@ -70,7 +70,7 @@ namespace MathNet.Numerics.Properties {
                 resourceCulture = value;
             }
         }
-        
+
         /// <summary>
         ///   The accuracy couldn&apos;t be reached with the specified number of iterations. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -79,7 +79,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("AccuracyNotReached", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   The array arguments must have the same length. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -88,16 +88,20 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentArraysSameLength", resourceCulture);
             }
         }
-        
+
         /// <summary>
+<<<<<<< HEAD
         ///   The given array is the wrong length. Should be {0}. に類似しているローカライズされた文字列を検索します。
+=======
+        ///   Looks up a localized string similar to The given array has the wrong length. Should be {0}..
+>>>>>>> 1ff8db9b6037781e80e1d981438e8cdf0ba87076
         /// </summary>
         public static string ArgumentArrayWrongLength {
             get {
                 return ResourceManager.GetString("ArgumentArrayWrongLength", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   The argument must be between 0 and 1. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -106,7 +110,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentBetween0And1", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Value cannot be in the range -1 &lt; x &lt; 1. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -115,7 +119,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentCannotBeBetweenOneAndNegativeOne", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Value must be even. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -124,7 +128,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentEven", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   The histogram does not contain the value. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -133,7 +137,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentHistogramContainsNot", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Value is expected to be between {0} and {1} (including {0} and {1}). に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -142,7 +146,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentInIntervalXYInclusive", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   At least one item of {0} is a null reference (Nothing in Visual Basic). に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -151,7 +155,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentItemNull", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Value must be greater than or equal to one. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -160,7 +164,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentLessThanOne", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Matrix dimensions must agree..
         /// </summary>
@@ -169,7 +173,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentMatrixDimensions", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Matrix dimensions must agree: {0}. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -178,7 +182,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentMatrixDimensions1", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Matrix dimensions must agree: op1 is {0}, op2 is {1}. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -187,7 +191,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentMatrixDimensions2", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Matrix dimensions must agree: op1 is {0}, op2 is {1}, op3 is {2}. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -196,7 +200,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentMatrixDimensions3", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   The requested matrix does not exist. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -205,7 +209,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentMatrixDoesNotExist", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   The matrix indices must not be out of range of the given matrix. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -214,7 +218,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentMatrixIndexOutOfRange", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Matrix must not be rank deficient. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -223,7 +227,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentMatrixNotRankDeficient", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Matrix must not be singular. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -232,7 +236,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentMatrixNotSingular", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Matrix must be positive definite. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -241,7 +245,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentMatrixPositiveDefinite", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Matrix column dimensions must agree. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -250,7 +254,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentMatrixSameColumnDimension", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Matrix row dimensions must agree. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -259,7 +263,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentMatrixSameRowDimension", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Matrix must have exactly one column. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -268,7 +272,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentMatrixSingleColumn", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Matrix must have exactly one column and row, thus have only one cell. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -277,7 +281,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentMatrixSingleColumnRow", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Matrix must have exactly one row. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -286,7 +290,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentMatrixSingleRow", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Matrix must be square. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -295,7 +299,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentMatrixSquare", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Matrix must be symmetric. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -304,7 +308,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentMatrixSymmetric", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Matrix must be symmetric positive definite. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -313,7 +317,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentMatrixSymmetricPositiveDefinite", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   In the specified range, the minimum is greater than maximum. に類似しているローカライズされた文字列を検索します。
         ///   Looks up a localized string similar to In the specified range, the exclusive maximum must be greater than the inclusive minimum..
@@ -323,7 +327,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentMaxExclusiveMustBeLargerThanMinInclusive", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   In the specified range, the minimum is greater than maximum. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -332,7 +336,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentMinValueGreaterThanMaxValue", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Value must be positive. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -341,7 +345,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentMustBePositive", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Value must neither be infinite nor NaN. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -350,7 +354,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentNotInfinityNaN", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Value must not be negative (zero is ok). に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -359,7 +363,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentNotNegative", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   {0} is a null reference (Nothing in Visual Basic). に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -368,7 +372,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentNull", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Value must be odd. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -377,7 +381,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentOdd", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   {0} must be greater than {1}. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -386,7 +390,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentOutOfRangeGreater", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   {0} must be greater than or equal to {1}. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -395,7 +399,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentOutOfRangeGreaterEqual", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to {0} must be smaller than {1}..
         /// </summary>
@@ -404,7 +408,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentOutOfRangeSmaller", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to {0} must be smaller than or equal to {1}..
         /// </summary>
@@ -413,7 +417,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentOutOfRangeSmallerEqual", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to The chosen parameter set is invalid (probably some value is out of range)..
         /// </summary>
@@ -422,7 +426,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentParameterSetInvalid", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   The given expression does not represent a complex number. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -431,7 +435,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentParseComplexNumber", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Value must be positive (and not zero). に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -440,7 +444,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentPositive", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Size must be a Power of Two. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -449,7 +453,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentPowerOfTwo", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Size must be a Power of Two in every dimension. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -458,7 +462,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentPowerOfTwoEveryDimension", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   The range between {0} and {1} must be less than or equal to {2}. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -467,7 +471,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentRangeLessEqual", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Arguments must be different objects. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -476,7 +480,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentReferenceDifferent", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Array must have exactly one dimension (and not be null). に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -485,7 +489,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentSingleDimensionArray", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Value is too large. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -494,7 +498,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentTooLarge", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Value is too large for the current iteration limit. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -503,7 +507,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentTooLargeForIterationLimit", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Type mismatch. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -512,7 +516,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentTypeMismatch", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to The upper bound must be strictly larger than the lower bound..
         /// </summary>
@@ -521,7 +525,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentUpperBoundMustBeLargerThanLowerBound", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to The upper bound must be at least as large as the lower bound..
         /// </summary>
@@ -530,7 +534,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentUpperBoundMustBeLargerThanOrEqualToLowerBound", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Array length must be a multiple of {0}..
         /// </summary>
@@ -539,7 +543,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentVectorLengthsMultipleOf", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   All vectors must have the same dimensionality. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -548,7 +552,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentVectorsSameLength", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   The vector must have 3 dimensions. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -557,7 +561,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArgumentVectorThreeDimensional", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   The given array is too small. It must be at least {0} long. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -566,7 +570,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ArrayTooSmall", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Big endian files are not supported. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -575,7 +579,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("BigEndianNotSupported", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   The supplied collection is empty. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -584,7 +588,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("CollectionEmpty", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Complex matrices are not supported. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -593,7 +597,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ComplexMatricesNotSupported", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   An algorithm failed to converge. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -602,7 +606,16 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ConvergenceFailed", resourceCulture);
             }
         }
-        
+
+        /// <summary>
+        ///   Looks up a localized string similar to The sample size must be larger than the given degrees of freedom..
+        /// </summary>
+        public static string DegreesOfFreedomMustBeLessThanSampleSize {
+            get {
+                return ResourceManager.GetString("DegreesOfFreedomMustBeLessThanSampleSize", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   This feature is not implemented yet (but is planned). に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -611,7 +624,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("FeaturePlannedButNotImplementedYet", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   The given file doesn&apos;t exist. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -620,7 +633,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("FileDoesNotExist", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Sample points should be sorted in strictly ascending order に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -629,7 +642,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("Interpolation_Initialize_SamplePointsNotStrictlyAscendingOrder", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   All sample points should be unique. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -638,7 +651,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("Interpolation_Initialize_SamplePointsNotUnique", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Invalid parameterization for the distribution. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -647,7 +660,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("InvalidDistributionParameters", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Invalid Left Boundary Condition. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -656,7 +669,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("InvalidLeftBoundaryCondition", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   The operation could not be performed because the accumulator is empty. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -665,7 +678,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("InvalidOperationAccumulatorEmpty", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   The operation could not be performed because the histogram is empty. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -674,7 +687,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("InvalidOperationHistogramEmpty", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Not enough points in the distribution. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -683,7 +696,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("InvalidOperationHistogramNotEnoughPoints", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   No Samples Provided. Preparation Required. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -692,7 +705,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("InvalidOperationNoSamplesProvided", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to An invalid parameter was passed to a native method..
         /// </summary>
@@ -701,7 +714,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("InvalidParameter", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to An invalid parameter was passed to a native method, parameter number : {0}.
         /// </summary>
@@ -710,7 +723,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("InvalidParameterWithNumber", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Invalid Right Boundary Condition..
         /// </summary>
@@ -719,7 +732,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("InvalidRightBoundaryCondition", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Lag must be positive.
         /// </summary>
@@ -728,7 +741,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("LagMustBePositive", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Lag must be smaller than the sample size.
         /// </summary>
@@ -737,7 +750,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("LagMustBeSmallerThanTheSampleSize", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to ddd MMM dd HH:mm:ss yyyy.
         /// </summary>
@@ -746,7 +759,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("MatlabDateHeaderFormat", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Matrices can not be empty and must have at least one row and column..
         /// </summary>
@@ -755,7 +768,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("MatrixCanNotBeEmpty", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to The number of columns of a matrix must be positive..
         /// </summary>
@@ -764,7 +777,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("MatrixColumnsMustBePositive", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Matrix must be in sparse storage format.
         /// </summary>
@@ -773,7 +786,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("MatrixMustBeSparse", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to The number of rows of a matrix must be positive..
         /// </summary>
@@ -782,7 +795,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("MatrixRowsMustBePositive", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   The number of rows or columns of a matrix must be positive. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -791,7 +804,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("MatrixRowsOrColumnsMustBePositive", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Unable to allocate native memory..
         /// </summary>
@@ -800,7 +813,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("MemoryAllocation", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Only 1 and 2 dimensional arrays are supported..
         /// </summary>
@@ -809,7 +822,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("MoreThan2D", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Data must contain at least {0} values. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -818,7 +831,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("MustContainAtLeast", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Name cannot contain a space. name:  {0} に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -827,7 +840,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("NameCannotContainASpace", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   {0} is not a supported type. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -836,7 +849,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("NotSupportedType", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Algorithm experience a numerical break down
         ///.
@@ -846,7 +859,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("NumericalBreakdown", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to The two arguments can&apos;t be compared (maybe they are part of a partial ordering?).
         /// </summary>
@@ -855,7 +868,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("PartialOrderException", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   The integer array does not represent a valid permutation. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -864,7 +877,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("PermutationAsIntArrayInvalid", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   The sampler&apos;s proposal distribution is not upper bounding the target density. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -873,7 +886,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("ProposalDistributionNoUpperBound", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to A regression of the requested order requires at least {0} samples. Only {1} samples have been provided. .
         /// </summary>
@@ -882,7 +895,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("RegressionNotEnoughSamples", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to The algorithm has failed, exceeded the number of iterations allowed or there is no root within the provided bounds..
         /// </summary>
@@ -891,7 +904,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("RootFindingFailed", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   The algorithm has failed, exceeded the number of iterations allowed or there is no root within the provided bounds. Consider to use RobustNewtonRaphson instead. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -900,7 +913,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("RootFindingFailedRecommendRobustNewtonRaphson", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   The lower and upper bounds must bracket a single root. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -909,7 +922,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("RootMustBeBracketedByBounds", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   The algorithm ended without root in the range. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -918,7 +931,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("RootNotFound", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   The number of rows must greater than or equal to the number of columns. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -927,7 +940,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("RowsLessThanColumns", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to All sample vectors must have the same length. However, vectors with disagreeing length {0} and {1} have been provided. A sample with index i is given by the value at index i of each provided vector..
         /// </summary>
@@ -936,7 +949,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("SampleVectorsSameLength", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to U is singular, and the inversion could not be completed..
         /// </summary>
@@ -945,7 +958,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("SingularUMatrix", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to U is singular, and the inversion could not be completed. The {0}-th diagonal element of the factor U is zero..
         /// </summary>
@@ -954,7 +967,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("SingularUMatrixWithElement", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to The singular vectors were not computed..
         /// </summary>
@@ -963,7 +976,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("SingularVectorsNotComputed", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   This special case is not supported yet (but is planned). に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -972,7 +985,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("SpecialCasePlannedButNotImplementedYet", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to The given stop criterion already exist in the collection..
         /// </summary>
@@ -981,7 +994,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("StopCriterionDuplicate", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to There is no stop criterion in the collection..
         /// </summary>
@@ -990,7 +1003,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("StopCriterionMissing", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   String parameter cannot be empty or null. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -999,7 +1012,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("StringNullOrEmpty", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   We only support sparse matrix with less than int.MaxValue elements. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -1008,7 +1021,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("TooManyElements", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   The moment of the distribution is undefined. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -1017,7 +1030,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("UndefinedMoment", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   A user defined provider has not been specified. に類似しているローカライズされた文字列を検索します。
         /// </summary>
@@ -1026,7 +1039,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("UserDefinedProviderNotSpecified", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to User work buffers are not supported by this provider..
         /// </summary>
@@ -1035,7 +1048,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("UserWorkBufferNotSupported", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Vectors can not be empty and must have at least one element..
         /// </summary>
@@ -1044,7 +1057,7 @@ namespace MathNet.Numerics.Properties {
                 return ResourceManager.GetString("VectorCanNotBeEmpty", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to The given work array is too small. Check work[0] for the corret size..
         /// </summary>

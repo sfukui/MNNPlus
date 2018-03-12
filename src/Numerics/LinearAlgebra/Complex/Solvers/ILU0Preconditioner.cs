@@ -33,12 +33,7 @@ using MathNet.Numerics.Properties;
 
 namespace MathNet.Numerics.LinearAlgebra.Complex.Solvers
 {
-
-#if NOSYSNUMERICS
-    using Complex = Numerics.Complex;
-#else
     using Complex = System.Numerics.Complex;
-#endif
 
     /// <summary>
     /// An incomplete, level 0, LU factorization preconditioner.
@@ -191,7 +186,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex.Solvers
             var rowValues = new DenseVector(_decompositionLU.RowCount);
             for (var i = 0; i < _decompositionLU.RowCount; i++)
             {
-                // Clear the rowValues 
+                // Clear the rowValues
                 rowValues.Clear();
                 _decompositionLU.Row(i, rowValues);
 

@@ -115,7 +115,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
         /// </summary>
         void RowColumnAtIndex(int index, out int row, out int column)
         {
-#if PORTABLE
+#if NETSTANDARD1_3
             row = index % RowCount;
             column = index / RowCount;
 #else
@@ -266,6 +266,27 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             return new DenseColumnMajorMatrixStorage<T>(rows, columns, array);
         }
 
+        public static DenseColumnMajorMatrixStorage<T> OfColumnMajorArray(int rows, int columns, T[] data)
+        {
+            T[] ret = new T[rows*columns];
+            Array.Copy(data, 0, ret, 0, Math.Min(ret.Length, data.Length));
+            return new DenseColumnMajorMatrixStorage<T>(rows, columns, ret);
+        }
+
+        public static DenseColumnMajorMatrixStorage<T> OfRowMajorArray(int rows, int columns, T[] data)
+        {
+            T[] ret = new T[rows*columns];
+            for (int i = 0; i < rows; i++)
+            {
+                int offset = i*columns;
+                for (int j = 0; j < columns; j++)
+                {
+                    ret[(j*rows) + i] = data[offset + j];
+                }
+            }
+            return new DenseColumnMajorMatrixStorage<T>(rows, columns, ret);
+        }
+
         public static DenseColumnMajorMatrixStorage<T> OfColumnVectors(VectorStorage<T>[] data)
         {
             if (data.Length <= 0)
@@ -333,12 +354,15 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             var arrayData = data as T[];
             if (arrayData != null)
             {
-                var copy = new T[arrayData.Length];
-                Array.Copy(arrayData, 0, copy, 0, arrayData.Length);
-                return new DenseColumnMajorMatrixStorage<T>(rows, columns, copy);
+                return OfColumnMajorArray(rows, columns, arrayData);
             }
 
             return new DenseColumnMajorMatrixStorage<T>(rows, columns, data.ToArray());
+        }
+
+        public static DenseColumnMajorMatrixStorage<T> OfRowMajorEnumerable(int rows, int columns, IEnumerable<T> data)
+        {
+            return OfRowMajorArray(rows, columns, data as T[] ?? data.ToArray());
         }
 
         public static DenseColumnMajorMatrixStorage<T> OfColumnEnumerables(int rows, int columns, IEnumerable<IEnumerable<T>> data)
@@ -571,6 +595,20 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             target.Values = values.ToArray();
         }
 
+        internal override void TransposeSquareInplaceUnchecked()
+        {
+            for (var j = 0; j < ColumnCount; j++)
+            {
+                var index = j * RowCount;
+                for (var i = 0; i < j; i++)
+                {
+                    T swap = Data[index + i];
+                    Data[index + i] = Data[i*ColumnCount + j];
+                    Data[i*ColumnCount + j] = swap;
+                }
+            }
+        }
+
         // EXTRACT
 
         public override T[] ToRowMajorArray()
@@ -638,6 +676,11 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
                 }
             }
             return ret;
+        }
+
+        public override T[] AsColumnMajorArray()
+        {
+            return Data;
         }
 
         // ENUMERATION
@@ -776,7 +819,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
 
         // FUNCTIONAL COMBINATORS: MAP
 
-        public override void MapInplace(Func<T, T> f, Zeros zeros = Zeros.AllowSkip)
+        public override void MapInplace(Func<T, T> f, Zeros zeros)
         {
             CommonParallel.For(0, Data.Length, 4096, (a, b) =>
             {
@@ -787,7 +830,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             });
         }
 
-        public override void MapIndexedInplace(Func<int, int, T, T> f, Zeros zeros = Zeros.AllowSkip)
+        public override void MapIndexedInplace(Func<int, int, T, T> f, Zeros zeros)
         {
             CommonParallel.For(0, ColumnCount, Math.Max(4096/RowCount, 32), (a, b) =>
             {

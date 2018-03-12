@@ -190,8 +190,13 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             {
                 for (var i = 0; i < hashNum; i++)
                 {
-                    var col = i%ColumnCount;
-                    var row = (i - col)/RowCount;
+#if NETSTANDARD1_3
+                    int col = i%ColumnCount;
+                    int row = i/ColumnCount;
+#else
+                    int col;
+                    int row = Math.DivRem(i, ColumnCount, out col);
+#endif
                     hash = hash*31 + At(row, col).GetHashCode();
                 }
             }
@@ -467,15 +472,16 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
                 throw new ArgumentNullException("target");
             }
 
-            if (ReferenceEquals(this, target))
-            {
-                throw new NotSupportedException("In-place transpose is not supported.");
-            }
-
             if (RowCount != target.ColumnCount || ColumnCount != target.RowCount)
             {
                 var message = string.Format(Resources.ArgumentMatrixDimensions2, RowCount + "x" + ColumnCount, target.RowCount + "x" + target.ColumnCount);
                 throw new ArgumentException(message, "target");
+            }
+
+            if (ReferenceEquals(this, target))
+            {
+                TransposeSquareInplaceUnchecked();
+                return;
             }
 
             TransposeToUnchecked(target, existingData);
@@ -488,6 +494,19 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
                 for (int i = 0; i < RowCount; i++)
                 {
                     target.At(j, i, At(i, j));
+                }
+            }
+        }
+
+        internal virtual void TransposeSquareInplaceUnchecked()
+        {
+            for (int j = 0; j < ColumnCount; j++)
+            {
+                for (int i = 0; i < j; i++)
+                {
+                    T swap = At(i, j);
+                    At(i, j, At(j, i));
+                    At(j, i, swap);
                 }
             }
         }
@@ -563,6 +582,31 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
                 }
             }
             return ret;
+        }
+
+        public virtual T[] AsRowMajorArray()
+        {
+            return null;
+        }
+
+        public virtual T[] AsColumnMajorArray()
+        {
+            return null;
+        }
+
+        public virtual T[][] AsRowArrays()
+        {
+            return null;
+        }
+
+        public virtual T[][] AsColumnArrays()
+        {
+            return null;
+        }
+
+        public virtual T[,] AsArray()
+        {
+            return null;
         }
 
         // ENUMERATION
@@ -674,7 +718,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
 
         // FUNCTIONAL COMBINATORS: MAP
 
-        public virtual void MapInplace(Func<T, T> f, Zeros zeros = Zeros.AllowSkip)
+        public virtual void MapInplace(Func<T, T> f, Zeros zeros)
         {
             for (int i = 0; i < RowCount; i++)
             {
@@ -685,7 +729,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             }
         }
 
-        public virtual void MapIndexedInplace(Func<int, int, T, T> f, Zeros zeros = Zeros.AllowSkip)
+        public virtual void MapIndexedInplace(Func<int, int, T, T> f, Zeros zeros)
         {
             for (int i = 0; i < RowCount; i++)
             {
@@ -696,8 +740,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             }
         }
 
-        public void MapTo<TU>(MatrixStorage<TU> target, Func<T, TU> f,
-            Zeros zeros = Zeros.AllowSkip, ExistingData existingData = ExistingData.Clear)
+        public void MapTo<TU>(MatrixStorage<TU> target, Func<T, TU> f, Zeros zeros, ExistingData existingData)
             where TU : struct, IEquatable<TU>, IFormattable
         {
             if (target == null)
@@ -726,8 +769,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             }
         }
 
-        public void MapIndexedTo<TU>(MatrixStorage<TU> target, Func<int, int, T, TU> f,
-            Zeros zeros = Zeros.AllowSkip, ExistingData existingData = ExistingData.Clear)
+        public void MapIndexedTo<TU>(MatrixStorage<TU> target, Func<int, int, T, TU> f, Zeros zeros, ExistingData existingData)
             where TU : struct, IEquatable<TU>, IFormattable
         {
             if (target == null)
@@ -759,7 +801,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
         public void MapSubMatrixIndexedTo<TU>(MatrixStorage<TU> target, Func<int, int, T, TU> f,
             int sourceRowIndex, int targetRowIndex, int rowCount,
             int sourceColumnIndex, int targetColumnIndex, int columnCount,
-            Zeros zeros = Zeros.AllowSkip, ExistingData existingData = ExistingData.Clear)
+            Zeros zeros, ExistingData existingData)
             where TU : struct, IEquatable<TU>, IFormattable
         {
             if (target == null)
@@ -840,7 +882,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
         // FUNCTIONAL COMBINATORS: FOLD
 
         /// <remarks>The state array will not be modified, unless it is the same instance as the target array (which is allowed).</remarks>
-        public void FoldByRow<TU>(TU[] target, Func<TU, T, TU> f, Func<TU, int, TU> finalize, TU[] state, Zeros zeros = Zeros.AllowSkip)
+        public void FoldByRow<TU>(TU[] target, Func<TU, T, TU> f, Func<TU, int, TU> finalize, TU[] state, Zeros zeros)
         {
             if (target == null)
             {
@@ -878,7 +920,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
         }
 
         /// <remarks>The state array will not be modified, unless it is the same instance as the target array (which is allowed).</remarks>
-        public void FoldByColumn<TU>(TU[] target, Func<TU, T, TU> f, Func<TU, int, TU> finalize, TU[] state, Zeros zeros = Zeros.AllowSkip)
+        public void FoldByColumn<TU>(TU[] target, Func<TU, T, TU> f, Func<TU, int, TU> finalize, TU[] state, Zeros zeros)
         {
             if (target == null)
             {

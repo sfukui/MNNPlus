@@ -30,15 +30,11 @@
 using System;
 using MathNet.Numerics.LinearAlgebra.Factorization;
 using MathNet.Numerics.Properties;
+using MathNet.Numerics.Providers.LinearAlgebra;
 
 namespace MathNet.Numerics.LinearAlgebra.Complex.Factorization
 {
-
-#if NOSYSNUMERICS
-    using Numerics;
-#else
-    using System.Numerics;
-#endif
+    using Complex = System.Numerics.Complex;
 
     /// <summary>
     /// <para>A class which encapsulates the functionality of the QR decomposition Modified Gram-Schmidt Orthogonalization.</para>
@@ -50,7 +46,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex.Factorization
     internal sealed class DenseGramSchmidt : GramSchmidt
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="DenseGramSchmidt"/> class. This object creates an unitary matrix 
+        /// Initializes a new instance of the <see cref="DenseGramSchmidt"/> class. This object creates an unitary matrix
         /// using the modified Gram-Schmidt method.
         /// </summary>
         /// <param name="matrix">The matrix to factor.</param>
@@ -114,7 +110,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex.Factorization
                     for (var index = 0; index < rowsQ; index++)
                     {
                         dot += q[(k1 * rowsQ) + index].Conjugate() * q[(j1 * rowsQ) + index];
-                    } 
+                    }
 
                     r[(j * columnsQ) + k] = dot;
                     for (var i = 0; i < rowsQ; i++)
@@ -163,7 +159,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex.Factorization
                 throw new NotSupportedException("Can only do GramSchmidt factorization for dense matrices at the moment.");
             }
 
-            Control.LinearAlgebraProvider.QRSolveFactored(((DenseMatrix)Q).Values, ((DenseMatrix)FullR).Values, Q.RowCount, FullR.ColumnCount, null, dinput.Values, input.ColumnCount, dresult.Values, QRMethod.Thin);
+            LinearAlgebraControl.Provider.QRSolveFactored(((DenseMatrix)Q).Values, ((DenseMatrix)FullR).Values, Q.RowCount, FullR.ColumnCount, null, dinput.Values, input.ColumnCount, dresult.Values, QRMethod.Thin);
         }
 
         /// <summary>
@@ -198,7 +194,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex.Factorization
                 throw new NotSupportedException("Can only do GramSchmidt factorization for dense vectors at the moment.");
             }
 
-            Control.LinearAlgebraProvider.QRSolveFactored(((DenseMatrix)Q).Values, ((DenseMatrix)FullR).Values, Q.RowCount, FullR.ColumnCount, null, dinput.Values, 1, dresult.Values, QRMethod.Thin);
+            LinearAlgebraControl.Provider.QRSolveFactored(((DenseMatrix)Q).Values, ((DenseMatrix)FullR).Values, Q.RowCount, FullR.ColumnCount, null, dinput.Values, 1, dresult.Values, QRMethod.Thin);
         }
     }
 }

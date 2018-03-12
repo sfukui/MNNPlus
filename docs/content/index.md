@@ -6,12 +6,11 @@ in science, engineering and every day use. Covered topics include special functi
 linear algebra, probability models, random numbers, interpolation, integration,
 regression, optimization problems and more.
 
-Math.NET Numerics is part of the [Math.NET initiative](http://www.mathdotnet.com/)
+Math.NET Numerics is part of the [Math.NET initiative](https://www.mathdotnet.com/)
 and is the result of merging dnAnalytics with Math.NET Iridium, replacing both.
 Available for free under the [MIT/X11 License](License.html).
-It targets Microsoft .Net 4, .Net 3.5 and Mono
-(Windows, Linux and Mac), Silverlight 5, WindowsPhone 8 and 8.1, Windows 8/Store
-(PCL 7, 47, 78, 259 and 328) and Android/iOS (Xamarin). In addition to a purely
+It targets Microsoft .Net 4.0 and higher, including Mono, and .Net Standard 1.3
+and higher (with builds for .Net Standard 2.0). In addition to a purely
 managed implementation it also supports native hardware optimization.
 See [Platform Support](Compatibility.html) for full details.
 
@@ -120,7 +119,7 @@ If you don't have NuGet yet:
 
     [lang=sh]
     sudo mozroots --import --sync
-    curl -L http://nuget.org/nuget.exe -o nuget.exe
+    curl -L https://nuget.org/nuget.exe -o nuget.exe
 
 Then you can use NuGet to fetch the latest binaries in your working directory.
 The `-Pre` argument causes it to include pre-releases, omit it if you want stable releases only.

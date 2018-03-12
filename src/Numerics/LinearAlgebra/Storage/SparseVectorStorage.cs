@@ -83,7 +83,7 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
         /// </summary>
         public override T At(int index)
         {
-            // Search if item idex exists in NonZeroIndices array in range "0 - nonzero values count"
+            // Search if item index exists in NonZeroIndices array in range "0 - nonzero values count"
             var itemIndex = Array.BinarySearch(Indices, 0, ValueCount, index);
             return itemIndex >= 0 ? Values[itemIndex] : Zero;
         }
@@ -284,10 +284,10 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
 
             if (itemCount > 0)
             {
-                Array.Copy(Values, first + count, Values, first, ValueCount - first - count);
-                Array.Copy(Indices, first + count, Indices, first, ValueCount - first - count);
+                Array.Copy(Values, first + itemCount, Values, first, ValueCount - first - itemCount);
+                Array.Copy(Indices, first + itemCount, Indices, first, ValueCount - first - itemCount);
 
-                ValueCount -= count;
+                ValueCount -= itemCount;
             }
 
             // Check whether we need to shrink the arrays. This is reasonable to do if
@@ -611,6 +611,18 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             }
         }
 
+        // EXTRACT
+
+        public override T[] ToArray()
+        {
+            var ret = new T[Length];
+            for (int i = 0; i < ValueCount; i++)
+            {
+                ret[Indices[i]] = Values[i];
+            }
+            return ret;
+        }
+
         // ENUMERATION
 
         public override IEnumerable<T> Enumerate()
@@ -762,7 +774,75 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
             return base.Find2Unchecked(other, predicate, zeros);
         }
 
-        // FUNCTIONAL COMBINATORS
+        // FUNCTIONAL COMBINATORS: MAP
+
+        public override void MapInplace(Func<T, T> f, Zeros zeros)
+        {
+            var indices = new List<int>();
+            var values = new List<T>(ValueCount);
+            if (zeros == Zeros.Include || !Zero.Equals(f(Zero)))
+            {
+                int k = 0;
+                for (int i = 0; i < Length; i++)
+                {
+                    var item = k < ValueCount && (Indices[k]) == i ? f(Values[k++]) : f(Zero);
+                    if (!Zero.Equals(item))
+                    {
+                        values.Add(item);
+                        indices.Add(i);
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < ValueCount; i++)
+                {
+                    var item = f(Values[i]);
+                    if (!Zero.Equals(item))
+                    {
+                        values.Add(item);
+                        indices.Add(Indices[i]);
+                    }
+                }
+            }
+            Indices = indices.ToArray();
+            Values = values.ToArray();
+            ValueCount = values.Count;
+        }
+
+        public override void MapIndexedInplace(Func<int, T, T> f, Zeros zeros)
+        {
+            var indices = new List<int>();
+            var values = new List<T>(ValueCount);
+            if (zeros == Zeros.Include)
+            {
+                int k = 0;
+                for (int i = 0; i < Length; i++)
+                {
+                    var item = k < ValueCount && (Indices[k]) == i ? f(i, Values[k++]) : f(i, Zero);
+                    if (!Zero.Equals(item))
+                    {
+                        values.Add(item);
+                        indices.Add(i);
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < ValueCount; i++)
+                {
+                    var item = f(Indices[i], Values[i]);
+                    if (!Zero.Equals(item))
+                    {
+                        values.Add(item);
+                        indices.Add(Indices[i]);
+                    }
+                }
+            }
+            Indices = indices.ToArray();
+            Values = values.ToArray();
+            ValueCount = values.Count;
+        }
 
         internal override void MapToUnchecked<TU>(VectorStorage<TU> target, Func<T, TU> f, Zeros zeros, ExistingData existingData)
         {
@@ -1061,6 +1141,8 @@ namespace MathNet.Numerics.LinearAlgebra.Storage
 
             base.Map2ToUnchecked(target, other, f, zeros, existingData);
         }
+
+        // FUNCTIONAL COMBINATORS: MAP
 
         internal override TState Fold2Unchecked<TOther, TState>(VectorStorage<TOther> other, Func<TState, T, TOther, TState> f, TState state, Zeros zeros)
         {

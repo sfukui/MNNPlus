@@ -28,13 +28,13 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 using MathNet.Numerics.Threading;
-
-#if PORTABLE
-using System;
-#else
-using System.Runtime;
 using System.Threading;
+
+#if !NETSTANDARD1_3
+using System;
+using System.Runtime;
 #endif
 
 namespace MathNet.Numerics.Random
@@ -42,8 +42,11 @@ namespace MathNet.Numerics.Random
     /// <summary>
     /// A random number generator based on the <see cref="System.Random"/> class in the .NET library.
     /// </summary>
+    [Serializable]
+    [DataContract(Namespace = "urn:MathNet/Numerics/Random")]
     public class SystemRandomSource : RandomSource
     {
+        [DataMember(Order = 1)]
         readonly System.Random _random;
 
         /// <summary>
@@ -80,25 +83,6 @@ namespace MathNet.Numerics.Random
             _random = new System.Random(seed);
         }
 
-#if PORTABLE
-        [ThreadStatic]
-        static SystemRandomSource DefaultInstance;
-
-        /// <summary>
-        /// Default instance, thread-safe.
-        /// </summary>
-        public static SystemRandomSource Default
-        {
-            get
-            {
-                if (DefaultInstance == null)
-                {
-                    DefaultInstance = new SystemRandomSource(RandomSeed.Robust(), true);
-                }
-                return DefaultInstance;
-            }
-        }
-#else
         static readonly ThreadLocal<SystemRandomSource> DefaultInstance = new ThreadLocal<SystemRandomSource>(() => new SystemRandomSource(RandomSeed.Robust(), true));
 
         /// <summary>
@@ -108,7 +92,6 @@ namespace MathNet.Numerics.Random
         {
             get { return DefaultInstance.Value; }
         }
-#endif
 
         /// <summary>
         /// Returns a random double-precision floating point number greater than or equal to 0.0, and less than 1.0.

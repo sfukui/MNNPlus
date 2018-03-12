@@ -20,7 +20,7 @@ namespace MathNet.Numerics
         public NonConvergenceException(string message, Exception innerException) : base(message, innerException)
         {
         }
-#if !PORTABLE
+#if !NETSTANDARD1_3
         protected NonConvergenceException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
             : base(info, context)
         {
@@ -48,7 +48,7 @@ namespace MathNet.Numerics
             : base(message, innerException)
         {
         }
-#if !PORTABLE
+#if !NETSTANDARD1_3
         protected NumericalBreakdownException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
             : base(info, context)
         {
@@ -57,7 +57,7 @@ namespace MathNet.Numerics
     }
 
     /// <summary>
-    /// An error occured calling native provider function.
+    /// An error occurred calling native provider function.
     /// </summary>
     [Serializable]
     public abstract class NativeInterfaceException : Exception
@@ -75,7 +75,7 @@ namespace MathNet.Numerics
             : base(message, innerException)
         {
         }
-#if !PORTABLE
+#if !NETSTANDARD1_3
         protected NativeInterfaceException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
             : base(info, context)
         {
@@ -84,7 +84,7 @@ namespace MathNet.Numerics
     }
 
     /// <summary>
-    /// An error occured calling native provider function.
+    /// An error occurred calling native provider function.
     /// </summary>
     [Serializable]
     public class InvalidParameterException : NativeInterfaceException
@@ -103,7 +103,7 @@ namespace MathNet.Numerics
             : base(string.Format(Resources.InvalidParameterWithNumber, parameter), innerException)
         {
         }
-#if !PORTABLE
+#if !NETSTANDARD1_3
         protected InvalidParameterException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
             : base(info, context)
         {
@@ -112,7 +112,7 @@ namespace MathNet.Numerics
     }
 
     /// <summary>
-    /// Native provider was unable to allocate sufficent memory.
+    /// Native provider was unable to allocate sufficient memory.
     /// </summary>
     [Serializable]
     public class MemoryAllocationException : NativeInterfaceException
@@ -126,7 +126,7 @@ namespace MathNet.Numerics
             : base(Resources.MemoryAllocation, innerException)
         {
         }
-#if !PORTABLE
+#if !NETSTANDARD1_3
         protected MemoryAllocationException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
             : base(info, context)
         {
@@ -154,7 +154,7 @@ namespace MathNet.Numerics
             : base(string.Format(Resources.SingularUMatrixWithElement, element), innerException)
         {
         }
-#if !PORTABLE
+#if !NETSTANDARD1_3
         protected SingularUMatrixException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
             : base(info, context)
         {

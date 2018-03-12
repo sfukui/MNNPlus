@@ -3,7 +3,7 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 //
-// Copyright (c) 2009-2013 Math.NET
+// Copyright (c) 2009-2017 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -66,12 +66,12 @@
 */
 
 using System.Collections.Generic;
-
-#if PORTABLE
-using System;
-#else
-using System.Runtime;
+using System.Runtime.Serialization;
 using System.Threading;
+
+#if !NETSTANDARD1_3
+using System;
+using System.Runtime;
 #endif
 
 namespace MathNet.Numerics.Random
@@ -79,6 +79,8 @@ namespace MathNet.Numerics.Random
     /// <summary>
     /// Random number generator using Mersenne Twister 19937 algorithm.
     /// </summary>
+    [Serializable]
+    [DataContract(Namespace = "urn:MathNet/Numerics/Random")]
     public class MersenneTwister : RandomSource
     {
         /// <summary>
@@ -119,11 +121,13 @@ namespace MathNet.Numerics.Random
         /// <summary>
         /// Mersenne twister constant.
         /// </summary>
+        [DataMember(Order = 1)]
         readonly uint[] _mt = new uint[N];
 
         /// <summary>
         /// Mersenne twister constant.
         /// </summary>
+        [DataMember(Order = 2)]
         int _mti = N + 1;
 
         /// <summary>
@@ -167,25 +171,6 @@ namespace MathNet.Numerics.Random
             init_genrand((uint)seed);
         }
 
-#if PORTABLE
-        [ThreadStatic]
-        static MersenneTwister DefaultInstance;
-
-        /// <summary>
-        /// Default instance, thread-safe.
-        /// </summary>
-        public static MersenneTwister Default
-        {
-            get
-            {
-                if (DefaultInstance == null)
-                {
-                    DefaultInstance = new MersenneTwister(RandomSeed.Robust(), true);
-                }
-                return DefaultInstance;
-            }
-        }
-#else
         static readonly ThreadLocal<MersenneTwister> DefaultInstance = new ThreadLocal<MersenneTwister>(() => new MersenneTwister(RandomSeed.Robust(), true));
 
         /// <summary>
@@ -195,7 +180,6 @@ namespace MathNet.Numerics.Random
         {
             get { return DefaultInstance.Value; }
         }
-#endif
 
         /*/// <summary>
         /// Initializes a new instance of the <see cref="MersenneTwister"/> class.

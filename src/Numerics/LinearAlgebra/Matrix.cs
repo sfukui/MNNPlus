@@ -31,6 +31,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime;
+using System.Runtime.CompilerServices;
 using MathNet.Numerics.LinearAlgebra.Storage;
 using MathNet.Numerics.Properties;
 using MathNet.Numerics.Threading;
@@ -44,7 +45,7 @@ namespace MathNet.Numerics.LinearAlgebra
     [Serializable]
     public abstract partial class Matrix<T> :
         IFormattable, IEquatable<Matrix<T>>
-#if !PORTABLE
+#if !NETSTANDARD1_3
         , ICloneable
 #endif
         where T : struct, IEquatable<T>, IFormattable
@@ -92,12 +93,16 @@ namespace MathNet.Numerics.LinearAlgebra
         /// to get and set values without range checking.</remarks>
         public T this[int row, int column]
         {
+#if !NET40
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             [TargetedPatchingOptOut("Performance critical to inline across NGen image boundaries")]
-            //[MethodImpl(MethodImplOptions.AggressiveInlining)] .Net 4.5 only
             get { return Storage[row, column]; }
 
+#if !NET40
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             [TargetedPatchingOptOut("Performance critical to inline across NGen image boundaries")]
-            //[MethodImpl(MethodImplOptions.AggressiveInlining)] .Net 4.5 only
             set { Storage[row, column] = value; }
         }
 
@@ -113,8 +118,10 @@ namespace MathNet.Numerics.LinearAlgebra
         /// <returns>
         /// The requested element.
         /// </returns>
+#if !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         [TargetedPatchingOptOut("Performance critical to inline across NGen image boundaries")]
-        //[MethodImpl(MethodImplOptions.AggressiveInlining)] .Net 4.5 only
         public T At(int row, int column)
         {
             return Storage.At(row, column);
@@ -132,8 +139,10 @@ namespace MathNet.Numerics.LinearAlgebra
         /// <param name="value">
         /// The value to set the element to.
         /// </param>
+#if !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         [TargetedPatchingOptOut("Performance critical to inline across NGen image boundaries")]
-        //[MethodImpl(MethodImplOptions.AggressiveInlining)] .Net 4.5 only
         public void At(int row, int column, T value)
         {
             Storage.At(row, column, value);
@@ -1003,10 +1012,23 @@ namespace MathNet.Numerics.LinearAlgebra
         }
 
         /// <summary>
+        /// Puts the transpose of this matrix into the result matrix.
+        /// </summary>
+        public void Transpose(Matrix<T> result)
+        {
+            Storage.TransposeTo(result.Storage, ExistingData.Clear);
+        }
+
+        /// <summary>
         /// Returns the conjugate transpose of this matrix.
         /// </summary>
         /// <returns>The conjugate transpose of this matrix.</returns>
         public abstract Matrix<T> ConjugateTranspose();
+
+        /// <summary>
+        /// Puts the conjugate transpose of this matrix into the result matrix.
+        /// </summary>
+        public abstract void ConjugateTranspose(Matrix<T> result);
 
         /// <summary>
         /// Permute the rows of a matrix according to a permutation.
@@ -1265,21 +1287,14 @@ namespace MathNet.Numerics.LinearAlgebra
         }
 
         /// <summary>
-        /// Evaluates whether this matrix is hermitian (conjugate symmetric).
+        /// Evaluates whether this matrix is Hermitian (conjugate symmetric).
         /// </summary>
         public abstract bool IsHermitian();
 
         /// <summary>
-        /// Evaluates whether this matrix is conjugate symmetric.
-        /// </summary>
-        [Obsolete("Use IsHermitian instead. Will be removed in v4.")]
-        public bool IsConjugateSymmetric()
-        {
-            return IsHermitian();
-        }
-
-        /// <summary>
         /// Returns this matrix as a multidimensional array.
+        /// The returned array will be independent from this matrix.
+        /// A new memory block will be allocated for the array.
         /// </summary>
         /// <returns>A multidimensional containing the values of this matrix.</returns>
         public T[,] ToArray()
@@ -1288,7 +1303,9 @@ namespace MathNet.Numerics.LinearAlgebra
         }
 
         /// <summary>
-        /// Returns the matrix's elements as an array with the data laid out column-wise.
+        /// Returns the matrix's elements as an array with the data laid out column by column (column major).
+        /// The returned array will be independent from this matrix.
+        /// A new memory block will be allocated for the array.
         /// </summary>
         /// <example><pre>
         /// 1, 2, 3
@@ -1296,15 +1313,17 @@ namespace MathNet.Numerics.LinearAlgebra
         /// 7, 8, 9
         /// </pre></example>
         /// <returns>An array containing the matrix's elements.</returns>
-        /// <seealso cref="ToRowWiseArray"/>
+        /// <seealso cref="ToRowMajorArray"/>
         /// <seealso cref="Enumerate(Zeros)"/>
-        public T[] ToColumnWiseArray()
+        public T[] ToColumnMajorArray()
         {
             return Storage.ToColumnMajorArray();
         }
 
         /// <summary>
-        /// Returns the matrix's elements as an array with the data laid row-wise.
+        /// Returns the matrix's elements as an array with the data laid row by row (row major).
+        /// The returned array will be independent from this matrix.
+        /// A new memory block will be allocated for the array.
         /// </summary>
         /// <example><pre>
         /// 1, 2, 3
@@ -1312,15 +1331,17 @@ namespace MathNet.Numerics.LinearAlgebra
         /// 7, 8, 9
         /// </pre></example>
         /// <returns>An array containing the matrix's elements.</returns>
-        /// <seealso cref="ToColumnWiseArray"/>
+        /// <seealso cref="ToColumnMajorArray"/>
         /// <seealso cref="Enumerate(Zeros)"/>
-        public T[] ToRowWiseArray()
+        public T[] ToRowMajorArray()
         {
             return Storage.ToRowMajorArray();
         }
 
         /// <summary>
         /// Returns this matrix as array of row arrays.
+        /// The returned arrays will be independent from this matrix.
+        /// A new memory block will be allocated for the arrays.
         /// </summary>
         public T[][] ToRowArrays()
         {
@@ -1329,10 +1350,78 @@ namespace MathNet.Numerics.LinearAlgebra
 
         /// <summary>
         /// Returns this matrix as array of column arrays.
+        /// The returned arrays will be independent from this matrix.
+        /// A new memory block will be allocated for the arrays.
         /// </summary>
         public T[][] ToColumnArrays()
         {
             return Storage.ToColumnArrays();
+        }
+
+        /// <summary>
+        /// Returns the internal multidimensional array of this matrix if, and only if, this matrix is stored by such an array internally.
+        /// Otherwise returns null. Changes to the returned array and the matrix will affect each other.
+        /// Use ToArray instead if you always need an independent array.
+        /// </summary>
+        public T[,] AsArray()
+        {
+            return Storage.AsArray();
+        }
+
+        /// <summary>
+        /// Returns the internal column by column (column major) array of this matrix if, and only if, this matrix is stored by such arrays internally.
+        /// Otherwise returns null. Changes to the returned arrays and the matrix will affect each other.
+        /// Use ToColumnMajorArray instead if you always need an independent array.
+        /// </summary>
+        /// <example><pre>
+        /// 1, 2, 3
+        /// 4, 5, 6  will be returned as  1, 4, 7, 2, 5, 8, 3, 6, 9
+        /// 7, 8, 9
+        /// </pre></example>
+        /// <returns>An array containing the matrix's elements.</returns>
+        /// <seealso cref="ToRowMajorArray"/>
+        /// <seealso cref="Enumerate(Zeros)"/>
+        public T[] AsColumnMajorArray()
+        {
+            return Storage.AsColumnMajorArray();
+        }
+
+        /// <summary>
+        /// Returns the internal row by row (row major) array of this matrix if, and only if, this matrix is stored by such arrays internally.
+        /// Otherwise returns null. Changes to the returned arrays and the matrix will affect each other.
+        /// Use ToRowMajorArray instead if you always need an independent array.
+        /// </summary>
+        /// <example><pre>
+        /// 1, 2, 3
+        /// 4, 5, 6  will be returned as  1, 2, 3, 4, 5, 6, 7, 8, 9
+        /// 7, 8, 9
+        /// </pre></example>
+        /// <returns>An array containing the matrix's elements.</returns>
+        /// <seealso cref="ToColumnMajorArray"/>
+        /// <seealso cref="Enumerate(Zeros)"/>
+        public T[] AsRowMajorArray()
+        {
+            return Storage.AsRowMajorArray();
+        }
+
+        /// <summary>
+        /// Returns the internal row arrays of this matrix if, and only if, this matrix is stored by such arrays internally.
+        /// Otherwise returns null. Changes to the returned arrays and the matrix will affect each other.
+        /// Use ToRowArrays instead if you always need an independent array.
+        /// </summary>
+        public T[][] AsRowArrays()
+        {
+            return Storage.AsRowArrays();
+        }
+
+        /// <summary>
+        /// Returns the internal column arrays of this matrix if, and only if, this matrix is stored by such arrays internally.
+        /// Otherwise returns null. Changes to the returned arrays and the matrix will affect each other.
+        /// Use ToColumnArrays instead if you always need an independent array.
+        /// </summary>
+        public T[][] AsColumnArrays()
+        {
+            return Storage.AsColumnArrays();
         }
 
         /// <summary>
@@ -1342,8 +1431,6 @@ namespace MathNet.Numerics.LinearAlgebra
         /// The enumerator will include all values, even if they are zero.
         /// The ordering of the values is unspecified (not necessarily column-wise or row-wise).
         /// </remarks>
-        /// <seealso cref="ToColumnWiseArray"/>
-        /// <seealso cref="ToRowWiseArray"/>
         public IEnumerable<T> Enumerate()
         {
             return Storage.Enumerate();
@@ -1356,8 +1443,6 @@ namespace MathNet.Numerics.LinearAlgebra
         /// The enumerator will include all values, even if they are zero.
         /// The ordering of the values is unspecified (not necessarily column-wise or row-wise).
         /// </remarks>
-        /// <seealso cref="ToColumnWiseArray"/>
-        /// <seealso cref="ToRowWiseArray"/>
         public IEnumerable<T> Enumerate(Zeros zeros = Zeros.Include)
         {
             switch (zeros)
@@ -1399,32 +1484,6 @@ namespace MathNet.Numerics.LinearAlgebra
                 default:
                     return Storage.EnumerateIndexed();
             }
-        }
-
-        /// <summary>
-        /// Returns an IEnumerable that can be used to iterate through all non-zero values of the matrix.
-        /// </summary>
-        /// <remarks>
-        /// The enumerator will skip all elements with a zero value.
-        /// </remarks>
-        [Obsolete("Use Enumerate(Zeros.AllowSkip) instead. Will be removed in v4.")]
-        public IEnumerable<T> EnumerateNonZero()
-        {
-            return Storage.EnumerateNonZero();
-        }
-
-        /// <summary>
-        /// Returns an IEnumerable that can be used to iterate through all non-zero values of the matrix and their index.
-        /// </summary>
-        /// <remarks>
-        /// The enumerator returns a Tuple with the first two values being the row and column index
-        /// and the third value being the value of the element at that index.
-        /// The enumerator will skip all elements with a zero value.
-        /// </remarks>
-        [Obsolete("Use EnumerateIndexed(Zeros.AllowSkip) instead. Will be removed in v4.")]
-        public IEnumerable<Tuple<int, int, T>> EnumerateNonZeroIndexed()
-        {
-            return Storage.EnumerateNonZeroIndexed();
         }
 
         /// <summary>

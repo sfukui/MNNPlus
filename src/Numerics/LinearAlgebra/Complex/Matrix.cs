@@ -35,12 +35,7 @@ using MathNet.Numerics.Properties;
 
 namespace MathNet.Numerics.LinearAlgebra.Complex
 {
-
-#if NOSYSNUMERICS
-    using Complex = Numerics.Complex;
-#else
     using Complex = System.Numerics.Complex;
-#endif
 
     /// <summary>
     /// <c>Complex</c> version of the <see cref="Matrix{T}"/> class.
@@ -73,6 +68,15 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
             var ret = Transpose();
             ret.MapInplace(c => c.Conjugate(), Zeros.AllowSkip);
             return ret;
+        }
+
+        /// <summary>
+        /// Puts the conjugate transpose of this matrix into the result matrix.
+        /// </summary>
+        public sealed override void ConjugateTranspose(Matrix<Complex> result)
+        {
+            Transpose(result);
+            result.MapInplace(c => c.Conjugate(), Zeros.AllowSkip);
         }
 
         /// <summary>
@@ -347,13 +351,23 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         }
 
         /// <summary>
-        /// Pointwise raise this matrix to an exponent and store the result into the result vector.
+        /// Pointwise raise this matrix to an exponent and store the result into the result matrix.
         /// </summary>
         /// <param name="exponent">The exponent to raise this matrix values to.</param>
-        /// <param name="result">The vector to store the result of the pointwise power.</param>
+        /// <param name="result">The matrix to store the result of the pointwise power.</param>
         protected override void DoPointwisePower(Complex exponent, Matrix<Complex> result)
         {
             Map(x => x.Power(exponent), result, Zeros.Include);
+        }
+
+        /// <summary>
+        /// Pointwise raise this matrix to an exponent and store the result into the result matrix.
+        /// </summary>
+        /// <param name="exponent">The exponent to raise this matrix values to.</param>
+        /// <param name="result">The vector to store the result of the pointwise power.</param>
+        protected override void DoPointwisePower(Matrix<Complex> exponent, Matrix<Complex> result)
+        {
+            Map2(Complex.Pow, result, Zeros.Include);
         }
 
         /// <summary>
@@ -440,7 +454,156 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
             Map(Complex.Log, result, Zeros.Include);
         }
 
+        protected override void DoPointwiseAbs(Matrix<Complex> result)
+        {
+            Map(x => (Complex)Complex.Abs(x), result, Zeros.AllowSkip);
+        }
+        protected override void DoPointwiseAcos(Matrix<Complex> result)
+        {
+            Map(Complex.Acos, result, Zeros.Include);
+        }
+        protected override void DoPointwiseAsin(Matrix<Complex> result)
+        {
+            Map(Complex.Asin, result, Zeros.AllowSkip);
+        }
+        protected override void DoPointwiseAtan(Matrix<Complex> result)
+        {
+            Map(Complex.Atan, result, Zeros.AllowSkip);
+        }
+        protected override void DoPointwiseAtan2(Matrix<Complex> other, Matrix<Complex> result)
+        {
+            throw new NotSupportedException();
+        }
+        protected override void DoPointwiseCeiling(Matrix<Complex> result)
+        {
+            throw new NotSupportedException();
+        }
+        protected override void DoPointwiseCos(Matrix<Complex> result)
+        {
+            Map(Complex.Cos, result, Zeros.Include);
+        }
+        protected override void DoPointwiseCosh(Matrix<Complex> result)
+        {
+            Map(Complex.Cosh, result, Zeros.Include);
+        }
+        protected override void DoPointwiseFloor(Matrix<Complex> result)
+        {
+            throw new NotSupportedException();
+        }
+        protected override void DoPointwiseLog10(Matrix<Complex> result)
+        {
+            Map(Complex.Log10, result, Zeros.Include);
+        }
+        protected override void DoPointwiseRound(Matrix<Complex> result)
+        {
+            throw new NotSupportedException();
+        }
+        protected override void DoPointwiseSign(Matrix<Complex> result)
+        {
+            throw new NotSupportedException();
+        }
+        protected override void DoPointwiseSin(Matrix<Complex> result)
+        {
+            Map(Complex.Sin, result, Zeros.AllowSkip);
+        }
+        protected override void DoPointwiseSinh(Matrix<Complex> result)
+        {
+            Map(Complex.Sinh, result, Zeros.AllowSkip);
+        }
+        protected override void DoPointwiseSqrt(Matrix<Complex> result)
+        {
+            Map(Complex.Sqrt, result, Zeros.AllowSkip);
+        }
+        protected override void DoPointwiseTan(Matrix<Complex> result)
+        {
+            Map(Complex.Tan, result, Zeros.AllowSkip);
+        }
+        protected override void DoPointwiseTanh(Matrix<Complex> result)
+        {
+            Map(Complex.Tanh, result, Zeros.AllowSkip);
+        }
 
+        /// <summary>
+        /// Computes the Moore-Penrose Pseudo-Inverse of this matrix.
+        /// </summary>
+        public override Matrix<Complex> PseudoInverse()
+        {
+            var svd = Svd(true);
+            var w = svd.W;
+            var s = svd.S;
+            double tolerance = Math.Max(RowCount, ColumnCount) * svd.L2Norm * Precision.DoublePrecision;
+
+            for (int i = 0; i < s.Count; i++)
+            {
+                s[i] = s[i].Magnitude < tolerance ? 0 : 1/s[i];
+            }
+
+            w.SetDiagonal(s);
+            return (svd.U * w * svd.VT).Transpose();
+        }
+
+        /// <summary>
+        /// Computes the trace of this matrix.
+        /// </summary>
+        /// <returns>The trace of this matrix</returns>
+        /// <exception cref="ArgumentException">If the matrix is not square</exception>
+        public override Complex Trace()
+        {
+            if (RowCount != ColumnCount)
+            {
+                throw new ArgumentException(Resources.ArgumentMatrixSquare);
+            }
+
+            var sum = Complex.Zero;
+            for (var i = 0; i < RowCount; i++)
+            {
+                sum += At(i, i);
+            }
+
+            return sum;
+        }
+
+        protected override void DoPointwiseMinimum(Complex scalar, Matrix<Complex> result)
+        {
+            throw new NotSupportedException();
+        }
+
+        protected override void DoPointwiseMaximum(Complex scalar, Matrix<Complex> result)
+        {
+            throw new NotSupportedException();
+        }
+
+        protected override void DoPointwiseAbsoluteMinimum(Complex scalar, Matrix<Complex> result)
+        {
+            double absolute = scalar.Magnitude;
+            Map(x => Math.Min(absolute, x.Magnitude), result, Zeros.AllowSkip);
+        }
+
+        protected override void DoPointwiseAbsoluteMaximum(Complex scalar, Matrix<Complex> result)
+        {
+            double absolute = scalar.Magnitude;
+            Map(x => Math.Max(absolute, x.Magnitude), result, Zeros.Include);
+        }
+
+        protected override void DoPointwiseMinimum(Matrix<Complex> other, Matrix<Complex> result)
+        {
+            throw new NotSupportedException();
+        }
+
+        protected override void DoPointwiseMaximum(Matrix<Complex> other, Matrix<Complex> result)
+        {
+            throw new NotSupportedException();
+        }
+
+        protected override void DoPointwiseAbsoluteMinimum(Matrix<Complex> other, Matrix<Complex> result)
+        {
+            Map2((x, y) => Math.Min(x.Magnitude, y.Magnitude), other, result, Zeros.AllowSkip);
+        }
+
+        protected override void DoPointwiseAbsoluteMaximum(Matrix<Complex> other, Matrix<Complex> result)
+        {
+            Map2((x, y) => Math.Max(x.Magnitude, y.Magnitude), other, result, Zeros.AllowSkip);
+        }
 
         /// <summary>Calculates the induced L1 norm of this matrix.</summary>
         /// <returns>The maximum absolute column sum of the matrix.</returns>
@@ -629,28 +792,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         }
 
         /// <summary>
-        /// Computes the trace of this matrix.
-        /// </summary>
-        /// <returns>The trace of this matrix</returns>
-        /// <exception cref="ArgumentException">If the matrix is not square</exception>
-        public override Complex Trace()
-        {
-            if (RowCount != ColumnCount)
-            {
-                throw new ArgumentException(Resources.ArgumentMatrixSquare);
-            }
-
-            var sum = Complex.Zero;
-            for (var i = 0; i < RowCount; i++)
-            {
-                sum += At(i, i);
-            }
-
-            return sum;
-        }
-
-        /// <summary>
-        /// Evaluates whether this matrix is hermitian (conjugate symmetric).
+        /// Evaluates whether this matrix is Hermitian (conjugate symmetric).
         /// </summary>
         public override bool IsHermitian()
         {

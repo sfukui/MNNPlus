@@ -59,7 +59,7 @@ namespace MathNet.Numerics
         }
 
         /// <summary>
-        /// Create a floater hormann rational pole-free interpolation based on arbitrary points.
+        /// Create a Floater-Hormann rational pole-free interpolation based on arbitrary points.
         /// </summary>
         /// <param name="points">The sample points t.</param>
         /// <param name="values">The sample point values x(t).</param>
@@ -178,12 +178,6 @@ namespace MathNet.Numerics
         public static IInterpolation LogLinear(IEnumerable<double> points, IEnumerable<double> values)
         {
             return Interpolation.LogLinear.Interpolate(points, values);
-        }
-
-        [Obsolete("Use Linear instead. Will be removed in the next major version.")]
-        public static IInterpolation LinearSpline(IEnumerable<double> points, IEnumerable<double> values)
-        {
-            return Interpolation.LinearSpline.Interpolate(points, values);
         }
 
         /// <summary>

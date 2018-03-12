@@ -10,6 +10,8 @@ out/
 *.userprefs
 .vagrant
 .vs
+.vscode
+.idea
 
 # Test & Analysis Results
 [Tt]est[Rr]esult*/
@@ -18,12 +20,14 @@ out/
 TestResult.xml
 TestResults.xml
 coverage.*
+BenchmarkDotNet.Artifacts
 *.dotCover
 *.psess
 *.vsp
 *.vspx
 *.lnt
 *.svclog
+*.log
 
 # Caches
 _ReSharper*
@@ -64,7 +68,6 @@ packages/*
 # FAKE & Paket
 packages
 paket-files
-.paket/paket.exe
 .fake
 
 # Generated Doc Files

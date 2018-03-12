@@ -17,7 +17,10 @@ Feel free to add a link to your personal site/blog and/or twitter handle.*
 - [Christoph Rüegg](http://christoph.ruegg.name/) (@cdrnet)
 - [Marcus Cuda](http://marcuscuda.com/) (@marcuscuda)
 - Jurgen Van Gael (@jvangael)
+- Scott Stephens
+- Ignas Anikevicius
 - Alexander Karatarakis
+- Eirik Ovegard
 - Thomas Ibel
 - Yoonku Hwang
 - Gustavo Guerra
@@ -26,26 +29,30 @@ Feel free to add a link to your personal site/blog and/or twitter handle.*
 - Alexander Täschner
 - Hani Medhat
 - MaLiN2223
-- Matthew A. Johnson
+- Matthew Johnson
 - manyue
+- diluculo
 - David Prince
 - Frank A. Krueger
 - Andriy Bratiychuk
 - Jack Pappas
 - Phil Cleveland
+- jnyrup
+- Aappo Pulkkinen
 - Artyom Baranovskiy
 - Ashley Messer
 - Candy Chiu
 - Evelina Gabasova
-- Scott Stephens
 - Superbest
 - lionpeloux
+- mjmckp
 - Anders Gustafsson
 - Gauthier Segay
 - Hythem Sidky
 - John C Barstow
 - Jon Smit
 - Justin Needham
+- Ksero
 - Patrick van der Velde
 - Robin Neatherway
 - Andrew Kazyrevich
@@ -54,17 +61,28 @@ Feel free to add a link to your personal site/blog and/or twitter handle.*
 - Feodor Fitsner
 - Iain McDonald
 - Jon Larborn
+- Juri
 - Kyle Parrigan
+- Ryan Blackwell
+- bdodson
 - borfudin
 - Aixile
-- BenHewins
+- Albert Pang
+- Alex Hild
+- Ben Hewins
 - Dan
+- David Falkner
+- Elias Abou Jaoude
+- Florian Wechsung
 - Gregor959
 - Iain Sproat
 - Igor K
+- Jakub Arnold
 - Jeff Mastry
 - Joel Sleppy
+- Konstantin Tretyakov
 - Kosei ABE
+- Lucas Godshalk
 - Martin Posch
 - Matt Heffron
 - Max Malook
@@ -77,14 +95,15 @@ Feel free to add a link to your personal site/blog and/or twitter handle.*
 - ViK
 - VicPara
 - Volker Breuer
+- arthurvb
 - Baltazar Bieniek
 - bstrausser
-- Florian Wechsung
+- Christoph Albert
 - grovesNL
+- jb
 - liuzh
 - logophobia
 - Matthew Peacock
-- mjmckp
 - nyuriks
 - seahearman
 - teramonagi

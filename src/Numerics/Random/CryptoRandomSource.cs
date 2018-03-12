@@ -27,12 +27,13 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
-#if !PORTABLE
-
 using System;
 using System.Collections.Generic;
-using System.Runtime;
 using System.Security.Cryptography;
+
+#if !NETSTANDARD1_3
+using System.Runtime;
+#endif
 
 namespace MathNet.Numerics.Random
 {
@@ -47,11 +48,11 @@ namespace MathNet.Numerics.Random
         /// <summary>
         /// Construct a new random number generator with a random seed.
         /// </summary>
-        /// <remarks>Uses <see cref="System.Security.Cryptography.RNGCryptoServiceProvider"/> and uses the value of
+        /// <remarks>Uses <see cref="System.Security.Cryptography.RandomNumberGenerator"/> and uses the value of
         /// <see cref="Control.ThreadSafeRandomNumberGenerators"/> to set whether the instance is thread safe.</remarks>
         public CryptoRandomSource()
         {
-            _crypto = new RNGCryptoServiceProvider();
+            _crypto = RandomNumberGenerator.Create();
         }
 
         /// <summary>
@@ -67,11 +68,11 @@ namespace MathNet.Numerics.Random
         /// <summary>
         /// Construct a new random number generator with random seed.
         /// </summary>
-        /// <remarks>Uses <see cref="System.Security.Cryptography.RNGCryptoServiceProvider"/></remarks>
+        /// <remarks>Uses <see cref="System.Security.Cryptography.RandomNumberGenerator"/></remarks>
         /// <param name="threadSafe">if set to <c>true</c> , the class is thread safe.</param>
         public CryptoRandomSource(bool threadSafe) : base(threadSafe)
         {
-            _crypto = new RNGCryptoServiceProvider();
+            _crypto = RandomNumberGenerator.Create();
         }
 
         /// <summary>
@@ -121,9 +122,7 @@ namespace MathNet.Numerics.Random
 
         public void Dispose()
         {
-#if !NET35
             _crypto.Dispose();
-#endif
         }
 
         /// <summary>
@@ -134,15 +133,10 @@ namespace MathNet.Numerics.Random
         {
             var bytes = new byte[values.Length*4];
 
-#if !NET35
-            using (var rnd = new RNGCryptoServiceProvider())
+            using (var rnd = RandomNumberGenerator.Create())
             {
                 rnd.GetBytes(bytes);
             }
-#else
-            var rnd = new RNGCryptoServiceProvider();
-            rnd.GetBytes(bytes);
-#endif
 
             for (int i = 0; i < values.Length; i++)
             {
@@ -168,7 +162,7 @@ namespace MathNet.Numerics.Random
         /// <remarks>Supports being called in parallel from multiple threads.</remarks>
         public static IEnumerable<double> DoubleSequence()
         {
-            var rnd = new RNGCryptoServiceProvider();
+            var rnd = RandomNumberGenerator.Create();
             var buffer = new byte[1024*4];
 
             while (true)
@@ -182,5 +176,3 @@ namespace MathNet.Numerics.Random
         }
     }
 }
-
-#endif

@@ -30,6 +30,7 @@
 using System;
 using MathNet.Numerics.LinearAlgebra.Factorization;
 using MathNet.Numerics.Properties;
+using MathNet.Numerics.Providers.LinearAlgebra;
 
 namespace MathNet.Numerics.LinearAlgebra.Complex32.Factorization
 {
@@ -37,8 +38,8 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32.Factorization
 
     /// <summary>
     /// <para>A class which encapsulates the functionality of the QR decomposition.</para>
-    /// <para>Any real square matrix A may be decomposed as A = QR where Q is an orthogonal matrix 
-    /// (its columns are orthogonal unit vectors meaning QTQ = I) and R is an upper triangular matrix 
+    /// <para>Any real square matrix A may be decomposed as A = QR where Q is an orthogonal matrix
+    /// (its columns are orthogonal unit vectors meaning QTQ = I) and R is an upper triangular matrix
     /// (also called right triangular matrix).</para>
     /// </summary>
     /// <remarks>
@@ -74,13 +75,13 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32.Factorization
             {
                 r = matrix.Clone();
                 q = new DenseMatrix(matrix.RowCount);
-                Control.LinearAlgebraProvider.QRFactor(((DenseMatrix) r).Values, matrix.RowCount, matrix.ColumnCount, ((DenseMatrix) q).Values, tau);
+                LinearAlgebraControl.Provider.QRFactor(((DenseMatrix) r).Values, matrix.RowCount, matrix.ColumnCount, ((DenseMatrix) q).Values, tau);
             }
             else
             {
                 q = matrix.Clone();
                 r = new DenseMatrix(matrix.ColumnCount);
-                Control.LinearAlgebraProvider.ThinQRFactor(((DenseMatrix) q).Values, matrix.RowCount, matrix.ColumnCount, ((DenseMatrix) r).Values, tau);
+                LinearAlgebraControl.Provider.ThinQRFactor(((DenseMatrix) q).Values, matrix.RowCount, matrix.ColumnCount, ((DenseMatrix) r).Values, tau);
             }
 
             return new DenseQR(q, r, method, tau);
@@ -129,7 +130,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32.Factorization
                 throw new NotSupportedException("Can only do QR factorization for dense matrices at the moment.");
             }
 
-            Control.LinearAlgebraProvider.QRSolveFactored(((DenseMatrix) Q).Values, ((DenseMatrix) FullR).Values, Q.RowCount, FullR.ColumnCount, Tau, dinput.Values, input.ColumnCount, dresult.Values, Method);
+            LinearAlgebraControl.Provider.QRSolveFactored(((DenseMatrix) Q).Values, ((DenseMatrix) FullR).Values, Q.RowCount, FullR.ColumnCount, Tau, dinput.Values, input.ColumnCount, dresult.Values, Method);
         }
 
         /// <summary>
@@ -164,7 +165,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32.Factorization
                 throw new NotSupportedException("Can only do QR factorization for dense vectors at the moment.");
             }
 
-            Control.LinearAlgebraProvider.QRSolveFactored(((DenseMatrix) Q).Values, ((DenseMatrix) FullR).Values, Q.RowCount, FullR.ColumnCount, Tau, dinput.Values, 1, dresult.Values, Method);
+            LinearAlgebraControl.Provider.QRSolveFactored(((DenseMatrix) Q).Values, ((DenseMatrix) FullR).Values, Q.RowCount, FullR.ColumnCount, Tau, dinput.Values, 1, dresult.Values, Method);
         }
     }
 }

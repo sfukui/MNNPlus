@@ -27,22 +27,19 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
-using MathNet.Numerics.Distributions;
-using MathNet.Numerics.LinearAlgebra.Storage;
-using MathNet.Numerics.Threading;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
+using MathNet.Numerics.Distributions;
+using MathNet.Numerics.LinearAlgebra.Storage;
+using MathNet.Numerics.Providers.LinearAlgebra;
+using MathNet.Numerics.Threading;
+
 namespace MathNet.Numerics.LinearAlgebra.Complex
 {
-
-#if NOSYSNUMERICS
-    using Numerics;
-#else
-    using System.Numerics;
-#endif
+    using Complex = System.Numerics.Complex;
 
     /// <summary>
     /// A vector using dense storage.
@@ -246,7 +243,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
             }
             else
             {
-                Control.LinearAlgebraProvider.AddArrays(_values, otherDense._values, resultDense._values);
+                LinearAlgebraControl.Provider.AddArrays(_values, otherDense._values, resultDense._values);
             }
         }
 
@@ -308,7 +305,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
             }
             else
             {
-                Control.LinearAlgebraProvider.SubtractArrays(_values, otherDense._values, resultDense._values);
+                LinearAlgebraControl.Provider.SubtractArrays(_values, otherDense._values, resultDense._values);
             }
         }
 
@@ -359,7 +356,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
                 return;
             }
 
-            Control.LinearAlgebraProvider.ScaleArray(-Complex.One, _values, denseResult.Values);
+            LinearAlgebraControl.Provider.ScaleArray(-Complex.One, _values, denseResult.Values);
         }
 
         /// <summary>
@@ -375,7 +372,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
                 return;
             }
 
-            Control.LinearAlgebraProvider.ConjugateArray(_values, resultDense._values);
+            LinearAlgebraControl.Provider.ConjugateArray(_values, resultDense._values);
         }
 
         /// <summary>
@@ -393,7 +390,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
                 return;
             }
 
-            Control.LinearAlgebraProvider.ScaleArray(scalar, _values, denseResult.Values);
+            LinearAlgebraControl.Provider.ScaleArray(scalar, _values, denseResult.Values);
         }
 
         /// <summary>
@@ -406,7 +403,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
             var denseVector = other as DenseVector;
             return denseVector == null
                 ? base.DoDotProduct(other)
-                : Control.LinearAlgebraProvider.DotProduct(_values, denseVector.Values);
+                : LinearAlgebraControl.Provider.DotProduct(_values, denseVector.Values);
         }
 
         /// <summary>
@@ -623,7 +620,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
             }
             else
             {
-                Control.LinearAlgebraProvider.PointWiseMultiplyArrays(_values, denseOther._values, denseResult._values);
+                LinearAlgebraControl.Provider.PointWiseMultiplyArrays(_values, denseOther._values, denseResult._values);
             }
         }
 
@@ -635,16 +632,36 @@ namespace MathNet.Numerics.LinearAlgebra.Complex
         /// <remarks></remarks>
         protected override void DoPointwiseDivide(Vector<Complex> divisor, Vector<Complex> result)
         {
-            var denseOther = divisor as DenseVector;
+            var denseDivisor = divisor as DenseVector;
             var denseResult = result as DenseVector;
 
-            if (denseOther == null || denseResult == null)
+            if (denseDivisor == null || denseResult == null)
             {
                 base.DoPointwiseDivide(divisor, result);
             }
             else
             {
-                Control.LinearAlgebraProvider.PointWiseDivideArrays(_values, denseOther._values, denseResult._values);
+                LinearAlgebraControl.Provider.PointWiseDivideArrays(_values, denseDivisor._values, denseResult._values);
+            }
+        }
+
+        /// <summary>
+        /// Pointwise raise this vector to an exponent vector and store the result into the result vector.
+        /// </summary>
+        /// <param name="exponent">The exponent vector to raise this vector values to.</param>
+        /// <param name="result">The vector to store the result of the pointwise power.</param>
+        protected override void DoPointwisePower(Vector<Complex> exponent, Vector<Complex> result)
+        {
+            var denseExponent = exponent as DenseVector;
+            var denseResult = result as DenseVector;
+
+            if (denseExponent == null || denseResult == null)
+            {
+                base.DoPointwisePower(exponent, result);
+            }
+            else
+            {
+                LinearAlgebraControl.Provider.PointWisePowerArrays(_values, denseExponent._values, denseResult._values);
             }
         }
 

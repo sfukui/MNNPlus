@@ -3,7 +3,7 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 //
-// Copyright (c) 2009-2015 Math.NET
+// Copyright (c) 2009-2018 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -27,9 +27,14 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
-using MathNet.Numerics.Providers.LinearAlgebra;
 using System;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading.Tasks;
+using MathNet.Numerics.Providers.FourierTransform;
+using MathNet.Numerics.Providers.LinearAlgebra;
 
 namespace MathNet.Numerics
 {
@@ -38,14 +43,10 @@ namespace MathNet.Numerics
     /// </summary>
     public static class Control
     {
-        const string EnvVarLAProvider = "MathNetNumericsLAProvider";
-
         static int _maxDegreeOfParallelism;
-        static int _blockSize;
         static int _parallelizeOrder;
         static int _parallelizeElements;
-        static ILinearAlgebraProvider _linearAlgebraProvider;
-        static readonly object _staticLock = new object();
+        static string _nativeProviderHintPath;
 
         static Control()
         {
@@ -60,59 +61,40 @@ namespace MathNet.Numerics
             // Parallelization & Threading
             ThreadSafeRandomNumberGenerators = true;
             _maxDegreeOfParallelism = Environment.ProcessorCount;
-            _blockSize = 512;
             _parallelizeOrder = 64;
             _parallelizeElements = 300;
             TaskScheduler = TaskScheduler.Default;
         }
 
-        private static void InitializeDefaultLinearAlgebraProvider()
-        {
-            lock (_staticLock)
-            {
-                if (_linearAlgebraProvider == null)
-                {
-#if NATIVE
-                    try
-                    {
-                        var value = Environment.GetEnvironmentVariable(EnvVarLAProvider);
-                        switch (value != null ? value.ToUpperInvariant() : string.Empty)
-                        {
-                            case "MKL":
-                                UseNativeMKL();
-                                break;
-
-                            case "CUDA":
-                                UseNativeCUDA();
-                                break;
-
-                            case "OPENBLAS":
-                                UseNativeOpenBLAS();
-                                break;
-
-                            default:
-                                if (!TryUseNative())
-                                {
-                                    UseManaged();
-                                }
-                                break;
-                        }
-                    }
-                    catch
-                    {
-                        // We don't care about any failures here at all (because "auto")
-                        UseManaged();
-                    }
-#else
-                    UseManaged();
-#endif
-                }
-            }
-        }
-
         public static void UseManaged()
         {
-            LinearAlgebraProvider = new ManagedLinearAlgebraProvider();
+            LinearAlgebraControl.UseManaged();
+            FourierTransformControl.UseManaged();
+        }
+
+        public static void UseManagedReference()
+        {
+            LinearAlgebraControl.UseManagedReference();
+            FourierTransformControl.UseManaged();
+        }
+
+        /// <summary>
+        /// Use a specific provider if configured, e.g. using
+        /// environment variables, or fall back to the best providers.
+        /// </summary>
+        public static void UseDefaultProviders()
+        {
+            LinearAlgebraControl.UseDefault();
+            FourierTransformControl.UseDefault();
+        }
+
+        /// <summary>
+        /// Use the best provider available.
+        /// </summary>
+        public static void UseBestProviders()
+        {
+            LinearAlgebraControl.UseBest();
+            FourierTransformControl.UseBest();
         }
 
 #if NATIVE
@@ -123,7 +105,8 @@ namespace MathNet.Numerics
         /// </summary>
         public static void UseNativeMKL()
         {
-            LinearAlgebraProvider = new Providers.LinearAlgebra.Mkl.MklLinearAlgebraProvider();
+            LinearAlgebraControl.UseNativeMKL();
+            FourierTransformControl.UseNativeMKL();
         }
 
         /// <summary>
@@ -132,11 +115,12 @@ namespace MathNet.Numerics
         /// </summary>
         [CLSCompliant(false)]
         public static void UseNativeMKL(
-            Providers.LinearAlgebra.Mkl.MklConsistency consistency = Providers.LinearAlgebra.Mkl.MklConsistency.Auto,
-            Providers.LinearAlgebra.Mkl.MklPrecision precision = Providers.LinearAlgebra.Mkl.MklPrecision.Double,
-            Providers.LinearAlgebra.Mkl.MklAccuracy accuracy = Providers.LinearAlgebra.Mkl.MklAccuracy.High)
+            Providers.Common.Mkl.MklConsistency consistency = Providers.Common.Mkl.MklConsistency.Auto,
+            Providers.Common.Mkl.MklPrecision precision = Providers.Common.Mkl.MklPrecision.Double,
+            Providers.Common.Mkl.MklAccuracy accuracy = Providers.Common.Mkl.MklAccuracy.High)
         {
-            LinearAlgebraProvider = new Providers.LinearAlgebra.Mkl.MklLinearAlgebraProvider(consistency, precision, accuracy);
+            LinearAlgebraControl.UseNativeMKL(consistency, precision, accuracy);
+            FourierTransformControl.UseNativeMKL();
         }
 
         /// <summary>
@@ -148,7 +132,9 @@ namespace MathNet.Numerics
         /// </returns>
         public static bool TryUseNativeMKL()
         {
-            return Try(UseNativeMKL);
+            bool linearAlgebra = LinearAlgebraControl.TryUseNativeMKL();
+            bool fourierTransform = FourierTransformControl.TryUseNativeMKL();
+            return linearAlgebra || fourierTransform;
         }
 
         /// <summary>
@@ -157,7 +143,7 @@ namespace MathNet.Numerics
         /// </summary>
         public static void UseNativeCUDA()
         {
-            LinearAlgebraProvider = new Providers.LinearAlgebra.Cuda.CudaLinearAlgebraProvider();
+            LinearAlgebraControl.UseNativeCUDA();
         }
 
         /// <summary>
@@ -169,7 +155,8 @@ namespace MathNet.Numerics
         /// </returns>
         public static bool TryUseNativeCUDA()
         {
-            return Try(UseNativeCUDA);
+            bool linearAlgebra = LinearAlgebraControl.TryUseNativeCUDA();
+            return linearAlgebra;
         }
 
         /// <summary>
@@ -178,7 +165,7 @@ namespace MathNet.Numerics
         /// </summary>
         public static void UseNativeOpenBLAS()
         {
-            LinearAlgebraProvider = new Providers.LinearAlgebra.OpenBlas.OpenBlasLinearAlgebraProvider();
+            LinearAlgebraControl.UseNativeOpenBLAS();
         }
 
         /// <summary>
@@ -190,7 +177,8 @@ namespace MathNet.Numerics
         /// </returns>
         public static bool TryUseNativeOpenBLAS()
         {
-            return Try(UseNativeOpenBLAS);
+            bool linearAlgebra = LinearAlgebraControl.TryUseNativeOpenBLAS();
+            return linearAlgebra;
         }
 
         /// <summary>
@@ -202,30 +190,25 @@ namespace MathNet.Numerics
         /// </returns>
         public static bool TryUseNative()
         {
-            return TryUseNativeCUDA() || TryUseNativeMKL() || TryUseNativeOpenBLAS();
-        }
-
-        static bool Try(Action action)
-        {
-            try
-            {
-                action();
-                return true;
-            }
-            catch
-            {
-                // intentionally swallow exceptions here - use the non-try variants if you're interested in why
-                return false;
-            }
+            bool linearAlgebra = LinearAlgebraControl.TryUseNative();
+            bool fourierTransform = FourierTransformControl.TryUseNative();
+            return linearAlgebra || fourierTransform;
         }
 #endif
+
+        public static void FreeResources()
+        {
+            LinearAlgebraControl.FreeResources();
+            FourierTransformControl.FreeResources();
+        }
 
         public static void UseSingleThread()
         {
             _maxDegreeOfParallelism = 1;
             ThreadSafeRandomNumberGenerators = false;
 
-            LinearAlgebraProvider.InitializeVerify();
+            LinearAlgebraControl.Provider.InitializeVerify();
+            FourierTransformControl.Provider.InitializeVerify();
         }
 
         public static void UseMultiThreading()
@@ -233,7 +216,8 @@ namespace MathNet.Numerics
             _maxDegreeOfParallelism = Environment.ProcessorCount;
             ThreadSafeRandomNumberGenerators = true;
 
-            LinearAlgebraProvider.InitializeVerify();
+            LinearAlgebraControl.Provider.InitializeVerify();
+            FourierTransformControl.Provider.InitializeVerify();
         }
 
         /// <summary>
@@ -255,27 +239,14 @@ namespace MathNet.Numerics
         /// <summary>
         /// Optional path to try to load native provider binaries from.
         /// </summary>
-        public static string NativeProviderPath { get; set; }
-
-        /// <summary>
-        /// Gets or sets the linear algebra provider. Consider to use UseNativeMKL or UseManaged instead.
-        /// </summary>
-        /// <value>The linear algebra provider.</value>
-        public static ILinearAlgebraProvider LinearAlgebraProvider
+        public static string NativeProviderPath
         {
-            get
-            {
-                if (_linearAlgebraProvider == null)
-                    InitializeDefaultLinearAlgebraProvider();
-
-                return _linearAlgebraProvider;
-            }
+            get { return _nativeProviderHintPath; }
             set
             {
-                value.InitializeVerify();
-
-                // only actually set if verification did not throw
-                _linearAlgebraProvider = value;
+                _nativeProviderHintPath = value;
+                LinearAlgebraControl.HintPath = value;
+                FourierTransformControl.HintPath = value;
             }
         }
 
@@ -292,7 +263,8 @@ namespace MathNet.Numerics
                 _maxDegreeOfParallelism = Math.Max(1, Math.Min(1024, value));
 
                 // Reinitialize providers:
-                LinearAlgebraProvider.InitializeVerify();
+                LinearAlgebraControl.Provider.InitializeVerify();
+                FourierTransformControl.Provider.InitializeVerify();
             }
         }
 
@@ -300,17 +272,6 @@ namespace MathNet.Numerics
         /// Gets or sets the TaskScheduler used to schedule the worker tasks.
         /// </summary>
         public static TaskScheduler TaskScheduler { get; set; }
-
-        /// <summary>
-        /// Gets or sets the the block size to use for
-        /// the native linear algebra provider.
-        /// </summary>
-        /// <value>The block size. Default 512, must be at least 32.</value>
-        public static int BlockSize
-        {
-            get { return _blockSize; }
-            set { _blockSize = Math.Max(32, value); }
-        }
 
         /// <summary>
         /// Gets or sets the order of the matrix when linear algebra provider
@@ -332,6 +293,52 @@ namespace MathNet.Numerics
         {
             get { return _parallelizeElements; }
             set { _parallelizeElements = Math.Max(3, value); }
+        }
+
+        public static string Describe()
+        {
+#if NET40
+            var versionAttribute = typeof(Control).Assembly
+                .GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false)
+                .OfType<AssemblyInformationalVersionAttribute>()
+                .FirstOrDefault();
+#else
+            var versionAttribute = typeof(Control).GetTypeInfo().Assembly.GetCustomAttribute(typeof(AssemblyInformationalVersionAttribute)) as AssemblyInformationalVersionAttribute;
+#endif
+
+            var sb = new StringBuilder();
+            sb.AppendLine("Math.NET Numerics Configuration:");
+            sb.AppendLine($"Version {versionAttribute?.InformationalVersion}");
+#if NETSTANDARD1_3
+            sb.AppendLine("Built for .Net Standard 1.3");
+#elif NETSTANDARD2_0
+            sb.AppendLine("Built for .Net Standard 2.0");
+#elif NET40
+            sb.AppendLine("Built for .Net Framework 4.0");
+#elif NET461
+            sb.AppendLine("Built for .Net Framework 4.6.1");
+#endif
+#if !NATIVE
+            sb.AppendLine("No Native Provider Support");
+#endif
+            sb.AppendLine($"Linear Algebra Provider: {LinearAlgebraControl.Provider}");
+            sb.AppendLine($"Fourier Transform Provider: {FourierTransformControl.Provider}");
+            sb.AppendLine($"Max Degree of Parallelism: {MaxDegreeOfParallelism}");
+            sb.AppendLine($"Parallelize Elements: {ParallelizeElements}");
+            sb.AppendLine($"Parallelize Order: {ParallelizeOrder}");
+            sb.AppendLine($"Check Distribution Parameters: {CheckDistributionParameters}");
+            sb.AppendLine($"Thread-Safe RNGs: {ThreadSafeRandomNumberGenerators}");
+#if NETSTANDARD1_3 || NETSTANDARD2_0
+            // This would also work in .Net 4.0, but we don't want the dependency just for that.
+            sb.AppendLine($"Operating System: {RuntimeInformation.OSDescription}");
+            sb.AppendLine($"Operating System Architecture: {RuntimeInformation.OSArchitecture}");
+            sb.AppendLine($"Framework: {RuntimeInformation.FrameworkDescription}");
+            sb.AppendLine($"Process Architecture: {RuntimeInformation.ProcessArchitecture}");
+#else
+            sb.AppendLine($"Operating System: {Environment.OSVersion}");
+            sb.AppendLine($"Framework: {Environment.Version}");
+#endif
+            return sb.ToString();
         }
     }
 }

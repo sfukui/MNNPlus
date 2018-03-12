@@ -1,7 +1,0 @@
-TaskParallelLibrary
-File:FsUnit.fs
-File:FsUnitTyped.fs
-
-group Test
-    NUnit
-    FSharp.Core

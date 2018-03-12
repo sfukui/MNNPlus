@@ -27,17 +27,14 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 
-using MathNet.Numerics.Properties;
 using System;
+
+using MathNet.Numerics.Properties;
+using MathNet.Numerics.Providers.LinearAlgebra;
 
 namespace MathNet.Numerics.LinearAlgebra.Complex.Factorization
 {
-
-#if NOSYSNUMERICS
-    using Numerics;
-#else
-    using System.Numerics;
-#endif
+    using Complex = System.Numerics.Complex;
 
     /// <summary>
     /// <para>A class which encapsulates the functionality of a Cholesky factorization for dense matrices.</para>
@@ -67,7 +64,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex.Factorization
 
             // Create a new matrix for the Cholesky factor, then perform factorization (while overwriting).
             var factor = (DenseMatrix) matrix.Clone();
-            Control.LinearAlgebraProvider.CholeskyFactor(factor.Values, factor.RowCount);
+            LinearAlgebraControl.Provider.CholeskyFactor(factor.Values, factor.RowCount);
             return new DenseCholesky(factor);
         }
 
@@ -115,7 +112,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex.Factorization
 
             // Cholesky solve by overwriting result.
             var dfactor = (DenseMatrix) Factor;
-            Control.LinearAlgebraProvider.CholeskySolveFactored(dfactor.Values, dfactor.RowCount, dresult.Values, dresult.ColumnCount);
+            LinearAlgebraControl.Provider.CholeskySolveFactored(dfactor.Values, dfactor.RowCount, dresult.Values, dresult.ColumnCount);
         }
 
         /// <summary>
@@ -152,7 +149,42 @@ namespace MathNet.Numerics.LinearAlgebra.Complex.Factorization
 
             // Cholesky solve by overwriting result.
             var dfactor = (DenseMatrix) Factor;
-            Control.LinearAlgebraProvider.CholeskySolveFactored(dfactor.Values, dfactor.RowCount, dresult.Values, 1);
+            LinearAlgebraControl.Provider.CholeskySolveFactored(dfactor.Values, dfactor.RowCount, dresult.Values, 1);
+        }
+
+        /// <summary>
+        /// Calculates the Cholesky factorization of the input matrix.
+        /// </summary>
+        /// <param name="matrix">The matrix to be factorized<see cref="Matrix{T}"/>.</param>
+        /// <exception cref="ArgumentNullException">If <paramref name="matrix"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">If <paramref name="matrix"/> is not a square matrix.</exception>
+        /// <exception cref="ArgumentException">If <paramref name="matrix"/> is not positive definite.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">If <paramref name="matrix"/> does not have the same dimensions as the existing factor.</exception>
+        public override void Factorize(Matrix<Complex> matrix)
+        {
+            if (matrix.RowCount != matrix.ColumnCount)
+            {
+                throw new ArgumentException(Resources.ArgumentMatrixSquare);
+            }
+
+            if (matrix.RowCount != Factor.RowCount || matrix.ColumnCount != Factor.ColumnCount)
+            {
+                throw Matrix.DimensionsDontMatch<ArgumentException>(matrix, Factor);
+            }
+
+            var dmatrix = matrix as DenseMatrix;
+            if (dmatrix == null)
+            {
+                throw new NotSupportedException("Can only do Cholesky factorization for dense matrices at the moment.");
+            }
+
+            var dfactor = (DenseMatrix)Factor;
+
+            // Overwrite the existing Factor matrix with the input.
+            Array.Copy(dmatrix.Values, 0, dfactor.Values, 0, dmatrix.Values.Length);
+
+            // Perform factorization (while overwriting).
+            LinearAlgebraControl.Provider.CholeskyFactor(dfactor.Values, dfactor.RowCount);
         }
     }
 }

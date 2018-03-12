@@ -197,7 +197,7 @@ namespace MathNet.Numerics.Statistics
         /// <summary>
         /// Estimates the tau-th quantile from the sorted data array (ascending).
         /// The tau-th quantile is the data value where the cumulative distribution
-        /// function crosses tau. The quantile defintion can be specified
+        /// function crosses tau. The quantile definition can be specified
         /// by 4 parameters a, b, c and d, consistent with Mathematica.
         /// </summary>
         /// <param name="data">Sample array, must be sorted ascendingly.</param>
@@ -214,11 +214,7 @@ namespace MathNet.Numerics.Statistics
             }
 
             var x = a + (data.Length + b)*tau - 1;
-#if PORTABLE
-            var ip = (int) x;
-#else
             var ip = Math.Truncate(x);
-#endif
             var fp = x - ip;
 
             if (Math.Abs(fp) < 1e-9)

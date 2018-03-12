@@ -28,19 +28,22 @@
 // </copyright>
 
 using System;
+
 using MathNet.Numerics.Properties;
+using MathNet.Numerics.Providers.LinearAlgebra;
 
 namespace MathNet.Numerics.LinearAlgebra.Single.Factorization
 {
+
     /// <summary>
     /// <para>A class which encapsulates the functionality of the singular value decomposition (SVD) for <see cref="DenseMatrix"/>.</para>
-    /// <para>Suppose M is an m-by-n matrix whose entries are real numbers. 
+    /// <para>Suppose M is an m-by-n matrix whose entries are real numbers.
     /// Then there exists a factorization of the form M = UΣVT where:
     /// - U is an m-by-m unitary matrix;
     /// - Σ is m-by-n diagonal matrix with nonnegative real numbers on the diagonal;
-    /// - VT denotes transpose of V, an n-by-n unitary matrix; 
-    /// Such a factorization is called a singular-value decomposition of M. A common convention is to order the diagonal 
-    /// entries Σ(i,i) in descending order. In this case, the diagonal matrix Σ is uniquely determined 
+    /// - VT denotes transpose of V, an n-by-n unitary matrix;
+    /// Such a factorization is called a singular-value decomposition of M. A common convention is to order the diagonal
+    /// entries Σ(i,i) in descending order. In this case, the diagonal matrix Σ is uniquely determined
     /// by M (though the matrices U and V are not). The diagonal entries of Σ are known as the singular values of M.</para>
     /// </summary>
     /// <remarks>
@@ -62,7 +65,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single.Factorization
             var s = new DenseVector(nm);
             var u = new DenseMatrix(matrix.RowCount);
             var vt = new DenseMatrix(matrix.ColumnCount);
-            Control.LinearAlgebraProvider.SingularValueDecomposition(computeVectors, ((DenseMatrix) matrix.Clone()).Values, matrix.RowCount, matrix.ColumnCount, s.Values, u.Values, vt.Values);
+            LinearAlgebraControl.Provider.SingularValueDecomposition(computeVectors, ((DenseMatrix) matrix.Clone()).Values, matrix.RowCount, matrix.ColumnCount, s.Values, u.Values, vt.Values);
 
             return new DenseSvd(s, u, vt, computeVectors);
         }
@@ -114,7 +117,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single.Factorization
                 throw new NotSupportedException("Can only do SVD factorization for dense matrices at the moment.");
             }
 
-            Control.LinearAlgebraProvider.SvdSolveFactored(U.RowCount, VT.ColumnCount, ((DenseVector) S).Values, ((DenseMatrix) U).Values, ((DenseMatrix) VT).Values, dinput.Values, input.ColumnCount, dresult.Values);
+            LinearAlgebraControl.Provider.SvdSolveFactored(U.RowCount, VT.ColumnCount, ((DenseVector) S).Values, ((DenseMatrix) U).Values, ((DenseMatrix) VT).Values, dinput.Values, input.ColumnCount, dresult.Values);
         }
 
         /// <summary>
@@ -154,7 +157,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single.Factorization
                 throw new NotSupportedException("Can only do SVD factorization for dense vectors at the moment.");
             }
 
-            Control.LinearAlgebraProvider.SvdSolveFactored(U.RowCount, VT.ColumnCount, ((DenseVector) S).Values, ((DenseMatrix) U).Values, ((DenseMatrix) VT).Values, dinput.Values, 1, dresult.Values);
+            LinearAlgebraControl.Provider.SvdSolveFactored(U.RowCount, VT.ColumnCount, ((DenseVector) S).Values, ((DenseMatrix) U).Values, ((DenseMatrix) VT).Values, dinput.Values, 1, dresult.Values);
         }
     }
 }

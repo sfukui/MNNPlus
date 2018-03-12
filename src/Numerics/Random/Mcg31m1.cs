@@ -28,8 +28,10 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 
-#if !PORTABLE
+#if !NETSTANDARD1_3
+using System;
 using System.Runtime;
 #endif
 
@@ -38,11 +40,15 @@ namespace MathNet.Numerics.Random
     /// <summary>
     /// Multiplicative congruential generator using a modulus of 2^31-1 and a multiplier of 1132489760.
     /// </summary>
+    [Serializable]
+    [DataContract(Namespace = "urn:MathNet/Numerics/Random")]
     public class Mcg31m1 : RandomSource
     {
         const ulong Modulus = 2147483647;
         const ulong Multiplier = 1132489760;
         const double Reciprocal = 1.0/Modulus;
+
+        [DataMember(Order = 1)]
         ulong _xn;
 
         /// <summary>

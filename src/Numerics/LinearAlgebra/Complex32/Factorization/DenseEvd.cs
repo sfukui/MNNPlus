@@ -29,23 +29,19 @@
 
 using System;
 using MathNet.Numerics.Properties;
+using MathNet.Numerics.Providers.LinearAlgebra;
 
 namespace MathNet.Numerics.LinearAlgebra.Complex32.Factorization
 {
     using Numerics;
-
-#if NOSYSNUMERICS
-    using Complex = Numerics.Complex;
-#else
     using Complex = System.Numerics.Complex;
-#endif
 
     /// <summary>
     /// Eigenvalues and eigenvectors of a complex matrix.
     /// </summary>
     /// <remarks>
-    /// If A is hermitan, then A = V*D*V' where the eigenvalue matrix D is
-    /// diagonal and the eigenvector matrix V is hermitan.
+    /// If A is Hermitian, then A = V*D*V' where the eigenvalue matrix D is
+    /// diagonal and the eigenvector matrix V is Hermitian.
     /// I.e. A = V*D*V' and V*VH=I.
     /// If A is not symmetric, then the eigenvalue matrix D is block diagonal
     /// with the real eigenvalues in 1-by-1 blocks and any complex eigenvalues,
@@ -93,7 +89,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32.Factorization
                     break;
             }
 
-            Control.LinearAlgebraProvider.EigenDecomp(isSymmetric, order, matrix.Values, eigenVectors.Values, eigenValues.Values, blockDiagonal.Values);
+            LinearAlgebraControl.Provider.EigenDecomp(isSymmetric, order, matrix.Values, eigenVectors.Values, eigenValues.Values, blockDiagonal.Values);
 
             return new DenseEvd(eigenVectors, eigenValues, blockDiagonal, isSymmetric);
         }
@@ -104,16 +100,16 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32.Factorization
         }
 
         /// <summary>
-        /// Reduces a complex hermitian matrix to a real symmetric tridiagonal matrix using unitary similarity transformations.
+        /// Reduces a complex Hermitian matrix to a real symmetric tridiagonal matrix using unitary similarity transformations.
         /// </summary>
         /// <param name="matrixA">Source matrix to reduce</param>
         /// <param name="d">Output: Arrays for internal storage of real parts of eigenvalues</param>
         /// <param name="e">Output: Arrays for internal storage of imaginary parts of eigenvalues</param>
         /// <param name="tau">Output: Arrays that contains further information about the transformations.</param>
         /// <param name="order">Order of initial matrix</param>
-        /// <remarks>This is derived from the Algol procedures HTRIDI by 
-        /// Smith, Boyle, Dongarra, Garbow, Ikebe, Klema, Moler, and Wilkinson, Handbook for 
-        /// Auto. Comp., Vol.ii-Linear Algebra, and the corresponding 
+        /// <remarks>This is derived from the Algol procedures HTRIDI by
+        /// Smith, Boyle, Dongarra, Garbow, Ikebe, Klema, Moler, and Wilkinson, Handbook for
+        /// Auto. Comp., Vol.ii-Linear Algebra, and the corresponding
         /// Fortran subroutine in EISPACK.</remarks>
         internal static void SymmetricTridiagonalize(Complex32[] matrixA, float[] d, float[] e, Complex32[] tau, int order)
         {
@@ -333,7 +329,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32.Factorization
                         e[l] = s*p;
                         d[l] = c*p;
 
-                        // Check for convergence. If too many iterations have been performed, 
+                        // Check for convergence. If too many iterations have been performed,
                         // throw exception that Convergence Failed
                         if (iter >= maxiter)
                         {
@@ -748,7 +744,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex32.Factorization
                 }
             }
 
-            // All roots found.  
+            // All roots found.
             // Backsubstitute to find vectors of upper triangular form
             norm = 0.0f;
             for (var i = 0; i < order; i++)

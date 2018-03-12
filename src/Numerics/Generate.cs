@@ -3,7 +3,7 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 //
-// Copyright (c) 2009-2014 Math.NET
+// Copyright (c) 2009-2016 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -28,6 +28,7 @@
 // </copyright>
 
 using System;
+using System.Numerics;
 using System.Collections.Generic;
 using System.Linq;
 using MathNet.Numerics.Distributions;
@@ -37,10 +38,6 @@ using MathNet.Numerics.Threading;
 
 namespace MathNet.Numerics
 {
-#if !NOSYSNUMERICS
-    using System.Numerics;
-#endif
-
     public static class Generate
     {
         /// <summary>
@@ -216,6 +213,33 @@ namespace MathNet.Numerics
         }
 
         /// <summary>
+        /// Generate a linearly spaced sample vector within the inclusive interval (start, stop) and step 1.
+        /// Equivalent to MATLAB colon operator (:).
+        /// </summary>
+        public static int[] LinearRangeInt32(int start, int stop)
+        {
+            if (start == stop) return new int[] { start };
+            if (start < stop)
+            {
+                var data = new int[stop - start + 1];
+                for (int i = 0; i < data.Length; i++)
+                {
+                    data[i] = start + i;
+                }
+                return data;
+            }
+            else
+            {
+                var data = new int[start - stop + 1];
+                for (int i = 0; i < data.Length; i++)
+                {
+                    data[i] = start - i;
+                }
+                return data;
+            }
+        }
+
+        /// <summary>
         /// Generate a linearly spaced sample vector within the inclusive interval (start, stop) and the provided step.
         /// The start value is aways included as first value, but stop is only included if it stop-start is a multiple of step.
         /// Equivalent to MATLAB double colon operator (::).
@@ -232,6 +256,27 @@ namespace MathNet.Numerics
             for (int i = 0; i < data.Length; i++)
             {
                 data[i] = start + i*step;
+            }
+            return data;
+        }
+
+        /// <summary>
+        /// Generate a linearly spaced sample vector within the inclusive interval (start, stop) and the provided step.
+        /// The start value is aways included as first value, but stop is only included if it stop-start is a multiple of step.
+        /// Equivalent to MATLAB double colon operator (::).
+        /// </summary>
+        public static int[] LinearRangeInt32(int start, int step, int stop)
+        {
+            if (start == stop) return new int[] { start };
+            if (start < stop && step < 0 || start > stop && step > 0 || step == 0d)
+            {
+                return new int[0];
+            }
+
+            var data = new int[(stop - start) / step + 1];
+            for (int i = 0; i < data.Length; i++)
+            {
+                data[i] = start + i * step;
             }
             return data;
         }
@@ -749,8 +794,6 @@ namespace MathNet.Numerics
             }
         }
 
-#if !NOSYSNUMERICS
-
         /// <summary>
         /// Generate a Fibonacci sequence, including zero as first value.
         /// </summary>
@@ -797,8 +840,6 @@ namespace MathNet.Numerics
                 yield return b;
             }
         }
-
-#endif
 
         /// <summary>
         /// Create random samples, uniform between 0 and 1.
@@ -920,58 +961,6 @@ namespace MathNet.Numerics
         public static IEnumerable<double> NormalSequence(double mean, double standardDeviation)
         {
             return Distributions.Normal.Samples(SystemRandomSource.Default, mean, standardDeviation);
-        }
-
-        /// <summary>
-        /// Create samples with independent amplitudes of normal distribution and a flat spectral density.
-        /// </summary>
-        [Obsolete("Use Normal instead. Will be removed in v4.")]
-        public static double[] Gaussian(int length, double mean, double standardDeviation)
-        {
-            return Normal(length, mean, standardDeviation);
-        }
-
-        /// <summary>
-        /// Create an infinite sample sequence with independent amplitudes of normal distribution and a flat spectral density.
-        /// </summary>
-        [Obsolete("Use NormalSequence instead. Will be removed in v4.")]
-        public static IEnumerable<double> GaussianSequence(double mean, double standardDeviation)
-        {
-            return NormalSequence(mean, standardDeviation);
-        }
-
-        /// <summary>
-        /// Create skew alpha stable samples.
-        /// </summary>
-        /// <param name="length">The number of samples to generate.</param>
-        /// <param name="alpha">Stability alpha-parameter of the stable distribution</param>
-        /// <param name="beta">Skewness beta-parameter of the stable distribution</param>
-        /// <param name="scale">Scale c-parameter of the stable distribution</param>
-        /// <param name="location">Location mu-parameter of the stable distribution</param>
-        [Obsolete("Will be removed in v4.")]
-        public static double[] Stable(int length, double alpha, double beta, double scale, double location)
-        {
-            if (length < 0)
-            {
-                throw new ArgumentOutOfRangeException("length");
-            }
-
-            var samples = new double[length];
-            Distributions.Stable.Samples(SystemRandomSource.Default, samples, alpha, beta, scale, location);
-            return samples;
-        }
-
-        /// <summary>
-        /// Create skew alpha stable samples.
-        /// </summary>
-        /// <param name="alpha">Stability alpha-parameter of the stable distribution</param>
-        /// <param name="beta">Skewness beta-parameter of the stable distribution</param>
-        /// <param name="scale">Scale c-parameter of the stable distribution</param>
-        /// <param name="location">Location mu-parameter of the stable distribution</param>
-        [Obsolete("Will be removed in v4.")]
-        public static IEnumerable<double> StableSequence(double alpha, double beta, double scale, double location)
-        {
-            return Distributions.Stable.Samples(SystemRandomSource.Default, alpha, beta, scale, location);
         }
 
         /// <summary>
@@ -1099,7 +1088,5 @@ namespace MathNet.Numerics
         {
             return distribution.Samples().Zip(distribution.Samples(), map);
         }
-
-
     }
 }

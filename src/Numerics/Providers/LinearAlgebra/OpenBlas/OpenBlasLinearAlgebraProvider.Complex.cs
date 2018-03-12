@@ -34,13 +34,14 @@ using MathNet.Numerics.Properties;
 using System;
 using System.Numerics;
 using System.Security;
+using MathNet.Numerics.Providers.Common.OpenBlas;
 
 namespace MathNet.Numerics.Providers.LinearAlgebra.OpenBlas
 {
     /// <summary>
     /// OpenBLAS linear algebra provider.
     /// </summary>
-    public partial class OpenBlasLinearAlgebraProvider
+    internal partial class OpenBlasLinearAlgebraProvider
     {
         /// <summary>
         /// Computes the requested <see cref="Norm"/> of the matrix.
@@ -357,7 +358,7 @@ namespace MathNet.Numerics.Providers.LinearAlgebra.OpenBlas
             if (info > 0)
             {
                 throw new SingularUMatrixException(info);
-            } 
+            }
         }
 
         /// <summary>
@@ -955,10 +956,10 @@ namespace MathNet.Numerics.Providers.LinearAlgebra.OpenBlas
         /// </summary>
         /// <param name="isSymmetric">Whether the matrix is symmetric or not.</param>
         /// <param name="order">The order of the matrix.</param>
-        /// <param name="matrix">The matrix to decompose. The lenth of the array must be order * order.</param>
-        /// <param name="matrixEv">On output, the matrix contains the eigen vectors. The lenth of the array must be order * order.</param>
-        /// <param name="vectorEv">On output, the eigen values (λ) of matrix in ascending value. The length of the arry must <paramref name="order"/>.</param>
-        /// <param name="matrixD">On output, the block diagonal eigenvalue matrix. The lenth of the array must be order * order.</param>
+        /// <param name="matrix">The matrix to decompose. The length of the array must be order * order.</param>
+        /// <param name="matrixEv">On output, the matrix contains the eigen vectors. The length of the array must be order * order.</param>
+        /// <param name="vectorEv">On output, the eigen values (λ) of matrix in ascending value. The length of the array must <paramref name="order"/>.</param>
+        /// <param name="matrixD">On output, the block diagonal eigenvalue matrix. The length of the array must be order * order.</param>
         public override void EigenDecomp(bool isSymmetric, int order, Complex[] matrix, Complex[] matrixEv, Complex[] vectorEv, Complex[] matrixD)
         {
             if (matrix == null)

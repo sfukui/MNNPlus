@@ -1,5 +1,13 @@
+### 2.3.0 - 2018-02-14
+* r12 with Intel MKL 2018.0 Update 1
+
+### 2.2.0 - 2016-10-30
+* r11 with Intel MKL 2017.0
+* Vector Functions v0.1: vector power
+* Fourier Transforms v1.0: basic FFT support
+
 ### 2.1.0 - 2016-09-08
-* r10 with Intel MKL 2017
+* r10 with Intel MKL 2017.0
 
 ### 2.0.0 - 2015-09-26
 * r9 with Intel MKL 11.3

@@ -29,15 +29,11 @@
 
 using System;
 using MathNet.Numerics.Properties;
+using MathNet.Numerics.Providers.LinearAlgebra;
 
 namespace MathNet.Numerics.LinearAlgebra.Double.Factorization
 {
-
-#if NOSYSNUMERICS
-    using Numerics;
-#else
-    using System.Numerics;
-#endif
+    using Complex = System.Numerics.Complex;
 
     /// <summary>
     /// Eigenvalues and eigenvectors of a real matrix.
@@ -93,7 +89,7 @@ namespace MathNet.Numerics.LinearAlgebra.Double.Factorization
                     break;
             }
 
-            Control.LinearAlgebraProvider.EigenDecomp(isSymmetric, order, matrix.Values, eigenVectors.Values, eigenValues.Values, blockDiagonal.Values);
+            LinearAlgebraControl.Provider.EigenDecomp(isSymmetric, order, matrix.Values, eigenVectors.Values, eigenValues.Values, blockDiagonal.Values);
 
             return new DenseEvd(eigenVectors, eigenValues, blockDiagonal, isSymmetric);
         }
@@ -110,9 +106,9 @@ namespace MathNet.Numerics.LinearAlgebra.Double.Factorization
         /// <param name="d">Arrays for internal storage of real parts of eigenvalues</param>
         /// <param name="e">Arrays for internal storage of imaginary parts of eigenvalues</param>
         /// <param name="order">Order of initial matrix</param>
-        /// <remarks>This is derived from the Algol procedures tred2 by 
-        /// Bowdler, Martin, Reinsch, and Wilkinson, Handbook for 
-        /// Auto. Comp., Vol.ii-Linear Algebra, and the corresponding 
+        /// <remarks>This is derived from the Algol procedures tred2 by
+        /// Bowdler, Martin, Reinsch, and Wilkinson, Handbook for
+        /// Auto. Comp., Vol.ii-Linear Algebra, and the corresponding
         /// Fortran subroutine in EISPACK.</remarks>
         internal static void SymmetricTridiagonalize(double[] a, double[] d, double[] e, int order)
         {
@@ -362,7 +358,7 @@ namespace MathNet.Numerics.LinearAlgebra.Double.Factorization
                         e[l] = s*p;
                         d[l] = c*p;
 
-                        // Check for convergence. If too many iterations have been performed, 
+                        // Check for convergence. If too many iterations have been performed,
                         // throw exception that Convergence Failed
                         if (iter >= maxiter)
                         {

@@ -35,17 +35,12 @@ using MathNet.Numerics.Threading;
 
 namespace MathNet.Numerics.LinearAlgebra.Complex.Factorization
 {
-
-#if NOSYSNUMERICS
-    using Numerics;
-#else
-    using System.Numerics;
-#endif
+    using Complex = System.Numerics.Complex;
 
     /// <summary>
     /// <para>A class which encapsulates the functionality of the QR decomposition.</para>
-    /// <para>Any real square matrix A may be decomposed as A = QR where Q is an orthogonal matrix 
-    /// (its columns are orthogonal unit vectors meaning QTQ = I) and R is an upper triangular matrix 
+    /// <para>Any real square matrix A may be decomposed as A = QR where Q is an orthogonal matrix
+    /// (its columns are orthogonal unit vectors meaning QTQ = I) and R is an upper triangular matrix
     /// (also called right triangular matrix).</para>
     /// </summary>
     /// <remarks>
@@ -76,7 +71,7 @@ namespace MathNet.Numerics.LinearAlgebra.Complex.Factorization
             if (method == QRMethod.Full)
             {
                 r = matrix.Clone();
-                q = Matrix<Complex>.Build.SameAs(matrix, matrix.RowCount, matrix.RowCount);
+                q = Matrix<Complex>.Build.SameAs(matrix, matrix.RowCount, matrix.RowCount, fullyMutable: true);
 
                 for (var i = 0; i < matrix.RowCount; i++)
                 {

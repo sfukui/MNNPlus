@@ -1,13 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2026
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Matlab", "src\Data\Matlab\Matlab.csproj", "{550FB330-C86F-4C9D-9B4C-6D830CEB7520}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Matlab", "src\Data\Matlab\Matlab.csproj", "{550FB330-C86F-4C9D-9B4C-6D830CEB7520}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTests", "src\DataUnitTests\UnitTests.csproj", "{6B0247F6-B332-41BC-B100-C0E5509EE612}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Data Tests", "src\Data.Tests\Data.Tests.csproj", "{6B0247F6-B332-41BC-B100-C0E5509EE612}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Text", "src\Data\Text\Text.csproj", "{9D3A08E1-6B96-4552-A535-412E589B3264}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Text", "src\Data\Text\Text.csproj", "{9D3A08E1-6B96-4552-A535-412E589B3264}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Readme", "Readme", "{F510F04E-7503-4F87-A1EC-3A5FBA1DF7B8}"
 	ProjectSection(SolutionItems) = preProject
@@ -21,6 +21,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Readme", "Readme", "{F510F0
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{D954831A-F51A-436A-9F17-0DFC7AEC7113}"
 	ProjectSection(SolutionItems) = preProject
+		build\build-framework.fsx = build\build-framework.fsx
 		build.fsx = build.fsx
 		build\MathNet.Numerics.Extension.nuspec = build\MathNet.Numerics.Extension.nuspec
 		build\MathNet.Numerics.nuspec = build\MathNet.Numerics.nuspec
@@ -28,7 +29,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{D954831A
 		paket.lock = paket.lock
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestData", "src\TestData\TestData.csproj", "{AF3253C9-4DB5-45A0-98CF-C105FDA9DA47}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestData", "src\TestData\TestData.csproj", "{AF3253C9-4DB5-45A0-98CF-C105FDA9DA47}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -59,10 +60,13 @@ Global
 		{AF3253C9-4DB5-45A0-98CF-C105FDA9DA47}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AF3253C9-4DB5-45A0-98CF-C105FDA9DA47}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AF3253C9-4DB5-45A0-98CF-C105FDA9DA47}.Release|Any CPU.Build.0 = Release|Any CPU
-		{AF3253C9-4DB5-45A0-98CF-C105FDA9DA47}.Release-Signed|Any CPU.ActiveCfg = Release-Signed|Any CPU
-		{AF3253C9-4DB5-45A0-98CF-C105FDA9DA47}.Release-Signed|Any CPU.Build.0 = Release-Signed|Any CPU
+		{AF3253C9-4DB5-45A0-98CF-C105FDA9DA47}.Release-Signed|Any CPU.ActiveCfg = Release|Any CPU
+		{AF3253C9-4DB5-45A0-98CF-C105FDA9DA47}.Release-Signed|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8EB85351-0EA6-4FE9-BF02-091C0328718C}
 	EndGlobalSection
 EndGlobal

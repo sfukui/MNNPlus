@@ -33,28 +33,23 @@ using MathNet.Numerics.Properties;
 
 namespace MathNet.Numerics.LinearAlgebra.Complex.Solvers
 {
-
-#if NOSYSNUMERICS
-    using Complex = Numerics.Complex;
-#else
     using Complex = System.Numerics.Complex;
-#endif
 
     /// <summary>
     /// A Generalized Product Bi-Conjugate Gradient iterative matrix solver.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// The Generalized Product Bi-Conjugate Gradient (GPBiCG) solver is an 
+    /// The Generalized Product Bi-Conjugate Gradient (GPBiCG) solver is an
     /// alternative version of the Bi-Conjugate Gradient stabilized (CG) solver.
-    /// Unlike the CG solver the GPBiCG solver can be used on 
+    /// Unlike the CG solver the GPBiCG solver can be used on
     /// non-symmetric matrices. <br/>
     /// Note that much of the success of the solver depends on the selection of the
     /// proper preconditioner.
     /// </para>
     /// <para>
     /// The GPBiCG algorithm was taken from: <br/>
-    /// GPBiCG(m,l): A hybrid of BiCGSTAB and GPBiCG methods with 
+    /// GPBiCG(m,l): A hybrid of BiCGSTAB and GPBiCG methods with
     /// efficiency and robustness
     /// <br/>
     /// S. Fujino
@@ -70,13 +65,13 @@ namespace MathNet.Numerics.LinearAlgebra.Complex.Solvers
     public sealed class GpBiCg : IIterativeSolver<Complex>
     {
         /// <summary>
-        /// Indicates the number of <c>BiCGStab</c> steps should be taken 
+        /// Indicates the number of <c>BiCGStab</c> steps should be taken
         /// before switching.
         /// </summary>
         int _numberOfBiCgStabSteps = 1;
 
         /// <summary>
-        /// Indicates the number of <c>GPBiCG</c> steps should be taken 
+        /// Indicates the number of <c>GPBiCG</c> steps should be taken
         /// before switching.
         /// </summary>
         int _numberOfGpbiCgSteps = 4;

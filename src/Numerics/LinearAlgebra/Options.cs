@@ -73,12 +73,9 @@ namespace MathNet.Numerics.LinearAlgebra
         Symmetric = 1,
 
         /// <summary>
-        /// A matrix is hermitian (conjugate symmetric).
+        /// A matrix is Hermitian (conjugate symmetric).
         /// </summary>
         Hermitian = 2,
-
-        [Obsolete("Use Hermitian instead. Will be removed in v4.")]
-        ConjugateSymmetric = 2,
 
         /// <summary>
         /// A matrix is not symmetric

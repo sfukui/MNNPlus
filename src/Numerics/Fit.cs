@@ -3,7 +3,7 @@
 // http://numerics.mathdotnet.com
 // http://github.com/mathnet/mathnet-numerics
 //
-// Copyright (c) 2009-2015 Math.NET
+// Copyright (c) 2009-2018 Math.NET
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -31,6 +31,7 @@ using System;
 using System.Linq;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearRegression;
+using MathNet.Numerics.Providers.LinearAlgebra;
 
 namespace MathNet.Numerics
 {
@@ -61,33 +62,94 @@ namespace MathNet.Numerics
         }
 
         /// <summary>
-        /// Least-Squares fitting the points (X,y) = ((x0,x1,..,xk),y) to a linear surface y : X -> p0*x0 + p1*x1 + ... + pk*xk,
-        /// returning its best fitting parameters as [p0, p1, p2, ..., pk] array.
-        /// If an intercept is added, its coefficient will be prepended to the resulting parameters.
+        /// Least-Squares fitting the points (x,y) to a line through origin y : x -> b*x,
+        /// returning its best fitting parameter b,
+        /// where the intercept is zero and b the slope.
         /// </summary>
-        public static double[] MultiDim(double[][] x, double[] y, bool intercept = false, DirectRegressionMethod method = DirectRegressionMethod.NormalEquations)
+        public static double LineThroughOrigin(double[] x, double[] y)
         {
-            return MultipleRegression.DirectMethod(x, y, intercept, method);
+            return SimpleRegression.FitThroughOrigin(x, y);
         }
 
         /// <summary>
-        /// Least-Squares fitting the points (X,y) = ((x0,x1,..,xk),y) to a linear surface y : X -> p0*x0 + p1*x1 + ... + pk*xk,
-        /// returning a function y' for the best fitting combination.
-        /// If an intercept is added, its coefficient will be prepended to the resulting parameters.
+        /// Least-Squares fitting the points (x,y) to a line through origin y : x -> b*x,
+        /// returning a function y' for the best fitting line.
         /// </summary>
-        public static Func<double[], double> MultiDimFunc(double[][] x, double[] y, bool intercept = false, DirectRegressionMethod method = DirectRegressionMethod.NormalEquations)
+        public static Func<double, double> LineThroughOriginFunc(double[] x, double[] y)
         {
-            var parameters = MultipleRegression.DirectMethod(x, y, intercept, method);
-            return z => Control.LinearAlgebraProvider.DotProduct(parameters, z);
+            double slope = SimpleRegression.FitThroughOrigin(x, y);
+            return z => slope * z;
         }
 
         /// <summary>
-        /// Weighted Least-Squares fitting the points (X,y) = ((x0,x1,..,xk),y) and weights w to a linear surface y : X -> p0*x0 + p1*x1 + ... + pk*xk,
-        /// returning its best fitting parameters as [p0, p1, p2, ..., pk] array.
+        /// Least-Squares fitting the points (x,y) to an exponential y : x -> a*exp(r*x),
+        /// returning its best fitting parameters as (a, r) tuple.
         /// </summary>
-        public static double[] MultiDimWeighted(double[][] x, double[] y, double[] w)
+        public static Tuple<double, double> Exponential(double[] x, double[] y, DirectRegressionMethod method = DirectRegressionMethod.QR)
         {
-            return WeightedRegression.Weighted(x, y, w);
+            // Transformation: y_h := ln(y) ~> y_h : x -> ln(a) + r*x;
+            double[] lny = Generate.Map(y, Math.Log);
+            double[] p = LinearCombination(x, lny, method, t => 1.0, t => t);
+            return Tuple.Create(Math.Exp(p[0]), p[1]);
+        }
+
+        /// <summary>
+        /// Least-Squares fitting the points (x,y) to an exponential y : x -> a*exp(r*x),
+        /// returning a function y' for the best fitting line.
+        /// </summary>
+        public static Func<double, double> ExponentialFunc(double[] x, double[] y, DirectRegressionMethod method = DirectRegressionMethod.QR)
+        {
+            var parameters = Exponential(x, y, method);
+            var a = parameters.Item1;
+            var r = parameters.Item2;
+            return z => a * Math.Exp(r * z);
+        }
+
+        /// <summary>
+        /// Least-Squares fitting the points (x,y) to a logarithm y : x -> a + b*ln(x),
+        /// returning its best fitting parameters as (a, b) tuple.
+        /// </summary>
+        public static Tuple<double, double> Logarithm(double[] x, double[] y, DirectRegressionMethod method = DirectRegressionMethod.QR)
+        {
+            double[] lnx = Generate.Map(x, Math.Log);
+            double[] p = LinearCombination(lnx, y, method, t => 1.0, t => t);
+            return Tuple.Create(p[0], p[1]);
+        }
+
+        /// <summary>
+        /// Least-Squares fitting the points (x,y) to a logarithm y : x -> a + b*ln(x),
+        /// returning a function y' for the best fitting line.
+        /// </summary>
+        public static Func<double, double> LogarithmFunc(double[] x, double[] y, DirectRegressionMethod method = DirectRegressionMethod.QR)
+        {
+            var parameters = Logarithm(x, y, method);
+            var a = parameters.Item1;
+            var b = parameters.Item2;
+            return z => a + b * Math.Log(z);
+        }
+
+        /// <summary>
+        /// Least-Squares fitting the points (x,y) to a power y : x -> a*x^b,
+        /// returning its best fitting parameters as (a, b) tuple.
+        /// </summary>
+        public static Tuple<double, double> Power(double[] x, double[] y, DirectRegressionMethod method = DirectRegressionMethod.QR)
+        {
+            // Transformation: y_h := ln(y) ~> y_h : x -> ln(a) + b*ln(x);
+            double[] lny = Generate.Map(y, Math.Log);
+            double[] p = LinearCombination(x, lny, method, t => 1.0, Math.Log);
+            return Tuple.Create(Math.Exp(p[0]), p[1]);
+        }
+
+        /// <summary>
+        /// Least-Squares fitting the points (x,y) to a power y : x -> a*x^b,
+        /// returning a function y' for the best fitting line.
+        /// </summary>
+        public static Func<double, double> PowerFunc(double[] x, double[] y, DirectRegressionMethod method = DirectRegressionMethod.QR)
+        {
+            var parameters = Power(x, y, method);
+            var a = parameters.Item1;
+            var b = parameters.Item2;
+            return z => a * Math.Pow(z, b);
         }
 
         /// <summary>
@@ -161,6 +223,36 @@ namespace MathNet.Numerics
         {
             var parameters = LinearCombination(x, y, method, functions);
             return z => functions.Zip(parameters, (f, p) => p*f(z)).Sum();
+        }
+
+        /// <summary>
+        /// Least-Squares fitting the points (X,y) = ((x0,x1,..,xk),y) to a linear surface y : X -> p0*x0 + p1*x1 + ... + pk*xk,
+        /// returning its best fitting parameters as [p0, p1, p2, ..., pk] array.
+        /// If an intercept is added, its coefficient will be prepended to the resulting parameters.
+        /// </summary>
+        public static double[] MultiDim(double[][] x, double[] y, bool intercept = false, DirectRegressionMethod method = DirectRegressionMethod.NormalEquations)
+        {
+            return MultipleRegression.DirectMethod(x, y, intercept, method);
+        }
+
+        /// <summary>
+        /// Least-Squares fitting the points (X,y) = ((x0,x1,..,xk),y) to a linear surface y : X -> p0*x0 + p1*x1 + ... + pk*xk,
+        /// returning a function y' for the best fitting combination.
+        /// If an intercept is added, its coefficient will be prepended to the resulting parameters.
+        /// </summary>
+        public static Func<double[], double> MultiDimFunc(double[][] x, double[] y, bool intercept = false, DirectRegressionMethod method = DirectRegressionMethod.NormalEquations)
+        {
+            var parameters = MultipleRegression.DirectMethod(x, y, intercept, method);
+            return z => LinearAlgebraControl.Provider.DotProduct(parameters, z);
+        }
+
+        /// <summary>
+        /// Weighted Least-Squares fitting the points (X,y) = ((x0,x1,..,xk),y) and weights w to a linear surface y : X -> p0*x0 + p1*x1 + ... + pk*xk,
+        /// returning its best fitting parameters as [p0, p1, p2, ..., pk] array.
+        /// </summary>
+        public static double[] MultiDimWeighted(double[][] x, double[] y, double[] w)
+        {
+            return WeightedRegression.Weighted(x, y, w);
         }
 
         /// <summary>

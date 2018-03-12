@@ -35,23 +35,18 @@ using MathNet.Numerics.Properties;
 
 namespace MathNet.Numerics.LinearAlgebra.Complex.Solvers
 {
-
-#if NOSYSNUMERICS
-    using Complex = Numerics.Complex;
-#else
     using Complex = System.Numerics.Complex;
-#endif
 
     /// <summary>
     /// A composite matrix solver. The actual solver is made by a sequence of
-    /// matrix solvers. 
+    /// matrix solvers.
     /// </summary>
     /// <remarks>
     /// <para>
     /// Solver based on:<br />
     /// Faster PDE-based simulations using robust composite linear solvers<br />
     /// S. Bhowmicka, P. Raghavan a,*, L. McInnes b, B. Norris<br />
-    /// Future Generation Computer Systems, Vol 20, 2004, pp 373–387<br />
+    /// Future Generation Computer Systems, Vol 20, 2004, pp 373ï¿½387<br />
     /// </para>
     /// <para>
     /// Note that if an iterator is passed to this solver it will be used for all the sub-solvers.
@@ -121,9 +116,9 @@ namespace MathNet.Numerics.LinearAlgebra.Complex.Solvers
                 }
                 catch (Exception)
                 {
-                    // The solver broke down. 
+                    // The solver broke down.
                     // Log a message about this
-                    // Switch to the next preconditioner. 
+                    // Switch to the next preconditioner.
                     // Reset the solution vector to the previous solution
                     input.CopyTo(internalInput);
                     continue;

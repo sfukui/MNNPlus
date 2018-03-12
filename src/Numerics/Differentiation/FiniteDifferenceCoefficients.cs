@@ -95,7 +95,7 @@ namespace MathNet.Numerics.Differentiation
         /// Gets the finite difference coefficients for all orders at a specified center.
         /// </summary>
         /// <param name="center">Current function position with respect to coefficients. Must be within point range.</param>
-        /// <returns>Rectangular array of coefficients, with columns specifing order.</returns>
+        /// <returns>Rectangular array of coefficients, with columns specifying order.</returns>
         public double[,] GetCoefficientsForAllOrders(int center)
         {
             if (center >= _coefficients.Length)
@@ -129,12 +129,12 @@ namespace MathNet.Numerics.Differentiation
                 // "Polish" results by rounding.
                 var fac = SpecialFunctions.Factorial(points);
                 for (int j = 0; j < points; j++)
+                {
                     for (int k = 0; k < points; k++)
-#if PORTABLE
-                        c[center][j, k] = (Math.Round(c[center][j, k] * fac)) / fac;
-#else
+                    {
                         c[center][j, k] = (Math.Round(c[center][j, k] * fac, MidpointRounding.AwayFromZero)) / fac;
-#endif
+                    }
+                }
             }
 
             _coefficients = c;

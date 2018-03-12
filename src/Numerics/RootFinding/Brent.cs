@@ -33,7 +33,7 @@ using MathNet.Numerics.Properties;
 namespace MathNet.Numerics.RootFinding
 {
     /// <summary>
-    /// Algorithm by by Brent, Van Wijngaarden, Dekker et al.
+    /// Algorithm by Brent, Van Wijngaarden, Dekker et al.
     /// Implementation inspired by Press, Teukolsky, Vetterling, and Flannery, "Numerical Recipes in C", 2nd edition, Cambridge University Press
     /// </summary>
     public static class Brent
@@ -50,7 +50,7 @@ namespace MathNet.Numerics.RootFinding
         /// <exception cref="NonConvergenceException"></exception>
         public static double FindRootExpand(Func<double, double> f, double guessLowerBound, double guessUpperBound, double accuracy = 1e-8, int maxIterations = 100, double expandFactor = 1.6, int maxExpandIteratons = 100)
         {
-            ZeroCrossingBracketing.Expand(f, ref guessLowerBound, ref guessUpperBound, expandFactor, maxExpandIteratons);
+            ZeroCrossingBracketing.ExpandReduce(f, ref guessLowerBound, ref guessUpperBound, expandFactor, maxExpandIteratons, maxExpandIteratons*10);
             return FindRoot(f, guessLowerBound, guessUpperBound, accuracy, maxIterations);
         }
 
