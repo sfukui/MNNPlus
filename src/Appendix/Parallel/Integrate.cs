@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 using MathNet.Numerics;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
-using MathNet.Numerics.Optimization;
+using MathNet.Numerics.Appendix.Optimization;
 using MathNet.Numerics.Appendix;
 
-namespace MathNet.Numerics.Parallel.Integration
+namespace MathNet.Numerics.Appendix.Parallel.Integration
 {
     /// <summary>
     /// Numeric Integration (Quadrature).

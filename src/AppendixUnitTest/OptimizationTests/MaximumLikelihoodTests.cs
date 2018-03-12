@@ -1,7 +1,7 @@
 ﻿using System;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
-using MathNet.Numerics.Optimization;
+using MathNet.Numerics.Appendix.Optimization;
 using NUnit.Framework;
 
 namespace MathNet.Numerics.UnitTests.OptimizationTests
@@ -188,7 +188,7 @@ namespace MathNet.Numerics.UnitTests.OptimizationTests
             var nm = new NelderMead(targetfunction, nmIter, nmToler);
             var bfgs = new BFGS(targetfunction, bfgsIter, bfgsToler);
 
-            var nderiv = new MathNet.Numerics.Parallel.Differentiation.ParallelNumericalJacobian();
+            var nderiv = new MathNet.Numerics.Appendix.Parallel.Differentiation.ParallelNumericalJacobian();
             bfgs.DerivationMethod = (x) => { return nderiv.Evaluate(targetfunction, x); };
 
             var initParams = new double[4] { 1.65, 700.0, 2.34, 3.24 };

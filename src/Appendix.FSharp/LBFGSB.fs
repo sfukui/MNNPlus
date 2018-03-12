@@ -24,7 +24,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
 
-namespace MathNet.Numerics.Optimization
+namespace MathNet.Numerics.Appendix.Optimization
 
 open System
 //open System.Collections.Generic
@@ -323,7 +323,7 @@ type LBFGSB(f: FuncWithBounds, iteration: int, tolerance: float, approxdimension
                                                                   if xs.[i] - lbound < Double.Epsilon then defaultForwardDerivation.EvaluatePartialDerivative(f.Func, xs, i, 1)
                                                                   else if ubound - xs.[i] < Double.Epsilon then defaultBackwardDerivation.EvaluatePartialDerivative(f.Func, xs, i, 1)
                                                                   else defaultCentralDerivation.EvaluatePartialDerivative(f.Func, xs, i, 1) ) )
-    let mutable m_LineSearchMethod = new Optimization.LineSearch(f.Func, 1.0, 10.0, 10)
+    let mutable m_LineSearchMethod = new Appendix.Optimization.LineSearch(f.Func, 1.0, 10.0, 10)
     let mutable m_SubOptimizationMethod = DirectPrimal
     let mutable m_ApproxBFGSMatrixDimension = approxdimension
     // Matrix $S_k$

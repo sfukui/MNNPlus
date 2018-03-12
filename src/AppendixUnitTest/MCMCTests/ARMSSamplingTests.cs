@@ -3,7 +3,7 @@ using System.Linq;
 using MathNet.Numerics.Integration;
 using MathNet.Numerics.LinearAlgebra.Double;
 using MathNet.Numerics.LinearAlgebra;
-using MathNet.Numerics.Statistics.Mcmc;
+using MathNet.Numerics.Appendix.Statistics.Mcmc;
 using NUnit.Framework;
 
 namespace MathNet.Numerics.UnitTests.MCMCTests

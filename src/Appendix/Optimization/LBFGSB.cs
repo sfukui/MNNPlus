@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 using MathNet.Numerics;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
-using MathNet.Numerics.Optimization;
+using MathNet.Numerics.Appendix.Optimization;
 using MathNet.Numerics.Appendix;
 
-namespace MathNet.Numerics.Optimization
+namespace MathNet.Numerics.Appendix.Optimization
 {
     /// <summary>
     /// Defines a function with bound(s) of the variable(s).

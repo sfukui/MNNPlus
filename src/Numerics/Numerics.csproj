@@ -1,83 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFrameworks>net40;net461;netstandard1.3;netstandard2.0</TargetFrameworks>
     <NetStandardImplicitPackageVersion>2.0.1</NetStandardImplicitPackageVersion>
     <AssemblyName>MathNet.Numerics</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <UpgradeBackupLocation />
-    <IsWebBootstrapper>false</IsWebBootstrapper>
-    <TargetFrameworkProfile />
-    <PublishUrl>publish\</PublishUrl>
-    <Install>true</Install>
-    <InstallFrom>Disk</InstallFrom>
-    <UpdateEnabled>false</UpdateEnabled>
-    <UpdateMode>Foreground</UpdateMode>
-    <UpdateInterval>7</UpdateInterval>
-    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
-    <UpdatePeriodically>false</UpdatePeriodically>
-    <UpdateRequired>false</UpdateRequired>
-    <MapFileExtensions>true</MapFileExtensions>
-    <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <UseApplicationTrust>false</UseApplicationTrust>
-    <BootstrapperEnabled>true</BootstrapperEnabled>
-    <!-- Conditional Strong Name -->
-    <AssemblyOriginatorKeyFile>..\MathNet.Numerics.snk</AssemblyOriginatorKeyFile>
-    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <OutputPath>..\..\out\lib\Net40\</OutputPath>
-    <IntermediateOutputPath>..\..\obj\lib\Net40\</IntermediateOutputPath>
-    <BaseIntermediateOutputPath>..\..\obj\lib\Net40\</BaseIntermediateOutputPath>
-    <DocumentationFile>..\..\out\lib\Net40\MathNet.Numerics.xml</DocumentationFile>
-    <!-- Conditional Strong Name: NO -->
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <DefineConstants>TRACE;NATIVE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
-    <NoWarn>1591</NoWarn>
-    <Prefer32Bit>false</Prefer32Bit>
-    <LangVersion>5</LangVersion>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <OutputPath>..\..\out\lib-debug\Net40\</OutputPath>
-    <IntermediateOutputPath>..\..\obj\lib-debug\Net40\</IntermediateOutputPath>
-    <BaseIntermediateOutputPath>..\..\obj\lib-debug\Net40\</BaseIntermediateOutputPath>
-    <!-- Conditional Strong Name: NO -->
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <DefineConstants>TRACE;DEBUG;NATIVE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
-    <Prefer32Bit>false</Prefer32Bit>
-    <LangVersion>5</LangVersion>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release-Signed|AnyCPU'">
-    <OutputPath>..\..\out\lib-signed\Net40\</OutputPath>
-    <IntermediateOutputPath>..\..\obj\lib-signed\Net40\</IntermediateOutputPath>
-    <BaseIntermediateOutputPath>..\..\obj\lib-signed\Net40\</BaseIntermediateOutputPath>
-    <DocumentationFile>..\..\out\lib-signed\Net40\MathNet.Numerics.xml</DocumentationFile>
-    <!-- Conditional Strong Name: YES -->
-    <SignAssembly>true</SignAssembly>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <Optimize>true</Optimize>
-    <DefineConstants>TRACE;NATIVE;STRONGNAME</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
-    <NoWarn>1591</NoWarn>
-    <Prefer32Bit>false</Prefer32Bit>
-    <LangVersion>5</LangVersion>
     <RootNamespace>MathNet.Numerics</RootNamespace>
     <IsPackable>true</IsPackable>
     <PackageId>MathNet.Numerics</PackageId>

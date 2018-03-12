@@ -5,9 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
-using MathNet.Numerics.Statistics.Mcmc;
+using MathNet.Numerics.Appendix.Statistics.Mcmc;
 
-namespace MathNet.Numerics.Statistics.Mcmc
+namespace MathNet.Numerics.Appendix.Statistics.Mcmc
 {
 
     /// <summary>

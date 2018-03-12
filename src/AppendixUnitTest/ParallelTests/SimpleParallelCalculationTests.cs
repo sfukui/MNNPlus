@@ -1,8 +1,8 @@
 ﻿using System;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
-using MathNet.Numerics.Parallel.Differentiation;
-using MathNet.Numerics.Parallel.Integration;
+using MathNet.Numerics.Appendix.Parallel.Differentiation;
+using MathNet.Numerics.Appendix.Parallel.Integration;
 using NUnit.Framework;
 
 namespace MathNet.Numerics.UnitTests.ParallelTests
@@ -103,7 +103,7 @@ namespace MathNet.Numerics.UnitTests.ParallelTests
         [TestCase(-2.0, 4.5)]
         public void ParallelNumericalIntegration(double l, double u)
         {
-            double actural = Parallel.Integration.Integrate.OnClosedInterval(TargetFunction2, l, u);
+            double actural = Appendix.Parallel.Integration.Integrate.OnClosedInterval(TargetFunction2, l, u);
             double expected = ValidIndefiniteIntegral(u) - ValidIndefiniteIntegral(l);
 
             Assert.AreEqual(expected, actural, delta);

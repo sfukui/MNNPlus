@@ -24,7 +24,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
 
-namespace MathNet.Numerics.Optimization
+namespace MathNet.Numerics.Appendix.Optimization
 
 open MathNet.Numerics
 open MathNet.Numerics.Differentiation

@@ -33,7 +33,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using MathNet.Numerics.Properties;
 
-namespace MathNet.Numerics.Parallel.Integration
+namespace MathNet.Numerics.Appendix.Parallel.Integration
 {
     /// <summary>
     /// Approximation algorithm for definite integrals by the Trapezium rule of the Newton-Cotes family.

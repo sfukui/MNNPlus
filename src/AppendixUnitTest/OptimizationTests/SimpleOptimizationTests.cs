@@ -1,7 +1,7 @@
 ﻿using System;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
-using MathNet.Numerics.Optimization;
+using MathNet.Numerics.Appendix.Optimization;
 using NUnit.Framework;
 
 namespace AppendixUnitTest.OptimizationTests

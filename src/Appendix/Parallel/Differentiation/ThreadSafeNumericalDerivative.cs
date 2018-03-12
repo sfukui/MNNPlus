@@ -35,7 +35,7 @@ using System;
 using System.Linq;
 using MathNet.Numerics.Differentiation;
 
-namespace MathNet.Numerics.Parallel.Differentiation
+namespace MathNet.Numerics.Appendix.Parallel.Differentiation
 {
     /// <summary>
     /// Class to evaluate the numerical derivative of a function using finite difference approximations.

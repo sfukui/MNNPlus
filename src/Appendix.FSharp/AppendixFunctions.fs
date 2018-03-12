@@ -1,4 +1,4 @@
-﻿namespace MathNet.Numerics.Optimization
+﻿namespace MathNet.Numerics.Appendix.Optimization
 
 open MathNet.Numerics
 open MathNet.Numerics.Differentiation

@@ -90,11 +90,7 @@ namespace MathNet.Numerics.Properties {
         }
 
         /// <summary>
-<<<<<<< HEAD
         ///   The given array is the wrong length. Should be {0}. に類似しているローカライズされた文字列を検索します。
-=======
-        ///   Looks up a localized string similar to The given array has the wrong length. Should be {0}..
->>>>>>> 1ff8db9b6037781e80e1d981438e8cdf0ba87076
         /// </summary>
         public static string ArgumentArrayWrongLength {
             get {

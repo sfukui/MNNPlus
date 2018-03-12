@@ -35,7 +35,7 @@ using System;
 using MathNet.Numerics.Differentiation;
 using MathNet.Numerics.Threading;
 
-namespace MathNet.Numerics.Parallel.Differentiation
+namespace MathNet.Numerics.Appendix.Parallel.Differentiation
 {
     /// <summary>
     /// Class for evaluating the Jacobian of a function using finite differences with parallel computation.

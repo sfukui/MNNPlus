@@ -31,7 +31,7 @@
 using System;
 using System.Linq;
 
-namespace MathNet.Numerics.Parallel.Integration
+namespace MathNet.Numerics.Appendix.Parallel.Integration
 {
     /// <summary>
     /// Analytic integration algorithm for smooth functions with no discontinuities
