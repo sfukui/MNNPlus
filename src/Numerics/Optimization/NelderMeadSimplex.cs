@@ -29,8 +29,8 @@
 
 // Converted from code released with a MIT license available at https://code.google.com/p/nelder-mead-simplex/
 
-using MathNet.Numerics.LinearAlgebra;
 using System;
+using MathNet.Numerics.LinearAlgebra;
 
 namespace MathNet.Numerics.Optimization
 {
@@ -108,13 +108,13 @@ namespace MathNet.Numerics.Optimization
         {
             // confirm that we are in a position to commence
             if (objectiveFunction == null)
-                throw new ArgumentNullException("objectiveFunction","ObjectiveFunction must be set to a valid ObjectiveFunctionDelegate");
+                throw new ArgumentNullException(nameof(objectiveFunction),"ObjectiveFunction must be set to a valid ObjectiveFunctionDelegate");
 
             if (initialGuess == null)
-                throw new ArgumentNullException("initialGuess", "initialGuess must be initialized");
+                throw new ArgumentNullException(nameof(initialGuess), "initialGuess must be initialized");
 
             if (initalPertubation == null)
-                throw new ArgumentNullException("initalPertubation", "initalPertubation must be initialized, if unknown use overloaded version of FindMinimum()");
+                throw new ArgumentNullException(nameof(initalPertubation), "initalPertubation must be initialized, if unknown use overloaded version of FindMinimum()");
 
             SimplexConstant[] simplexConstants = SimplexConstant.CreateSimplexConstantsFromVectors(initialGuess,initalPertubation);
 
@@ -129,6 +129,7 @@ namespace MathNet.Numerics.Optimization
             ErrorProfile errorProfile;
 
             errorValues = InitializeErrorValues(vertices, objectiveFunction);
+            int numTimesHasConverged = 0;
 
             // iterate until we converge, or complete our permitted number of iterations
             while (true)
@@ -136,7 +137,16 @@ namespace MathNet.Numerics.Optimization
                 errorProfile = EvaluateSimplex(errorValues);
 
                 // see if the range in point heights is small enough to exit
+                // to handle the case when the function is symmetrical and extra iteration is performed
                 if (HasConverged(convergenceTolerance, errorProfile, errorValues))
+                {
+                    numTimesHasConverged++;
+                }
+                else
+                {
+                    numTimesHasConverged = 0;
+                }
+                if (numTimesHasConverged == 2)
                 {
                     exitCondition = ExitCondition.Converged;
                     break;
@@ -173,6 +183,7 @@ namespace MathNet.Numerics.Optimization
                     throw new MaximumIterationsException(String.Format("Maximum iterations ({0}) reached.", maximumIterations));
                 }
             }
+            objectiveFunction.EvaluateAt(vertices[errorProfile.LowestIndex]);
             var regressionResult = new MinimizationResult(objectiveFunction, evaluationCount, exitCondition);
             return regressionResult;
         }

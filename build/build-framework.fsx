@@ -19,8 +19,6 @@ module BuildFramework
 open FSharp.Core
 open Fake
 open Fake.ReleaseNotesHelper
-open Fake.StringHelper
-open Fake.Testing.NUnit3
 open System
 open System.IO
 
@@ -28,44 +26,228 @@ let rootDir = Path.GetFullPath (Path.Combine (__SOURCE_DIRECTORY__ + "/../"))
 Environment.CurrentDirectory <- rootDir
 trace rootDir
 
+
+// --------------------------------------------------------------------------------------
+// .Net SDK
+// --------------------------------------------------------------------------------------
+
+let msbuild targets configuration project =
+    let properties =
+        [
+            yield "Configuration", configuration
+        ]
+    MSBuildHelper.build (fun p ->
+        { p with
+            NoLogo = true
+            NodeReuse = false
+            Targets = targets
+            Properties = properties
+            RestorePackagesFlag = false
+            Verbosity = Some MSBuildVerbosity.Minimal
+        }) project
+
+let msbuildWeak targets configuration project =
+    let properties =
+        [
+            yield "Configuration", configuration
+            yield "StrongName", "False"
+        ]
+    MSBuildHelper.build (fun p ->
+        { p with
+            NoLogo = true
+            NodeReuse = false
+            Targets = targets
+            Properties = properties
+            RestorePackagesFlag = false
+            Verbosity = Some MSBuildVerbosity.Minimal
+        }) project
+
+let msbuildStrong targets configuration project =
+    let properties =
+        [
+            yield "Configuration", configuration
+            yield "StrongName", "True"
+        ]
+    MSBuildHelper.build (fun p ->
+        { p with
+            NoLogo = true
+            NodeReuse = false
+            Targets = targets
+            Properties = properties
+            RestorePackagesFlag = false
+            Verbosity = Some MSBuildVerbosity.Minimal
+        }) project
+
+let dotnet workingDir command =
+    let properties =
+        [
+        ]
+    let suffix = properties |> List.map (fun (name, value) -> sprintf """ /p:%s="%s" """ name value) |> String.concat ""
+    DotNetCli.RunCommand
+        (fun c -> { c with WorkingDir = workingDir})
+        (command + suffix)
+
+let dotnetWeak workingDir command =
+    let properties =
+        [
+            yield "StrongName", "False"
+        ]
+    let suffix = properties |> List.map (fun (name, value) -> sprintf """ /p:%s="%s" """ name value) |> String.concat ""
+    DotNetCli.RunCommand
+        (fun c -> { c with WorkingDir = workingDir})
+        (command + suffix)
+
+let dotnetStrong workingDir command =
+    let properties =
+        [
+            yield "StrongName", "True"
+        ]
+    let suffix = properties |> List.map (fun (name, value) -> sprintf """ /p:%s="%s" """ name value) |> String.concat ""
+    DotNetCli.RunCommand
+        (fun c -> { c with WorkingDir = workingDir})
+        (command + suffix)
+
+
+// --------------------------------------------------------------------------------------
+// Header
+// --------------------------------------------------------------------------------------
+
 let header = ReadFile(__SOURCE_DIRECTORY__ </> __SOURCE_FILE__) |> Seq.take 10 |> Seq.map (fun s -> s.Substring(2)) |> toLines
 
 type Release =
-    { Title: string
+    { RepoKey: string
+      Title: string
       AssemblyVersion: string
       PackageVersion: string
       ReleaseNotes: string
       ReleaseNotesFile: string }
 
-type Package =
+type ZipPackage =
     { Id: string
       Release: Release
-      Title: string
-      Summary: string
-      Description: string
-      Tags: string
-      FsLoader: bool
-      Authors: string list
-      Dependencies: NugetFrameworkDependencies list
-      Files: (string * string option * string option) list }
+      Title: string }
 
-type Bundle =
+type NuGetPackage =
     { Id: string
-      Release: Release
-      Title: string
-      Packages: Package list }
+      Release: Release }
 
-let release title releaseNotesFile : Release =
+type VisualStudioProject =
+    { AssemblyName: string
+      ProjectFile: string
+      OutputDir: string
+      Release: Release
+      NuGetPackages: NuGetPackage list }
+
+type NativeVisualStudioProject =
+    { BinaryName: string
+      ProjectFile: string
+      OutputDir: string
+      Release: Release
+      NuGetPackages: NuGetPackage list }
+
+type NativeBashScriptProject =
+    { BinaryName: string
+      BashScriptFile: string
+      OutputDir: string
+      Release: Release
+      NuGetPackages: NuGetPackage list }
+
+type Project =
+    | VisualStudio of VisualStudioProject
+    | NativeVisualStudio of NativeVisualStudioProject
+    | NativeBashScript of NativeBashScriptProject
+
+type Solution =
+    { Key: string
+      SolutionFile: string
+      Projects: Project list
+      Release: Release
+      ZipPackages: ZipPackage list
+      OutputDir: string
+      OutputLibDir: string
+      OutputLibStrongNameDir: string
+      OutputZipDir: string
+      OutputNuGetDir: string }
+
+type NuGetSpecification =
+    { NuGet: NuGetPackage
+      NuSpecFile: string
+      Title: string }
+
+
+let release repoKey title releaseNotesFile : Release =
     let info = LoadReleaseNotes releaseNotesFile
     let buildPart = "0"
     let assemblyVersion = info.AssemblyVersion + "." + buildPart
     let packageVersion = info.NugetVersion
     let notes = info.Notes |> List.map (fun l -> l.Replace("*","").Replace("`","")) |> toLines
-    { Title = title
+    { Release.RepoKey = repoKey
+      Title = title
       AssemblyVersion = assemblyVersion
       PackageVersion = packageVersion
       ReleaseNotes = notes
       ReleaseNotesFile = releaseNotesFile }
+
+let zipPackage packageId title release =
+    { ZipPackage.Id = packageId
+      Title = title
+      Release = release }
+
+let nugetPackage packageId release =
+    { NuGetPackage.Id = packageId
+      Release = release }
+
+let project assemblyName projectFile nuGetPackages =
+    { VisualStudioProject.AssemblyName = assemblyName
+      ProjectFile = projectFile
+      OutputDir = (Path.GetDirectoryName projectFile) </> "bin" </> "Release"
+      NuGetPackages = nuGetPackages
+      Release = nuGetPackages |> List.map (fun p -> p.Release) |> List.distinct |> List.exactlyOne }
+    |> Project.VisualStudio
+
+let nativeProject binaryName projectFile nuGetPackages =
+    { NativeVisualStudioProject.BinaryName = binaryName
+      ProjectFile = projectFile
+      OutputDir = (Path.GetDirectoryName projectFile) </> "bin" </> "Release"
+      NuGetPackages = nuGetPackages
+      Release = nuGetPackages |> List.map (fun p -> p.Release) |> List.distinct |> List.exactlyOne }
+    |> Project.NativeVisualStudio
+
+let nativeBashScriptProject binaryName bashScriptFile nuGetPackages =
+    { NativeBashScriptProject.BinaryName = binaryName
+      BashScriptFile = bashScriptFile
+      OutputDir = (Path.GetDirectoryName bashScriptFile) </> "bin" </> "Release"
+      NuGetPackages = nuGetPackages
+      Release = nuGetPackages |> List.map (fun p -> p.Release) |> List.distinct |> List.exactlyOne }
+    |> Project.NativeBashScript
+
+
+let projectOutputDir = function
+    | VisualStudio p -> p.OutputDir
+    | NativeVisualStudio p -> p.OutputDir
+    | NativeBashScript p -> p.OutputDir
+
+let projectRelease = function
+    | VisualStudio p -> p.Release
+    | NativeVisualStudio p -> p.Release
+    | NativeBashScript p -> p.Release
+
+let projectNuGetPackages = function
+    | VisualStudio p -> p.NuGetPackages
+    | NativeVisualStudio p -> p.NuGetPackages
+    | NativeBashScript p -> p.NuGetPackages
+
+let solution key solutionFile projects zipPackages =
+    { Solution.Key = key
+      SolutionFile = solutionFile
+      Projects = projects
+      ZipPackages = zipPackages
+      Release = List.concat [ projects |> List.map projectRelease; zipPackages |> List.map (fun p -> p.Release) ] |> List.distinct |> List.exactlyOne
+      OutputDir = "out" </> key
+      OutputLibDir = "out" </> key </> "Lib"
+      OutputLibStrongNameDir = "out" </> key </> "Lib-StrongName"
+      OutputZipDir = "out" </> key </> "Zip"
+      OutputNuGetDir = "out" </> key </> "NuGet" }
 
 let traceHeader (releases:Release list) =
     trace header
@@ -73,44 +255,8 @@ let traceHeader (releases:Release list) =
     for release in releases do
         trace ([ " "; release.Title.PadRight titleLength; "  v"; release.PackageVersion ] |> String.concat "")
     trace ""
-
-
-// --------------------------------------------------------------------------------------
-// TARGET FRAMEWORKS
-// --------------------------------------------------------------------------------------
-
-let libnet35 = "lib/net35"
-let libnet40 = "lib/net40"
-let libnet45 = "lib/net45"
-let netstandard13 = "lib/netstandard1.3"
-let netstandard16 = "lib/netstandard1.6"
-let netstandard20 = "lib/netstandard2.0"
-let libpcl7 = "lib/portable-net45+netcore45+MonoAndroid1+MonoTouch1"
-let libpcl47 = "lib/portable-net45+sl5+netcore45+MonoAndroid1+MonoTouch1"
-let libpcl78 = "lib/portable-net45+netcore45+wp8+MonoAndroid1+MonoTouch1"
-let libpcl259 = "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid1+MonoTouch1"
-let libpcl328 = "lib/portable-net4+sl5+netcore45+wpa81+wp8+MonoAndroid1+MonoTouch1"
-
-
-// --------------------------------------------------------------------------------------
-// .Net SDK
-// --------------------------------------------------------------------------------------
-
-let msbuild targets configuration project =
-    MSBuildHelper.build (fun p ->
-        { p with
-            NoLogo = true
-            NodeReuse = true
-            Targets = targets
-            Properties = [ "Configuration", configuration ]
-            RestorePackagesFlag = false
-            Verbosity = Some MSBuildVerbosity.Minimal
-        }) project
-
-let dotnet workingDir command =
-    DotNetCli.RunCommand
-        (fun c -> { c with WorkingDir = workingDir})
-        command
+    dotnet rootDir "--info"
+    trace ""
 
 
 // --------------------------------------------------------------------------------------
@@ -137,35 +283,72 @@ let patchVersionInResource path (release:Release) =
          >> regex_replace @"\d+,\d+,\d+,\d+" (replace "." "," release.AssemblyVersion))
         path
 
-let patchVersionInProjectFile path (release:Release) =
-    let semverSplit = release.PackageVersion.IndexOf('-')
-    let prefix = if semverSplit <= 0 then release.PackageVersion else release.PackageVersion.Substring(0, semverSplit)
-    let suffix = if semverSplit <= 0 then "" else release.PackageVersion.Substring(semverSplit+1)
-    ReplaceInFile
-        (regex_replace """\<PackageVersion\>.*\</PackageVersion\>""" (sprintf """<PackageVersion>%s</PackageVersion>""" release.PackageVersion)
-        >> regex_replace """\<Version\>.*\</Version\>""" (sprintf """<Version>%s</Version>""" release.PackageVersion)
-        >> regex_replace """\<AssemblyVersion\>.*\</AssemblyVersion\>""" (sprintf """<AssemblyVersion>%s</AssemblyVersion>""" release.AssemblyVersion)
-        >> regex_replace """\<FileVersion\>.*\</FileVersion\>""" (sprintf """<FileVersion>%s</FileVersion>""" release.AssemblyVersion)
-        >> regex_replace """\<VersionPrefix\>.*\</VersionPrefix\>""" (sprintf """<VersionPrefix>%s</VersionPrefix>""" prefix)
-        >> regex_replace """\<VersionSuffix\>.*\</VersionSuffix\>""" (sprintf """<VersionSuffix>%s</VersionSuffix>""" suffix)
-        >> regex_replace_singleline """\<PackageReleaseNotes\>.*\</PackageReleaseNotes\>""" (sprintf """<PackageReleaseNotes>%s</PackageReleaseNotes>""" release.ReleaseNotes))
-        path
+let patchVersionInProjectFile (project:Project) =
+    match project with
+    | VisualStudio p ->
+        let semverSplit = p.Release.PackageVersion.IndexOf('-')
+        let prefix = if semverSplit <= 0 then p.Release.PackageVersion else p.Release.PackageVersion.Substring(0, semverSplit)
+        let suffix = if semverSplit <= 0 then "" else p.Release.PackageVersion.Substring(semverSplit+1)
+        ReplaceInFile
+            (regex_replace """\<PackageVersion\>.*\</PackageVersion\>""" (sprintf """<PackageVersion>%s</PackageVersion>""" p.Release.PackageVersion)
+            >> regex_replace """\<Version\>.*\</Version\>""" (sprintf """<Version>%s</Version>""" p.Release.PackageVersion)
+            >> regex_replace """\<AssemblyVersion\>.*\</AssemblyVersion\>""" (sprintf """<AssemblyVersion>%s</AssemblyVersion>""" p.Release.AssemblyVersion)
+            >> regex_replace """\<FileVersion\>.*\</FileVersion\>""" (sprintf """<FileVersion>%s</FileVersion>""" p.Release.AssemblyVersion)
+            >> regex_replace """\<VersionPrefix\>.*\</VersionPrefix\>""" (sprintf """<VersionPrefix>%s</VersionPrefix>""" prefix)
+            >> regex_replace """\<VersionSuffix\>.*\</VersionSuffix\>""" (sprintf """<VersionSuffix>%s</VersionSuffix>""" suffix)
+            >> regex_replace_singleline """\<PackageReleaseNotes\>.*\</PackageReleaseNotes\>""" (sprintf """<PackageReleaseNotes>%s</PackageReleaseNotes>""" p.Release.ReleaseNotes))
+            p.ProjectFile
+    | NativeVisualStudio _ -> ()
+    | NativeBashScript _ -> ()
 
 
 // --------------------------------------------------------------------------------------
 // BUILD
 // --------------------------------------------------------------------------------------
 
-let clean project = msbuild [ "Clean" ] "Release" project
-let restore project = msbuild [ "Restore" ] "Release" project
-let build project = msbuild [ (if hasBuildParam "incremental" then "Build" else "Rebuild") ] "Release" project
-let pack project = dotnet rootDir (sprintf "pack %s --configuration Release --no-restore --no-build" project)
+let clean (solution:Solution) = msbuild [ "Clean" ] "Release" solution.SolutionFile
+
+let restoreWeak (solution:Solution) = msbuildWeak [ "Restore" ] "Release" solution.SolutionFile
+let restoreStrong (solution:Solution) = msbuildStrong [ "Restore" ] "Release" solution.SolutionFile
+
+let buildWeak (solution:Solution) = msbuildWeak [ (if hasBuildParam "incremental" then "Build" else "Rebuild") ] "Release" solution.SolutionFile
+let buildStrong (solution:Solution) = msbuildStrong [ (if hasBuildParam "incremental" then "Build" else "Rebuild") ] "Release" solution.SolutionFile
+
+let packWeak (solution:Solution) = dotnetWeak rootDir (sprintf "pack %s --configuration Release --no-restore --no-build" solution.SolutionFile)
+let packStrong (solution:Solution) = dotnetStrong rootDir (sprintf "pack %s --configuration Release --no-restore --no-build" solution.SolutionFile)
+
+let packProjectWeak = function
+    | VisualStudio p -> dotnetWeak rootDir (sprintf "pack %s --configuration Release --no-restore --no-build" p.ProjectFile)
+    | _ -> failwith "Project type not supported"
+let packProjectStrong = function
+    | VisualStudio p -> dotnetStrong rootDir (sprintf "pack %s --configuration Release --no-restore --no-build" p.ProjectFile)
+    | _ -> failwith "Project type not supported"
 
 //let buildConfig config subject = MSBuild "" (if hasBuildParam "incremental" then "Build" else "Rebuild") [ "Configuration", config ] subject |> ignore
 //let build subject = buildConfig "Release" subject
 //let buildSigned subject = buildConfig "Release-Signed" subject
 let buildConfig32 config subject = MSBuild "" (if hasBuildParam "incremental" then "Build" else "Rebuild") [("Configuration", config); ("Platform","Win32")] subject |> ignore
 let buildConfig64 config subject = MSBuild "" (if hasBuildParam "incremental" then "Build" else "Rebuild") [("Configuration", config); ("Platform","x64")] subject |> ignore
+
+
+// --------------------------------------------------------------------------------------
+// COLLECT
+// --------------------------------------------------------------------------------------
+
+let collectBinaries (solution:Solution) =
+    solution.Projects |> List.iter (function
+        | VisualStudio project -> CopyDir solution.OutputLibDir project.OutputDir (fun n -> n.Contains(project.AssemblyName + ".dll") || n.Contains(project.AssemblyName + ".pdb") || n.Contains(project.AssemblyName + ".xml"))
+        | _ -> failwith "Project type not supported")
+
+let collectBinariesSN (solution:Solution) =
+    solution.Projects |> List.iter (function
+        | VisualStudio project -> CopyDir solution.OutputLibStrongNameDir project.OutputDir (fun n -> n.Contains(project.AssemblyName + ".dll") || n.Contains(project.AssemblyName + ".pdb") || n.Contains(project.AssemblyName + ".xml"))
+        | _ -> failwith "Project type not supported")
+
+let collectNuGetPackages (solution:Solution) =
+    solution.Projects |> List.iter (function
+        | VisualStudio project -> CopyDir solution.OutputNuGetDir project.OutputDir (fun n -> n.EndsWith(".nupkg"))
+        | _ -> failwith "Project type not supported")
 
 
 // --------------------------------------------------------------------------------------
@@ -190,43 +373,13 @@ let provideReadme title (release:Release) path =
     |> ConvertTextToWindowsLineBreaks
     |> ReplaceFile (path </> "readme.txt")
 
-let provideFsLoader includes path =
-    // inspired by FsLab/tpetricek
-    let fullScript = ReadFile "src/FSharp/MathNet.Numerics.fsx" |> Array.ofSeq
-    let startIndex = fullScript |> Seq.findIndex (fun s -> s.Contains "***MathNet.Numerics.fsx***")
-    let extraScript = fullScript .[startIndex + 1 ..] |> List.ofSeq
-    let assemblies = [ "MathNet.Numerics.dll"; "MathNet.Numerics.FSharp.dll" ]
-    let nowarn = ["#nowarn \"211\""]
-    let references = [ for assembly in assemblies -> sprintf "#r \"%s\"" assembly ]
-    ReplaceFile (path </> "MathNet.Numerics.fsx") (nowarn @ includes @ references @ extraScript |> toLines)
-
-let provideFsIfSharpLoader path =
-    let fullScript = ReadFile "src/FSharp/MathNet.Numerics.IfSharp.fsx" |> Array.ofSeq
-    let startIndex = fullScript |> Seq.findIndex (fun s -> s.Contains "***MathNet.Numerics.IfSharp.fsx***")
-    ReplaceFile (path </> "MathNet.Numerics.IfSharp.fsx") (fullScript .[startIndex + 1 ..] |> toLines)
-
-let provideZipExtraFiles path (bundle:Bundle) =
-    provideLicense path
-    provideReadme (sprintf "%s v%s" bundle.Title bundle.Release.PackageVersion) bundle.Release path
-    if bundle.Packages |> List.exists (fun p -> p.FsLoader) then
-        let includes = [ for root in [ ""; "../"; "../../" ] -> sprintf "#I \"%sNet40\"" root ]
-        provideFsLoader includes path
-        provideFsIfSharpLoader path
-
-let provideNuGetExtraFiles path (bundle:Bundle) (pack:Package) =
-    provideLicense path
-    provideReadme (sprintf "%s v%s" pack.Title pack.Release.PackageVersion) bundle.Release path
-    if pack.FsLoader then
-        let includes = [ for root in [ ""; "../"; "../../"; "../../../" ] do
-                         for package in bundle.Packages do
-                         yield sprintf "#I \"%spackages/%s/lib/net40/\"" root package.Id
-                         yield sprintf "#I \"%spackages/%s.%s/lib/net40/\"" root package.Id package.Release.PackageVersion ]
-        provideFsLoader includes path
-        provideFsIfSharpLoader path
 
 // SIGN
 
-let sign fingerprint timeserver files =
+let sign fingerprint timeserver (solution: Solution) =
+    let files = solution.Projects |> Seq.collect (function
+        | VisualStudio project -> !! (project.OutputDir + "/**/" + project.AssemblyName + ".dll")
+        | _ -> failwith "Project type not supported")
     let fileArgs = files |> Seq.map (sprintf "\"%s\"") |> String.concat " "
     let optionsArgs = sprintf """/v /fd sha256 /sha1 "%s" /tr "%s" /td sha256""" fingerprint timeserver
     let arguments = sprintf """sign %s %s""" optionsArgs fileArgs
@@ -237,58 +390,52 @@ let sign fingerprint timeserver files =
     if result <> 0 then
         failwithf "Error during SignTool call "
 
+let signNuGet fingerprint timeserver (solutions: Solution list) =
+    CleanDir "obj/NuGet"
+    solutions
+    |> Seq.collect (fun solution -> !! (solution.OutputNuGetDir </> "*.nupkg"))
+    |> Seq.distinct
+    |> Seq.iter (fun file ->
+        let args = sprintf """sign "%s" -HashAlgorithm SHA256 -TimestampHashAlgorithm SHA256 -CertificateFingerprint "%s" -Timestamper "%s""" (FullName file) fingerprint timeserver
+        let result =
+            ExecProcess (fun info ->
+                info.FileName <- "packages/build/NuGet.CommandLine/tools/NuGet.exe"
+                info.WorkingDirectory <- FullName "obj/NuGet"
+                info.Arguments <- args) (TimeSpan.FromMinutes 10.)
+        if result <> 0 then failwith "Error during NuGet sign.")
+    DeleteDir "obj/NuGet"
+
 
 // ZIP
 
-let zip zipDir filesDir filesFilter (bundle:Bundle) =
+let zip (package:ZipPackage) zipDir filesDir filesFilter =
     CleanDir "obj/Zip"
-    let workPath = "obj/Zip/" + bundle.Id
+    let workPath = "obj/Zip/" + package.Id
     CopyDir workPath filesDir filesFilter
-    provideZipExtraFiles workPath bundle
-    Zip "obj/Zip/" (zipDir </> sprintf "%s-%s.zip" bundle.Id bundle.Release.PackageVersion) !! (workPath + "/**/*.*")
-    CleanDir "obj/Zip"
+    provideLicense workPath
+    provideReadme (sprintf "%s v%s" package.Title package.Release.PackageVersion) package.Release workPath
+    Zip "obj/Zip/" (zipDir </> sprintf "%s-%s.zip" package.Id package.Release.PackageVersion) !! (workPath + "/**/*.*")
+    DeleteDir "obj/Zip"
+
 
 // NUGET
 
-let updateNuspec (pack:Package) outPath symbols updateFiles spec =
+let updateNuspec (nuget:NuGetPackage) outPath spec =
     { spec with ToolPath = "packages/build/NuGet.CommandLine/tools/NuGet.exe"
                 OutputPath = outPath
                 WorkingDir = "obj/NuGet"
-                Version = pack.Release.PackageVersion
-                ReleaseNotes = pack.Release.ReleaseNotes
-                Project = pack.Id
-                Title = pack.Title
-                Summary = pack.Summary
-                Description = pack.Description
-                Tags = pack.Tags
-                Authors = pack.Authors
-                DependenciesByFramework = pack.Dependencies
-                SymbolPackage = symbols
-                Files = updateFiles pack.Files
+                Version = nuget.Release.PackageVersion
+                ReleaseNotes = nuget.Release.ReleaseNotes
                 Publish = false }
 
-let nugetPack (bundle:Bundle) outPath =
+let nugetPackManually (solution:Solution) (packages:NuGetSpecification list) =
     CleanDir "obj/NuGet"
-    for pack in bundle.Packages do
-        provideNuGetExtraFiles "obj/NuGet" bundle pack
-        let withLicenseReadme f = [ "license.txt", None, None; "readme.txt", None, None; ] @ f
-        let withoutSymbolsSources f =
-            List.choose (function | (_, Some (target:string), _) when target.StartsWith("src") -> None
-                                  | (s, t, None) -> Some (s, t, Some ("**/*.pdb"))
-                                  | (s, t, Some e) -> Some (s, t, Some (e + ";**/*.pdb"))) f
-        // first pass - generates symbol + normal package. NuGet does drop the symbols from the normal package, but unfortunately not the sources.
-        // NuGet (updateNuspec pack outPath NugetSymbolPackage.Nuspec withLicenseReadme) "build/MathNet.Numerics.nuspec"
-        // second pass - generate only normal package, again, but this time explicitly drop the sources (and the debug symbols)
-        NuGet (updateNuspec pack outPath NugetSymbolPackage.None (withLicenseReadme >> withoutSymbolsSources)) "build/MathNet.Numerics.nuspec"
+    for pack in packages do
+        provideLicense "obj/NuGet"
+        provideReadme (sprintf "%s v%s" pack.Title pack.NuGet.Release.PackageVersion) pack.NuGet.Release "obj/NuGet"
+        NuGet (updateNuspec pack.NuGet solution.OutputNuGetDir) pack.NuSpecFile
         CleanDir "obj/NuGet"
-
-let nugetPackExtension (bundle:Bundle) outPath =
-    CleanDir "obj/NuGet"
-    for pack in bundle.Packages do
-        provideNuGetExtraFiles "obj/NuGet" bundle pack
-        let withLicenseReadme f = [ "license.txt", None, None; "readme.txt", None, None; ] @ f
-        NuGet (updateNuspec pack outPath NugetSymbolPackage.None withLicenseReadme) "build/MathNet.Numerics.Extension.nuspec"
-        CleanDir "obj/NuGet"
+    DeleteDir "obj/NuGet"
 
 
 // --------------------------------------------------------------------------------------
@@ -355,13 +502,13 @@ let publishReleaseTag title prefix (release:Release) =
     let cmd = sprintf """tag -a %s -m "%s" """ tagName tagMessage
     Git.CommandHelper.runSimpleGitCommand "." cmd |> printfn "%s"
     let _, remotes, _ = Git.CommandHelper.runGitCommand "." "remote -v"
-    let main = remotes |> Seq.find (fun s -> s.Contains("(push)") && s.Contains("mathnet/mathnet-numerics"))
+    let main = remotes |> Seq.find (fun s -> s.Contains("(push)") && s.Contains("mathnet/mathnet-" + release.RepoKey))
     let remoteName = main.Split('\t').[0]
     Git.Branches.pushTag "." remoteName tagName
 
-let publishNuGet packageFiles =
-    // TODO: Migrate to NuGet helper once it supports direct (non-integrated) operations
-    let rec impl trials file =
+let publishNuGet (solutions: Solution list) =
+    CleanDir "obj/NuGet"
+    let rec impl trials (file:string) =
         trace ("NuGet Push: " + System.IO.Path.GetFileName(file) + ".")
         try
             let args = sprintf """push "%s" -Source https://api.nuget.org/v3/index.json -T 900""" (FullName file)
@@ -374,33 +521,32 @@ let publishNuGet packageFiles =
         with exn ->
             if trials > 0 then impl (trials-1) file
             else ()
-    Seq.iter (impl 3) packageFiles
-
-let publishMirrors () =
-    let repo = "../mirror-numerics"
-    Git.CommandHelper.runSimpleGitCommand repo "remote update" |> printfn "%s"
-    Git.CommandHelper.runSimpleGitCommand repo "push mirrors" |> printfn "%s"
+    solutions
+    |> Seq.collect (fun solution -> !! (solution.OutputNuGetDir </> "*.nupkg"))
+    |> Seq.distinct
+    |> Seq.iter (impl 3)
+    DeleteDir "obj/NuGet"
 
 let publishDocs (release:Release) =
-    let repo = "../mathnet-websites"
-    Git.Branches.pull repo "origin" "master"
-    CopyRecursive "out/docs" "../mathnet-websites/numerics" true |> printfn "%A"
+    let repo = "../web-mathnet-" + release.RepoKey
+    Git.Branches.pull repo "origin" "gh-pages"
+    CopyRecursive "out/docs" repo true |> printfn "%A"
     Git.Staging.StageAll repo
-    Git.Commit.Commit repo (sprintf "Numerics: %s docs update" release.PackageVersion)
-    Git.Branches.pushBranch repo "origin" "master"
+    Git.Commit.Commit repo (sprintf "%s: %s docs update" release.Title release.PackageVersion)
+    Git.Branches.pushBranch repo "origin" "gh-pages"
 
 let publishApi (release:Release) =
-    let repo = "../mathnet-websites"
-    Git.Branches.pull repo "origin" "master"
-    CleanDir "../mathnet-websites/numerics/api"
-    CopyRecursive "out/api" "../mathnet-websites/numerics/api" true |> printfn "%A"
+    let repo = "../web-mathnet-" + release.RepoKey
+    Git.Branches.pull repo "origin" "gh-pages"
+    CleanDir (repo + "/api")
+    CopyRecursive "out/api" (repo + "/api") true |> printfn "%A"
     Git.Staging.StageAll repo
-    Git.Commit.Commit repo (sprintf "Numerics: %s api update" release.PackageVersion)
-    Git.Branches.pushBranch repo "origin" "master"
+    Git.Commit.Commit repo (sprintf "%s: %s api update" release.Title release.PackageVersion)
+    Git.Branches.pushBranch repo "origin" "gh-pages"
 
-let publishNuGetToArchive archivePath nupkgFile (pack:Package) =
+let publishNuGetToArchive (package:NuGetPackage) archivePath nupkgFile =
     let tempDir = Path.GetTempPath() </> Path.GetRandomFileName()
-    let archiveDir = archivePath </> pack.Id </> pack.Release.PackageVersion
+    let archiveDir = archivePath </> package.Id </> package.Release.PackageVersion
     CleanDirs [tempDir; archiveDir]
     nupkgFile |> CopyFile archiveDir
     use sha512 = System.Security.Cryptography.SHA512.Create()
@@ -410,18 +556,27 @@ let publishNuGetToArchive archivePath nupkgFile (pack:Package) =
     !! (tempDir </> "*.nuspec") |> Copy archiveDir
     DeleteDir tempDir
 
-let publishArchive zipOutPath nugetOutPath (bundles:Bundle list) =
-    let archivePath = (environVarOrFail "MathNetReleaseArchive") </> "Math.NET Numerics"
+let publishArchiveManual title zipOutPath nugetOutPath (zipPackages:ZipPackage list) (nugetPackages:NuGetPackage list) =
+    let archivePath = (environVarOrFail "MathNetReleaseArchive") </> title
     if directoryExists archivePath |> not then failwith "Release archive directory does not exists. Safety Check failed."
-    for bundle in bundles do
-        let zipFile = zipOutPath </> sprintf "%s-%s.zip" bundle.Id bundle.Release.PackageVersion
+    for zipPackage in zipPackages do
+        let zipFile = zipOutPath </> sprintf "%s-%s.zip" zipPackage.Id zipPackage.Release.PackageVersion
         if FileSystemHelper.fileExists zipFile then
             zipFile |> CopyFile (archivePath </> "Zip")
-    for package in bundles |> List.collect (fun b -> b.Packages) do
-        let nupkgFile = nugetOutPath </> sprintf "%s.%s.nupkg" package.Id package.Release.PackageVersion
+    for nugetPackage in nugetPackages do
+        let nupkgFile = nugetOutPath </> sprintf "%s.%s.nupkg" nugetPackage.Id nugetPackage.Release.PackageVersion
         if FileSystemHelper.fileExists nupkgFile then
             trace nupkgFile
-            publishNuGetToArchive (archivePath </> "NuGet") nupkgFile package
-        let symbolsFile = nugetOutPath </> sprintf "%s.%s.symbols.nupkg" package.Id package.Release.PackageVersion
+            publishNuGetToArchive nugetPackage (archivePath </> "NuGet") nupkgFile
+        let symbolsFile = nugetOutPath </> sprintf "%s.%s.symbols.nupkg" nugetPackage.Id nugetPackage.Release.PackageVersion
         if FileSystemHelper.fileExists symbolsFile then
             symbolsFile |> CopyFile (archivePath </> "Symbols")
+
+let publishArchive (solution:Solution) =
+    let zipOutPath = solution.OutputZipDir
+    let nugetOutPath = solution.OutputNuGetDir
+    let zipPackages = solution.ZipPackages
+    let nugetPackages = solution.Projects |> List.collect projectNuGetPackages |> List.distinct
+    publishArchiveManual solution.Release.Title zipOutPath nugetOutPath zipPackages nugetPackages
+
+let publishArchives (solutions: Solution list) = solutions |> List.iter publishArchive

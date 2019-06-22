@@ -1,14 +1,15 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net461;netcoreapp1.1;netcoreapp2.0</TargetFrameworks>
-    <RuntimeFrameworkVersion>2.0.5</RuntimeFrameworkVersion>
+    <GenerateProgramFile>false</GenerateProgramFile>
+    <TargetFrameworks>net461;netcoreapp2.2</TargetFrameworks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AssemblyName>MathNet.Numerics.FSharp.Tests</AssemblyName>
     <RootNamespace>MathNet.Numerics.Tests</RootNamespace>
     <IsPackable>false</IsPackable>
     <NoWarn>44;2003</NoWarn>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\FSharp\FSharp.fsproj" />
@@ -31,7 +32,6 @@
     <Compile Include="QuaternionTests.fs" />
     <Compile Include="Main.fs" />
     <None Include="paket.references" />
-    <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />

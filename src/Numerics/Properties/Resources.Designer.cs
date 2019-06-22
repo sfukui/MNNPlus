@@ -10,10 +10,8 @@
 
 using System.Reflection;
 
-namespace MathNet.Numerics.Properties {
-    using System;
-
-
+namespace MathNet.Numerics.Properties
+{
     /// <summary>
     ///   ローカライズされた文字列などを検索するための、厳密に型指定されたリソース クラスです。
     /// </summary>

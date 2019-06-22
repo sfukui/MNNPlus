@@ -1,3 +1,37 @@
+### 4.8.1 - 2019-06-12
+* Packaging fix - signed edition was not properly strong named.
+
+### 4.8.0 - 2019-06-02
+* Optimization: Levenberg-Marquardt, Trust-Region Dogleg *~Jong Hyun Kim*
+* Optimization: Nelder-Mead-Simplex: Improve convergence for symmetrical functions *~Erik Ovegard*
+* BUG: Optimization: Nelder-Mead-Simplex did not return the best evaluated point in some cases *~Eric Scott Salem*
+* Factorial: first 170 values now constant (data segment) instead of precomputed on first use *~Portalez Regis*
+* Window Functions: Tukey window *~Marco Ross*
+
+### 4.7.0 - 2018-11-11
+* Special Functions: Airy functions Ai, Bi *~Jong Hyun Kim*
+* Special Functions: Bessel functions of the first and second kind *~Jong Hyun Kim*
+* Special Functions: Modified Bessel functions of the first and second kind *~Jong Hyun Kim*
+* Special Functions: Spherical Bessel functions of the first and second kind *~Jong Hyun Kim*
+* Special Functions: Hankel functions of the first and second kind *~Jong Hyun Kim*
+* Special Functions: Kelvin functions of the first and second kind, and derivatives *~Jong Hyun Kim*
+* Linear Algebra: optimized sparse implementation of transpose-multiply *~Richard Reader*
+* Linear Algebra: optimized range checking in vectors and matrices
+
+### 4.6.0 - 2018-10-19
+* Polynomial: New Polynomial data structure *~Tobias Glaubach*
+* Statistics: Correlate.Auto auto correlation *~Tobias Glaubach*
+* Curve Fitting: Fit.Curve for non-linear least-squares fitting to an arbitray function
+
+### 4.5.1 - 2018-05-22
+* Signed NuGet packages
+
+### 4.5.0 - 2018-05-22
+* Random: New Xoshiro256StarStar random source *~Colin Green*
+
+### 4.4.1 - 2018-05-06
+* Build: strong-name edition .Signed NuGet packages are available again
+
 ### 4.4.0 - 2018-02-25
 * Linear Algebra: managed provider performance improvements on basic vector arithmetics
 

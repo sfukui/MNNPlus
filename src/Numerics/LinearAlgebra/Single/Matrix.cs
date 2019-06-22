@@ -28,8 +28,8 @@
 // </copyright>
 
 using System;
-using MathNet.Numerics.LinearAlgebra.Single.Factorization;
 using MathNet.Numerics.LinearAlgebra.Factorization;
+using MathNet.Numerics.LinearAlgebra.Single.Factorization;
 using MathNet.Numerics.LinearAlgebra.Storage;
 using MathNet.Numerics.Properties;
 
@@ -632,7 +632,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         {
             if (norm <= 0.0)
             {
-                throw new ArgumentOutOfRangeException("norm", Resources.ArgumentMustBePositive);
+                throw new ArgumentOutOfRangeException(nameof(norm), Resources.ArgumentMustBePositive);
             }
 
             var ret = new double[RowCount];
@@ -664,7 +664,7 @@ namespace MathNet.Numerics.LinearAlgebra.Single
         {
             if (norm <= 0.0)
             {
-                throw new ArgumentOutOfRangeException("norm", Resources.ArgumentMustBePositive);
+                throw new ArgumentOutOfRangeException(nameof(norm), Resources.ArgumentMustBePositive);
             }
 
             var ret = new double[ColumnCount];

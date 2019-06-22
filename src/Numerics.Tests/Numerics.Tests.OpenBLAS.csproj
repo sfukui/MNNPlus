@@ -2,13 +2,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net461;netcoreapp1.1;netcoreapp2.0</TargetFrameworks>
-    <RuntimeFrameworkVersion>2.0.5</RuntimeFrameworkVersion>
+    <GenerateProgramFile>false</GenerateProgramFile>
+    <TargetFrameworks>net461;netcoreapp2.2</TargetFrameworks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AssemblyName>MathNet.Numerics.Tests.OpenBLAS</AssemblyName>
     <RootNamespace>MathNet.Numerics.Tests</RootNamespace>
     <IsPackable>false</IsPackable>
-    <DefineConstants>NATIVE;OPENBLAS</DefineConstants>
+    <DefineConstants>NATIVE;OPENBLAS;$(CommonConstants)</DefineConstants>
   </PropertyGroup>
   <ItemGroup Condition="'$(TargetFramework)'=='net461'">
     <Reference Include="System" />
@@ -17,6 +17,9 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="TestResult.xml" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Numerics\Numerics.csproj" />

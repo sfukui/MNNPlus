@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27130.2026
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28729.10
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Readme", "Readme", "{C2F37492-38AE-4186-8A7F-17B0B080942C}"
 	ProjectSection(SolutionItems) = preProject
@@ -36,20 +36,17 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{B54A0B40
 	ProjectSection(SolutionItems) = preProject
 		.travis.yml = .travis.yml
 		appveyor.yml = appveyor.yml
+		docs\tools\build-docs.fsx = docs\tools\build-docs.fsx
 		build\build-framework.fsx = build\build-framework.fsx
 		build.fsx = build.fsx
-		build\MathNet.Numerics.nuspec = build\MathNet.Numerics.nuspec
+		src\Directory.Build.props = src\Directory.Build.props
+		global.json = global.json
 		paket.dependencies = paket.dependencies
 		paket.lock = paket.lock
+		azure-pipelines.yml = azure-pipelines.yml
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestData", "src\TestData\TestData.csproj", "{AF3253C9-4DB5-45A0-98CF-C105FDA9DA47}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Numerics.Tests.MKL", "src\Numerics.Tests\Numerics.Tests.MKL.csproj", "{0F171596-CDE9-4197-A8B2-07C406814CE3}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Numerics.Tests.OpenBLAS", "src\Numerics.Tests\Numerics.Tests.OpenBLAS.csproj", "{9C4A3651-3C4D-405A-8D25-503E04A1B459}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Numerics.Tests.CUDA", "src\Numerics.Tests\Numerics.Tests.CUDA.csproj", "{E184F219-F9F9-4396-AE0A-B431375CF06F}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Benchmark", "src\Benchmark\Benchmark.csproj", "{82444930-9FD7-41B6-B476-CCE41A0C0A0B}"
 EndProject
