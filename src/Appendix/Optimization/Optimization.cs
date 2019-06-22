@@ -97,10 +97,10 @@ namespace MathNet.Numerics.Appendix.Optimization
         
         public NelderMead(System.Func<double[], double> f, int iteration, double tolerance)
         {
-            var fConv = new Converter<double[], double>(f);
-            var fFS = Microsoft.FSharp.Core.FSharpFunc<double[], double>.FromConverter(fConv);
+            //var fConv = new Converter<double[], double>(f);
+            //var fFS = Microsoft.FSharp.Core.FSharpFunc<double[], double>.FromConverter(fConv);
 
-            m_NelderMeadFS = new NelderMeadFSharp(fFS, iteration, tolerance);
+            m_NelderMeadFS = new NelderMeadFSharp(f, iteration, tolerance);
         }
 
         public int Iteration

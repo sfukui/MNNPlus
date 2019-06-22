@@ -185,7 +185,7 @@ type LineSearch ( f: System.Func<float[], float>, xInit: float, xMax: float, tri
 type NelderMeadResultFSharp = { Parameters: float[]; FunctionValue: float; Converged: bool }
 
 [<CompiledName "NelderMeadFSharp">]
-type NelderMead (f:(float[] -> float), iteration: int, tolerance: float) =
+type NelderMead (func: System.Func<float array, float>, iteration: int, tolerance: float) =
     let defaultIteration = 100
     let defaultTolerance = 1e-3
 
@@ -208,6 +208,7 @@ type NelderMead (f:(float[] -> float), iteration: int, tolerance: float) =
     member this.Sigma with get() = m_Sigma and set v = m_Sigma <- v
                 
     member this.Minimize(initialValues: float[]) =
+        let f x = func.Invoke(x)
         // Creating Simplex
         let rec loopCS (vec: float[]) acc simplex =
             if acc = vec.Length then simplex

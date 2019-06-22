@@ -214,3 +214,38 @@ type AdaptiveRejectionMetropolisSampler =
         { m_LnPdf = lnPdf; m_XMin = xMin; m_XMax = xMax; m_X1 = x1t; m_Xn = xnt; Abscissas = List.empty; ProposalInfos = List.empty; m_Generator = new MersenneTwister(seed)}  
         then
             this.Abscissas <- [this.m_X1; (this.m_X1 + this.m_Xn) * 0.5; this.m_Xn]
+
+    new(lnPdf:System.Func<float, float>, xMin:float, xMax:float, x1:float, xn:float) as this =
+        { m_LnPdf = (fun x -> lnPdf.Invoke(x)) ; m_XMin = xMin; m_XMax = xMax; m_X1 = x1; m_Xn = xn; Abscissas = List.empty; ProposalInfos = List.empty; m_Generator = new MersenneTwister()}
+        then
+            this.Abscissas <- [x1; (x1 + xn) * 0.5; xn]
+    
+    new(lnPdf:System.Func<float, float>, xMin:float, xMax:float, x1:float, xn:float, seed:int) as this =
+        { m_LnPdf = (fun x -> lnPdf.Invoke(x)); m_XMin = xMin; m_XMax = xMax; m_X1 = x1; m_Xn = xn; Abscissas = List.empty; ProposalInfos = List.empty; m_Generator = new MersenneTwister(seed)}
+        then
+            this.Abscissas <- [x1; (x1 + xn) * 0.5; xn]
+
+    new(lnPdf:System.Func<float, float>, xMin:float, xMax:float, x1:float, xn:float, generator:RandomSource) as this =
+        { m_LnPdf = (fun x -> lnPdf.Invoke(x)); m_XMin = xMin; m_XMax = xMax; m_X1 = x1; m_Xn = xn; Abscissas = List.empty; ProposalInfos = List.empty; m_Generator = generator}
+        then
+            this.Abscissas <- [x1; (x1 + xn) * 0.5; xn]
+            
+    new(lnPdf:System.Func<float, float>, xMin: float, xMax: float) as this =
+        let lnPdfFS = fun x -> lnPdf.Invoke(x)
+        let mean = AdaptiveRejectionMetropolisSampler.calcMoment lnPdfFS xMin xMax (fun y -> y)
+        let sd = AdaptiveRejectionMetropolisSampler.calcMoment lnPdfFS xMin xMax (fun x -> (x - mean)**2.0) |> sqrt
+        let x1t = (max (mean - 2.0*sd) (0.5*(xMin + mean)))
+        let xnt = (min (mean + 2.0*sd) (0.5*(mean + xMax)))
+        { m_LnPdf = lnPdfFS; m_XMin = xMin; m_XMax = xMax; m_X1 = x1t; m_Xn = xnt; Abscissas = List.empty; ProposalInfos = List.empty; m_Generator = new MersenneTwister()}  
+        then
+            this.Abscissas <- [this.m_X1; (this.m_X1 + this.m_Xn) * 0.5; this.m_Xn]
+
+    new(lnPdf:System.Func<float, float>, xMin: float, xMax: float, seed: int) as this =
+        let lnPdfFS = fun x -> lnPdf.Invoke(x)
+        let mean = AdaptiveRejectionMetropolisSampler.calcMoment lnPdfFS xMin xMax (fun y -> y)
+        let sd = AdaptiveRejectionMetropolisSampler.calcMoment lnPdfFS xMin xMax (fun x -> (x - mean)**2.0) |> sqrt
+        let x1t = (max (mean - 2.0*sd) (0.5*(xMin + mean)))
+        let xnt = (min (mean + 2.0*sd) (0.5*(mean + xMax)))
+        { m_LnPdf = lnPdfFS; m_XMin = xMin; m_XMax = xMax; m_X1 = x1t; m_Xn = xnt; Abscissas = List.empty; ProposalInfos = List.empty; m_Generator = new MersenneTwister(seed)}  
+        then
+            this.Abscissas <- [this.m_X1; (this.m_X1 + this.m_Xn) * 0.5; this.m_Xn]

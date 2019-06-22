@@ -53,7 +53,7 @@ namespace MathNet.Numerics.UnitTests.OptimizationTests
             var currentPath = System.AppDomain.CurrentDomain.BaseDirectory;
             System.Environment.CurrentDirectory = currentPath;
 
-            using (var reader = new System.IO.StreamReader(@"..\..\TestData\XYData.csv"))
+            using (var reader = new System.IO.StreamReader(@"..\..\..\TestData\XYData.csv"))
             {
                 while(reader.EndOfStream != true)
                 {
@@ -168,7 +168,7 @@ namespace MathNet.Numerics.UnitTests.OptimizationTests
             var currentPath = System.AppDomain.CurrentDomain.BaseDirectory;
             System.Environment.CurrentDirectory = currentPath;
 
-            using (var reader = new System.IO.StreamReader(@"..\..\TestData\GB2Sample.csv"))
+            using (var reader = new System.IO.StreamReader(@"..\..\..\TestData\GB2Sample.csv"))
             {
                 while(reader.EndOfStream != true)
                     TestData.Add(Double.Parse(reader.ReadLine()));

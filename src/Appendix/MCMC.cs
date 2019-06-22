@@ -30,7 +30,7 @@ namespace MathNet.Numerics.Appendix.Statistics.Mcmc
         public AdaptiveRejectionMetropolisSampler(System.Func<double, double> lnPdf, double xMin, double xMax,
             double x1, double xn, MathNet.Numerics.Random.RandomSource generator)
         {
-            m_ARMSFS = new AdaptiveRejectionMetropolisSamplerFSharp(CSFuncToFSFunc(lnPdf), xMin, xMax, x1, xn, generator);
+            m_ARMSFS = new AdaptiveRejectionMetropolisSamplerFSharp(lnPdf, xMin, xMax, x1, xn, generator);
         }
 
         /// <summary>
@@ -46,7 +46,7 @@ namespace MathNet.Numerics.Appendix.Statistics.Mcmc
         public AdaptiveRejectionMetropolisSampler(System.Func<double, double> lnPdf, double xMin, double xMax,
         double x1, double xn)
         {
-            m_ARMSFS = new AdaptiveRejectionMetropolisSamplerFSharp(CSFuncToFSFunc(lnPdf), xMin, xMax, x1, xn);
+            m_ARMSFS = new AdaptiveRejectionMetropolisSamplerFSharp(lnPdf, xMin, xMax, x1, xn);
         }
 
         /// <summary>
@@ -63,7 +63,7 @@ namespace MathNet.Numerics.Appendix.Statistics.Mcmc
         public AdaptiveRejectionMetropolisSampler(System.Func<double, double> lnPdf, double xMin, double xMax,
             double x1, double xn, int seed)
         {
-            m_ARMSFS = new AdaptiveRejectionMetropolisSamplerFSharp(CSFuncToFSFunc(lnPdf), xMin, xMax, x1, xn, seed);
+            m_ARMSFS = new AdaptiveRejectionMetropolisSamplerFSharp(lnPdf, xMin, xMax, x1, xn, seed);
         }
 
         /// <summary>
@@ -79,7 +79,7 @@ namespace MathNet.Numerics.Appendix.Statistics.Mcmc
         /// <param name="seed">The seed of Mersenne twister.</param>
         public AdaptiveRejectionMetropolisSampler(System.Func<double, double> lnPdf, double xMin, double xMax, int seed)
         {
-            m_ARMSFS = new AdaptiveRejectionMetropolisSamplerFSharp(CSFuncToFSFunc(lnPdf), xMin, xMax, seed);
+            m_ARMSFS = new AdaptiveRejectionMetropolisSamplerFSharp(lnPdf, xMin, xMax, seed);
         }
 
         /// <summary>
@@ -94,14 +94,7 @@ namespace MathNet.Numerics.Appendix.Statistics.Mcmc
         /// <param name="xMax">The maximum value of domain.</param>
         public AdaptiveRejectionMetropolisSampler(System.Func<double, double> lnPdf, double xMin, double xMax)
         {
-            m_ARMSFS = new AdaptiveRejectionMetropolisSamplerFSharp(CSFuncToFSFunc(lnPdf), xMin, xMax);
-        }
-
-
-        private Microsoft.FSharp.Core.FSharpFunc<double, double> CSFuncToFSFunc(System.Func<double, double> func)
-        {
-            var fConv = new Converter<double, double>(func);
-            return Microsoft.FSharp.Core.FSharpFunc<double, double>.FromConverter(fConv);
+            m_ARMSFS = new AdaptiveRejectionMetropolisSamplerFSharp(lnPdf, xMin, xMax);
         }
 
         /// <summary>
