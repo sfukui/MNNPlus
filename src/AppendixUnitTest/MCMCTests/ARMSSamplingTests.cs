@@ -14,7 +14,7 @@ namespace MathNet.Numerics.UnitTests.MCMCTests
         /// <summary>
         /// Rate of accept range for parameter comparison.
         /// </summary>
-        private double acceptRangeRate = 0.01;
+        private double acceptRangeRate = 0.1;
 
         /// <summary>
         /// Sample sizes in ARMS.
